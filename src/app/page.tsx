@@ -52,7 +52,7 @@ export default function HomePage() {
         </div>
 
         <div className={`pageShell ${styles.heroGrid}`}>
-          <div className={styles.heroCopy}>
+          <div className={`${styles.heroCopy} animate-fade-in-up`}>
             <p className="eyebrow">Pharmacogenomics medication safety platform</p>
             <h1>Your DNA file knows which medications could harm you.</h1>
             <p>
@@ -82,19 +82,19 @@ export default function HomePage() {
 
       <section className={styles.stats}>
         <div className={`pageShell ${styles.statsGrid}`}>
-          <article className={styles.statCard}>
+          <article className={`${styles.statCard} animate-fade-in-up`}>
             <p className={styles.statValue}>125K</p>
             <p className={styles.statLabel}>
               medication-related deaths cited in the platform’s problem framing
             </p>
           </article>
-          <article className={styles.statCard}>
+          <article className={`${styles.statCard} animate-fade-in-up delay-100`}>
             <p className={styles.statValue}>$136B</p>
             <p className={styles.statLabel}>
               in annual cost burden tied to preventable medication complications
             </p>
           </article>
-          <article className={styles.statCard}>
+          <article className={`${styles.statCard} animate-fade-in-up delay-200`}>
             <p className={styles.statValue}>1 in 4</p>
             <p className={styles.statLabel}>
               people may carry genetic traits that change how common drugs should be used
@@ -114,7 +114,7 @@ export default function HomePage() {
           </div>
 
           <div className={styles.steps}>
-            <article className={styles.stepCard}>
+            <article className={`${styles.stepCard} animate-fade-in-up`}>
               <span className={styles.stepNumber}>1</span>
               <h3>Upload your raw file</h3>
               <p>
@@ -122,7 +122,7 @@ export default function HomePage() {
                 flow with clear expectations before any analysis begins.
               </p>
             </article>
-            <article className={styles.stepCard}>
+            <article className={`${styles.stepCard} animate-fade-in-up delay-100`}>
               <span className={styles.stepNumber}>2</span>
               <h3>Map actionable pharmacogenes</h3>
               <p>
@@ -130,7 +130,7 @@ export default function HomePage() {
                 rather than overwhelming users with a full genome dump.
               </p>
             </article>
-            <article className={styles.stepCard}>
+            <article className={`${styles.stepCard} animate-fade-in-up delay-200`}>
               <span className={styles.stepNumber}>3</span>
               <h3>Review report-ready guidance</h3>
               <p>
@@ -153,22 +153,22 @@ export default function HomePage() {
           </div>
 
           <div className={styles.badgeGrid}>
-            <article className={styles.badgeCard}>
+            <article className={`${styles.badgeCard} animate-fade-in-up`}>
               <span className={styles.badgeTag}>HIPAA-aligned</span>
               <h3>Secure foundations</h3>
               <p>Authentication, session handling, and database design are structured for sensitive data.</p>
             </article>
-            <article className={styles.badgeCard}>
+            <article className={`${styles.badgeCard} animate-fade-in-up delay-100`}>
               <span className={styles.badgeTag}>CPIC Level A</span>
               <h3>Clinical relevance</h3>
               <p>Future result views are shaped around guideline-backed medication interpretation patterns.</p>
             </article>
-            <article className={styles.badgeCard}>
+            <article className={`${styles.badgeCard} animate-fade-in-up delay-200`}>
               <span className={styles.badgeTag}>Your Data</span>
               <h3>User control</h3>
               <p>Deletion-ready workflows and explicit consent checkpoints are part of the product story.</p>
             </article>
-            <article className={styles.badgeCard}>
+            <article className={`${styles.badgeCard} animate-fade-in-up delay-300`}>
               <span className={styles.badgeTag}>No Selling</span>
               <h3>Privacy by default</h3>
               <p>No resale positioning, no growth-hack tone, and no ambiguity around ownership of uploads.</p>
@@ -236,7 +236,7 @@ export default function HomePage() {
           </div>
 
           <div className={styles.pricingGrid}>
-            <article className={`cardSurface ${styles.priceCard}`}>
+            <article className={`cardSurface ${styles.priceCard} animate-fade-in-up`}>
               <h3>One-time report</h3>
               <div className={styles.price}>
                 $49 <small>once</small>
@@ -250,12 +250,12 @@ export default function HomePage() {
                 <span>Medication safety summary</span>
                 <span>Physician-ready export structure</span>
               </div>
-              <Link className="buttonGhost" href="/register">
+              <Link className="buttonSecondary" href="/register">
                 Start one-time report
               </Link>
             </article>
 
-            <article className={`cardSurface ${styles.priceCard}`}>
+            <article className={`cardSurface ${styles.priceCard} animate-fade-in-up delay-100`}>
               <span className={styles.recommendation}>Recommended</span>
               <h3>Annual access</h3>
               <div className={styles.price}>
