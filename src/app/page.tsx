@@ -314,6 +314,23 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* CTA Band */}
+      <section className={styles.ctaBand}>
+        <div className={styles.ctaGlow} />
+        <div className={`pageShell ${styles.ctaInner}`}>
+          <h2>Ready to understand your medication safety profile?</h2>
+          <p>Upload your raw DNA file and get a clinician-ready report in under 60 seconds.</p>
+          <div className={styles.ctaActions}>
+            <Link className="buttonPrimary" href="/register">
+              Get Started Free
+            </Link>
+            <Link className="buttonSecondary" href="/login">
+              Sign In
+            </Link>
+          </div>
+        </div>
+      </section>
+
       <footer className={styles.footer}>
         <div className={`pageShell ${styles.footerGrid}`}>
           <div>
@@ -346,6 +363,9 @@ export default function HomePage() {
               <p>Medication safety support for patients, families, and clinicians.</p>
             </div>
           </div>
+        </div>
+        <div className={`pageShell ${styles.footerBottom}`}>
+          <p>© 2025 GenoNexus. All rights reserved. Not a substitute for medical advice.</p>
         </div>
       </footer>
     </div>
