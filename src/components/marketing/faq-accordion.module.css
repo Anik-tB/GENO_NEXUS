@@ -1,14 +1,22 @@
 .list {
   display: grid;
   gap: 1rem;
+  max-width: 800px;
+  margin: 0 auto;
 }
 
 .item {
   overflow: hidden;
-  border: 1px solid rgba(13, 43, 94, 0.08);
-  border-radius: 22px;
-  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid var(--gn-surface-border);
+  border-radius: 20px;
+  background: var(--gn-surface);
+  backdrop-filter: blur(12px);
   box-shadow: var(--shadow-card);
+  transition: border-color 0.3s ease;
+}
+
+.item:hover {
+  border-color: rgba(14, 165, 233, 0.2);
 }
 
 .trigger {
@@ -16,12 +24,19 @@
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  padding: 1.15rem 1.25rem;
+  padding: 1.25rem 1.5rem;
   border: 0;
   background: transparent;
-  color: var(--gn-navy);
+  color: var(--gn-text-primary);
   text-align: left;
-  font-weight: 700;
+  font-weight: 600;
+  font-size: 1.05rem;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.trigger:hover {
+  color: var(--gn-primary);
 }
 
 .icon {
@@ -30,21 +45,24 @@
   justify-content: center;
   width: 32px;
   height: 32px;
-  border-radius: 50%;
-  background: var(--gn-blue-pale);
-  color: var(--gn-blue);
+  border-radius: 10px;
+  background: rgba(14, 165, 233, 0.1);
+  border: 1px solid rgba(14, 165, 233, 0.2);
+  color: var(--gn-primary);
   font-size: 1.25rem;
-  transition: transform 180ms ease;
+  font-weight: 300;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .open {
   transform: rotate(45deg);
+  background: rgba(14, 165, 233, 0.2);
 }
 
 .content {
   display: grid;
   grid-template-rows: 0fr;
-  transition: grid-template-rows 220ms ease;
+  transition: grid-template-rows 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .contentOpen {
@@ -57,8 +75,8 @@
 
 .inner p {
   margin: 0;
-  padding: 0 1.25rem 1.2rem;
-  color: var(--gn-gray-700);
-  line-height: 1.7;
+  padding: 0 1.5rem 1.5rem;
+  color: var(--gn-text-secondary);
+  line-height: 1.75;
+  font-size: 1rem;
 }
-
