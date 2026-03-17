@@ -3,17 +3,17 @@ import styles from "./auth-shell.module.css";
 
 const TRUST_SIGNALS = [
   {
-    icon: "🔒",
+    icon: "HIPAA",
     title: "HIPAA-aligned foundations",
     text: "Secure handling patterns, privacy-first workflows, and protected genetic data."
   },
   {
-    icon: "🧬",
+    icon: "PGx",
     title: "Clinical guideline-backed insights",
     text: "Medication recommendations based on pharmacogenomic standards like CPIC."
   },
   {
-    icon: "🔬",
+    icon: "AI",
     title: "AI-powered medication safety analysis",
     text: "Advanced analysis that converts complex DNA data into understandable health insights."
   }
@@ -34,28 +34,28 @@ export function AuthShell({ children }: AuthShellProps) {
         <div className={styles.bgGrid} />
         <div className={styles.bgOrb1} />
         <div className={styles.bgOrb2} />
-        
+
         {/* Floating DNA/Molecular Particles */}
         <div className={styles.particleLayer}>
-            <div className={`${styles.particle} ${styles.p1}`}></div>
-            <div className={`${styles.particle} ${styles.p2}`}></div>
-            <div className={`${styles.particle} ${styles.p3}`}></div>
-            <div className={`${styles.particle} ${styles.p4}`}></div>
-            <div className={`${styles.particle} ${styles.p5}`}></div>
+          <div className={`${styles.particle} ${styles.p1}`}></div>
+          <div className={`${styles.particle} ${styles.p2}`}></div>
+          <div className={`${styles.particle} ${styles.p3}`}></div>
+          <div className={`${styles.particle} ${styles.p4}`}></div>
+          <div className={`${styles.particle} ${styles.p5}`}></div>
         </div>
 
         <div className={styles.brandInner}>
           <div className={styles.brandTop}>
             <Link href="/" className={styles.logo}>
               <span className={styles.logoMark}>
-                <svg 
-                  width="28" 
-                  height="28" 
-                  viewBox="0 0 24 24" 
-                  fill="none" 
-                  stroke="currentColor" 
-                  strokeWidth="2" 
-                  strokeLinecap="round" 
+                <svg
+                  width="28"
+                  height="28"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
                   strokeLinejoin="round"
                 >
                   <path d="M2 15c6.667-6 13.333 0 20-6" />
@@ -105,9 +105,7 @@ export function AuthShell({ children }: AuthShellProps) {
         <section className={`${styles.contentCard} animate-fade-in-up delay-100`}>
           {/* Glassmorphic border glow overlay */}
           <div className={styles.cardGlowBorder} />
-          <div className={styles.cardInner}>
-             {children}
-          </div>
+          <div className={styles.cardInner}>{children}</div>
         </section>
       </main>
     </div>
