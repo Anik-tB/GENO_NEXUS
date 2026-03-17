@@ -49,12 +49,20 @@
 
 .nav {
   position: relative;
-  z-index: 10;
+  z-index: 50;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  padding: 1rem 0 2rem;
+  padding: 0.75rem 1.5rem;
+  margin: 1.5rem auto 3rem;
+  max-width: 1200px;
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 99px; /* Rounded / pill shape */
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1);
   animation: fadeInUp 0.8s ease-out;
 }
 

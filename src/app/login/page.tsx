@@ -16,15 +16,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
   const attempts = Number(cookieStore.get("geno_login_attempts")?.value ?? "0");
 
   return (
-    <AuthShell
-      title="Sign in with confidence"
-      description="Access your secure GenoNexus workspace, review medication safety results, and continue where you left off."
-      footer={
-        <>
-          Need access for a new account? <a href="/register">Create one here</a>.
-        </>
-      }
-    >
+    <AuthShell>
       <LoginForm
         attempts={attempts}
         error={getSingleParam(params.error)}

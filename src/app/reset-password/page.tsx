@@ -15,15 +15,7 @@ export default async function ResetPasswordPage({
   const params = await searchParams;
 
   return (
-    <AuthShell
-      title="Reset your password"
-      description="Enter your email and, if the account exists, GenoNexus will send secure reset instructions."
-      footer={
-        <>
-          Password resets always use an ambiguous confirmation message to avoid exposing whether an account exists.
-        </>
-      }
-    >
+    <AuthShell>
       <ResetPasswordForm
         error={getSingleParam(params.error)}
         status={getSingleParam(params.status)}

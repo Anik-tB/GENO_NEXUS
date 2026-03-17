@@ -5,46 +5,44 @@ const TRUST_SIGNALS = [
   {
     icon: "🔒",
     title: "HIPAA-aligned foundations",
-    text: "Secure handling patterns, controlled access, and privacy-first workflows from day one."
+    text: "Secure handling patterns, privacy-first workflows, and protected genetic data."
   },
   {
     icon: "🧬",
-    title: "Clinical guideline-backed",
-    text: "Results designed around pharmacogenomic safety standards and CPIC-style interpretation."
+    title: "Clinical guideline-backed insights",
+    text: "Medication recommendations based on pharmacogenomic standards like CPIC."
   },
   {
-    icon: "🛡️",
-    title: "Your data stays yours",
-    text: "No resale workflow, deletion-ready architecture, and explicit consent checkpoints."
-  },
-  {
-    icon: "💊",
-    title: "Built for patient clarity",
-    text: "Plain-English guidance and medical-grade structure for safer medication conversations."
+    icon: "🔬",
+    title: "AI-powered medication safety analysis",
+    text: "Advanced analysis that converts complex DNA data into understandable health insights."
   }
 ];
 
 interface AuthShellProps {
-  title: string;
-  description: string;
   children: React.ReactNode;
-  footer?: React.ReactNode;
 }
 
-export function AuthShell({
-  title,
-  description,
-  children,
-  footer
-}: AuthShellProps) {
+export function AuthShell({ children }: AuthShellProps) {
   return (
     <div className={styles.layout}>
+      {/* =========================================
+          LEFT BRAND PANEL
+          ========================================= */}
       <aside className={styles.brandPanel}>
         {/* Animated background geometry */}
         <div className={styles.bgGrid} />
         <div className={styles.bgOrb1} />
         <div className={styles.bgOrb2} />
-        <div className={styles.bgOrb3} />
+        
+        {/* Floating DNA/Molecular Particles */}
+        <div className={styles.particleLayer}>
+            <div className={`${styles.particle} ${styles.p1}`}></div>
+            <div className={`${styles.particle} ${styles.p2}`}></div>
+            <div className={`${styles.particle} ${styles.p3}`}></div>
+            <div className={`${styles.particle} ${styles.p4}`}></div>
+            <div className={`${styles.particle} ${styles.p5}`}></div>
+        </div>
 
         <div className={styles.brandInner}>
           <div className={styles.brandTop}>
@@ -77,20 +75,18 @@ export function AuthShell({
             </Link>
 
             <div className={styles.headlineBlock}>
-              <p className="eyebrow">Medication safety intelligence</p>
+              <p className="eyebrow">Medication Safety Intelligence</p>
               <h2 className={`${styles.headline} animate-fade-in-up delay-100`}>
-                Your medication safety starts here.
+                Secure pharmacogenomic insights that transform raw DNA files into patient-friendly medication risk analysis.
               </h2>
-              <p className={`${styles.subtitle} animate-fade-in-up delay-200`}>
-                Secure authentication for a pharmacogenomics platform designed to turn raw
-                DNA files into patient-friendly medication risk insights.
-              </p>
             </div>
 
-            <div className={`${styles.signalList} animate-fade-in-up delay-300`}>
+            <div className={`${styles.signalList} animate-fade-in-up delay-200`}>
               {TRUST_SIGNALS.map((signal) => (
                 <div key={signal.title} className={styles.signal}>
-                  <span className={styles.signalIcon}>{signal.icon}</span>
+                  <div className={styles.signalIconBox}>
+                    <span className={styles.signalIcon}>{signal.icon}</span>
+                  </div>
                   <div>
                     <strong className={styles.signalTitle}>{signal.title}</strong>
                     <p className={styles.signalText}>{signal.text}</p>
@@ -99,22 +95,19 @@ export function AuthShell({
               ))}
             </div>
           </div>
-
-          <p className={styles.disclaimer}>
-            GenoNexus supports medication safety awareness and is not a substitute for a
-            clinician, pharmacist, or emergency advice.
-          </p>
         </div>
       </aside>
 
+      {/* =========================================
+          RIGHT CONTENT PANEL
+          ========================================= */}
       <main className={styles.contentPanel}>
         <section className={`${styles.contentCard} animate-fade-in-up delay-100`}>
-          <header className={styles.header}>
-            <h1>{title}</h1>
-            <p>{description}</p>
-          </header>
-          {children}
-          {footer ? <div className={styles.footer}>{footer}</div> : null}
+          {/* Glassmorphic border glow overlay */}
+          <div className={styles.cardGlowBorder} />
+          <div className={styles.cardInner}>
+             {children}
+          </div>
         </section>
       </main>
     </div>

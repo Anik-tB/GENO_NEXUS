@@ -13,15 +13,7 @@ export default async function RegisterPage({ searchParams }: RegisterPageProps) 
   const params = await searchParams;
 
   return (
-    <AuthShell
-      title="Create your secure account"
-      description="Set up a privacy-first GenoNexus account to store your results, manage future uploads, and keep medication insights in one place."
-      footer={
-        <>
-          By creating an account, you are preparing the secure profile foundation needed for future DNA upload and report workflows.
-        </>
-      }
-    >
+    <AuthShell>
       <RegisterForm
         error={getSingleParam(params.error)}
         status={getSingleParam(params.status)}
