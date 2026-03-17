@@ -31,10 +31,81 @@ const FAQ_ITEMS = [
   }
 ];
 
+const FEATURES = [
+  {
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M2 15c6.667-6 13.333 0 20-6" />
+        <path d="M9 22c1.798-1.998 2.518-3.995 2.8-5.993" />
+        <path d="M15 2c-1.798 1.998-2.518 3.995-2.8 5.993" />
+      </svg>
+    ),
+    title: "Multi-Format DNA Analysis",
+    description: "Process raw DNA files from 23andMe, AncestryDNA, and VCF formats with deep-learning powered variant detection."
+  },
+  {
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+      </svg>
+    ),
+    title: "Variant Pathogenicity Scoring",
+    description: "AI-driven classification with 93.5% accuracy across diverse genomic datasets using graph neural networks."
+  },
+  {
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="10" />
+        <path d="M12 6v6l4 2" />
+      </svg>
+    ),
+    title: "Real-Time Medication Alerts",
+    description: "Instant safety notifications when drug-gene interactions are detected, with risk-tier classification."
+  },
+  {
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+        <path d="M14 2v6h6" />
+        <path d="M16 13H8" /><path d="M16 17H8" /><path d="M10 9H8" />
+      </svg>
+    ),
+    title: "Physician-Ready Reports",
+    description: "Clinician-formatted summaries with clear risk tiers and plain-English language designed for care conversations."
+  },
+  {
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+      </svg>
+    ),
+    title: "Privacy-First Architecture",
+    description: "HIPAA-aligned infrastructure with end-to-end encryption, user-controlled deletion, and zero data resale."
+  },
+  {
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+        <path d="M3.27 6.96L12 12.01l8.73-5.05" />
+        <path d="M12 22.08V12" />
+      </svg>
+    ),
+    title: "AI-Powered Chatbot",
+    description: "Ask questions about your genomic data in natural language and get research-backed answers instantly."
+  }
+];
+
 export default function HomePage() {
   return (
     <div className={styles.page}>
       <section className={styles.hero}>
+        {/* Ambient glow orbs */}
+        <div className={styles.heroOrbs}>
+          <div className={styles.heroOrb1} />
+          <div className={styles.heroOrb2} />
+        </div>
+
         <div className={`pageShell ${styles.nav}`}>
           <Link href="/" className={styles.brand}>
             <span className={styles.brandMark}>
@@ -65,6 +136,7 @@ export default function HomePage() {
           </Link>
 
           <nav className={styles.navLinks}>
+            <a href="#features">Features</a>
             <a href="#how-it-works">How it works</a>
             <a href="#trust">Security</a>
             <a href="#pricing">Pricing</a>
@@ -108,7 +180,7 @@ export default function HomePage() {
           <article className={`${styles.statCard} animate-fade-in-up`}>
             <p className={styles.statValue}>125K</p>
             <p className={styles.statLabel}>
-              medication-related deaths cited in the platform’s problem framing
+              medication-related deaths cited in the platform&apos;s problem framing
             </p>
           </article>
           <article className={`${styles.statCard} animate-fade-in-up delay-100`}>
@@ -123,6 +195,34 @@ export default function HomePage() {
               people may carry genetic traits that change how common drugs should be used
             </p>
           </article>
+        </div>
+      </section>
+
+      {/* Features Showcase */}
+      <section className={styles.featuresSection} id="features">
+        <div className="pageShell">
+          <div className="sectionHeader">
+            <h2>Powerful genomics tools, built for everyone.</h2>
+            <p>
+              From DNA analysis to AI-powered medication safety insights, GenoNexus brings
+              clinical-grade pharmacogenomics to patients, physicians, and researchers.
+            </p>
+          </div>
+
+          <div className={styles.featuresGrid}>
+            {FEATURES.map((feature, i) => (
+              <article
+                key={feature.title}
+                className={`${styles.featureCard} animate-fade-in-up delay-${(i % 3) * 100 + 100}`}
+              >
+                <div className={styles.featureIconWrap}>
+                  {feature.icon}
+                </div>
+                <h3>{feature.title}</h3>
+                <p>{feature.description}</p>
+              </article>
+            ))}
+          </div>
         </div>
       </section>
 

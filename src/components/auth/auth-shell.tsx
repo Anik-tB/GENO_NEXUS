@@ -3,17 +3,36 @@ import styles from "./auth-shell.module.css";
 
 const TRUST_SIGNALS = [
   {
-    icon: "HIPAA",
+    icon: (
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+      </svg>
+    ),
+    label: "HIPAA",
     title: "HIPAA-aligned foundations",
     text: "Secure handling patterns, privacy-first workflows, and protected genetic data."
   },
   {
-    icon: "PGx",
+    icon: (
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M2 15c6.667-6 13.333 0 20-6" />
+        <path d="M9 22c1.798-1.998 2.518-3.995 2.8-5.993" />
+        <path d="M15 2c-1.798 1.998-2.518 3.995-2.8 5.993" />
+      </svg>
+    ),
+    label: "PGx",
     title: "Clinical guideline-backed insights",
     text: "Medication recommendations based on pharmacogenomic standards like CPIC."
   },
   {
-    icon: "AI",
+    icon: (
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+        <path d="M3.27 6.96L12 12.01l8.73-5.05" />
+        <path d="M12 22.08V12" />
+      </svg>
+    ),
+    label: "AI",
     title: "AI-powered medication safety analysis",
     text: "Advanced analysis that converts complex DNA data into understandable health insights."
   }
@@ -34,6 +53,7 @@ export function AuthShell({ children }: AuthShellProps) {
         <div className={styles.bgGrid} />
         <div className={styles.bgOrb1} />
         <div className={styles.bgOrb2} />
+        <div className={styles.bgOrb3} />
 
         {/* Floating DNA/Molecular Particles */}
         <div className={styles.particleLayer}>
@@ -42,6 +62,15 @@ export function AuthShell({ children }: AuthShellProps) {
           <div className={`${styles.particle} ${styles.p3}`}></div>
           <div className={`${styles.particle} ${styles.p4}`}></div>
           <div className={`${styles.particle} ${styles.p5}`}></div>
+          <div className={`${styles.particle} ${styles.p6}`}></div>
+          <div className={`${styles.particle} ${styles.p7}`}></div>
+        </div>
+
+        {/* Animated line decoration */}
+        <div className={styles.lineDecoration}>
+          <div className={styles.line1} />
+          <div className={styles.line2} />
+          <div className={styles.line3} />
         </div>
 
         <div className={styles.brandInner}>
@@ -85,7 +114,7 @@ export function AuthShell({ children }: AuthShellProps) {
               {TRUST_SIGNALS.map((signal) => (
                 <div key={signal.title} className={styles.signal}>
                   <div className={styles.signalIconBox}>
-                    <span className={styles.signalIcon}>{signal.icon}</span>
+                    {signal.icon}
                   </div>
                   <div>
                     <strong className={styles.signalTitle}>{signal.title}</strong>
@@ -93,6 +122,24 @@ export function AuthShell({ children }: AuthShellProps) {
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+
+          {/* Bottom stats strip */}
+          <div className={`${styles.statsStrip} animate-fade-in-up delay-300`}>
+            <div className={styles.statsItem}>
+              <span className={styles.statsValue}>93.5%</span>
+              <span className={styles.statsLabel}>Variant accuracy</span>
+            </div>
+            <div className={styles.statsDivider} />
+            <div className={styles.statsItem}>
+              <span className={styles.statsValue}>&lt;60s</span>
+              <span className={styles.statsLabel}>Report time</span>
+            </div>
+            <div className={styles.statsDivider} />
+            <div className={styles.statsItem}>
+              <span className={styles.statsValue}>256-bit</span>
+              <span className={styles.statsLabel}>Encryption</span>
             </div>
           </div>
         </div>
