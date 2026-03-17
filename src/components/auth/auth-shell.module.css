@@ -1,0 +1,177 @@
+.layout {
+  display: grid;
+  min-height: 100vh;
+  grid-template-columns: minmax(320px, 0.95fr) minmax(0, 1.35fr);
+  background: linear-gradient(180deg, #eef4fb 0%, #f8fbff 100%);
+}
+
+.brandPanel {
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at top right, rgba(0, 168, 150, 0.22), transparent 24%),
+    radial-gradient(circle at bottom left, rgba(46, 117, 182, 0.28), transparent 28%),
+    linear-gradient(160deg, #0d2b5e, #143b79 56%, #0f2960);
+  color: white;
+}
+
+.brandInner {
+  display: flex;
+  min-height: 100%;
+  flex-direction: column;
+  gap: 2rem;
+  justify-content: space-between;
+  padding: 2rem;
+}
+
+.brandTop {
+  display: grid;
+  gap: 1.35rem;
+}
+
+.logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.8rem;
+  color: white;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.logoMark {
+  display: inline-flex;
+  width: 2.7rem;
+  height: 2.7rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 20px;
+  background: linear-gradient(135deg, rgba(0, 168, 150, 0.9), rgba(16, 216, 193, 0.72));
+  color: #062a26;
+  font-family: var(--font-display), serif;
+  font-size: 1.2rem;
+}
+
+.headline {
+  margin: 0;
+  font-family: var(--font-display), serif;
+  font-size: clamp(2.4rem, 5vw, 4rem);
+  line-height: 1.02;
+}
+
+.subtitle {
+  margin: 0;
+  max-width: 28rem;
+  color: rgba(214, 228, 247, 0.92);
+  font-size: 1.05rem;
+  line-height: 1.75;
+}
+
+.signalList {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.signal {
+  display: flex;
+  gap: 0.85rem;
+  align-items: flex-start;
+  border-radius: 20px;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(16px);
+}
+
+.signalBadge {
+  display: inline-flex;
+  width: 2.2rem;
+  height: 2.2rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.16);
+  color: #9bf2ea;
+  font-size: 0.95rem;
+  font-weight: 800;
+}
+
+.signalTitle {
+  display: block;
+  margin-bottom: 0.2rem;
+  font-size: 0.96rem;
+  font-weight: 800;
+}
+
+.signalText {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.76);
+  font-size: 0.92rem;
+  line-height: 1.6;
+}
+
+.disclaimer {
+  max-width: 28rem;
+  color: rgba(255, 255, 255, 0.74);
+  font-size: 0.88rem;
+  line-height: 1.65;
+}
+
+.contentPanel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+
+.contentCard {
+  width: min(100%, 620px);
+  border-radius: 32px;
+  padding: 2rem;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 24px 80px rgba(13, 43, 94, 0.12);
+}
+
+.header {
+  margin-bottom: 1.5rem;
+}
+
+.header h1 {
+  margin: 0 0 0.55rem;
+  color: var(--gn-navy);
+  font-size: clamp(2rem, 4vw, 3rem);
+  line-height: 1.04;
+}
+
+.header p {
+  margin: 0;
+  color: var(--gn-gray-700);
+  line-height: 1.7;
+}
+
+.footer {
+  margin-top: 1.25rem;
+  color: var(--gn-gray-500);
+  font-size: 0.92rem;
+}
+
+@media (max-width: 980px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+
+  .brandInner {
+    padding-bottom: 1.5rem;
+  }
+}
+
+@media (max-width: 720px) {
+  .brandInner,
+  .contentPanel {
+    padding: 1rem;
+  }
+
+  .contentCard {
+    border-radius: 28px;
+    padding: 1.25rem;
+  }
+}
+

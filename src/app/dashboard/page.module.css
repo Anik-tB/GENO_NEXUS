@@ -1,0 +1,86 @@
+.page {
+  min-height: 100vh;
+  padding: 2rem 0 4rem;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.8rem;
+  color: var(--gn-navy);
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.brandMark {
+  display: inline-flex;
+  width: 2.7rem;
+  height: 2.7rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 20px;
+  background: linear-gradient(135deg, var(--gn-teal), #18d1bf);
+  color: #062a26;
+  font-family: var(--font-display), serif;
+}
+
+.hero {
+  display: grid;
+  gap: 1rem;
+  padding: 2rem;
+}
+
+.hero h1 {
+  margin: 0;
+  color: var(--gn-navy);
+  font-size: clamp(2rem, 5vw, 3.4rem);
+}
+
+.hero p {
+  margin: 0;
+  max-width: 42rem;
+  color: var(--gn-gray-700);
+  line-height: 1.75;
+}
+
+.grid {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.card {
+  padding: 1.4rem;
+}
+
+.card h2 {
+  margin: 0 0 0.55rem;
+  color: var(--gn-navy);
+  font-size: 1.2rem;
+}
+
+.card p {
+  margin: 0;
+  color: var(--gn-gray-700);
+  line-height: 1.7;
+}
+
+.logout {
+  border: 0;
+}
+
+@media (max-width: 960px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}
+
