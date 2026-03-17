@@ -3,6 +3,7 @@ import { buildSessionCookie, createSession } from "@/lib/auth/sessions";
 import { hashPassword } from "@/lib/auth/password";
 import { createUser, findUserByEmail } from "@/lib/auth/users";
 import { registerSchema } from "@/lib/validation/auth";
+import { generateVerificationToken, sendVerificationEmail } from "@/lib/auth/email";
 
 function redirectTo(request: NextRequest, path: string) {
   return NextResponse.redirect(new URL(path, request.url));
@@ -48,6 +49,11 @@ export async function POST(request: NextRequest) {
     });
 
     const session = await createSession(user.id, true);
+    
+    // Generate token and send email
+    const token = await generateVerificationToken(user.id);
+    await sendVerificationEmail(user.email, token);
+
     const response = redirectTo(request, "/dashboard");
     response.cookies.set(buildSessionCookie(session.token, session.expiresAt));
     return response;
