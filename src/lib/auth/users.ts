@@ -15,6 +15,10 @@ interface CreateUserInput {
   passwordHash: string;
 }
 
+function normalizeEmail(email: string) {
+  return email.trim().toLowerCase();
+}
+
 function mapUser(row: Record<string, string>): AuthUser {
   return {
     id: row.id,
@@ -31,10 +35,10 @@ export async function findUserByEmail(email: string) {
     `
       SELECT id, first_name, last_name, email, password_hash
       FROM users
-      WHERE lower(email) = lower($1)
+      WHERE email = $1
       LIMIT 1
     `,
-    [email]
+    [normalizeEmail(email)]
   );
 
   return result.rows[0] ? mapUser(result.rows[0]) : null;
@@ -55,9 +59,20 @@ export async function createUser(input: CreateUserInput) {
       VALUES ($1, $2, lower($3), $4, NOW(), NOW())
       RETURNING id, first_name, last_name, email, password_hash
     `,
-    [input.firstName, input.lastName, input.email, input.passwordHash]
+    [input.firstName, input.lastName, normalizeEmail(input.email), input.passwordHash]
   );
 
   return mapUser(result.rows[0]);
 }
 
+export async function updateUserPassword(userId: string, passwordHash: string) {
+  const client = assertDatabase();
+  await client.query(
+    `
+      UPDATE users
+      SET password_hash = $2, updated_at = NOW()
+      WHERE id = $1
+    `,
+    [userId, passwordHash]
+  );
+}

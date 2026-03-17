@@ -29,6 +29,26 @@ function validateEmail(value: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
 }
 
+function getStrongPasswordError(password: string) {
+  if (password.length < 12) {
+    return "Use at least 12 characters.";
+  }
+
+  if (!/[a-z]/.test(password)) {
+    return "Include at least one lowercase letter.";
+  }
+
+  if (!/[A-Z]/.test(password)) {
+    return "Include at least one uppercase letter.";
+  }
+
+  if (!/\d/.test(password)) {
+    return "Include at least one number.";
+  }
+
+  return undefined;
+}
+
 function ErrorText({ message }: { message?: string }) {
   return message ? <p className={styles.fieldError}>{message}</p> : null;
 }
@@ -58,6 +78,9 @@ function StatusMessage({
       </div>
     );
   }
+  if (error === "invalid_token") {
+    return <div className={styles.errorBanner}>This password reset link is invalid or has expired.</div>;
+  }
   if (status === "sent") {
     return (
       <div className={styles.statusBanner}>
@@ -70,6 +93,9 @@ function StatusMessage({
   }
   if (status === "session_required") {
     return <div className={styles.statusBanner}>Please sign in to access your dashboard.</div>;
+  }
+  if (status === "password_reset") {
+    return <div className={styles.statusBanner}>Password updated. Sign in with your new password.</div>;
   }
 
   return fallback ? <>{fallback}</> : null;
@@ -263,16 +289,23 @@ export function RegisterForm({ error, status }: FormMessageProps) {
     const passwordValue = String(formData.get("password") ?? "");
     const confirmPassword = String(formData.get("confirmPassword") ?? "");
     const termsAccepted = formData.get("termsAccepted");
+    const medicalAcknowledged = formData.get("medicalAcknowledged");
 
-    if (fullName.split(" ").length < 2) nextErrors.fullName = "Please enter your first and last name.";
+    if (fullName.split(/\s+/).filter(Boolean).length < 2) {
+      nextErrors.fullName = "Please enter your first and last name.";
+    }
     if (!validateEmail(email)) nextErrors.email = "Enter a valid email address.";
-    if (passwordValue.length < 12) {
-      nextErrors.password = "Use at least 12 characters.";
+    const passwordError = getStrongPasswordError(passwordValue);
+    if (passwordError) {
+      nextErrors.password = passwordError;
     }
     if (passwordValue !== confirmPassword) {
       nextErrors.confirmPassword = "Passwords must match.";
     }
     if (!termsAccepted) nextErrors.termsAccepted = "You must accept the Terms of Service.";
+    if (!medicalAcknowledged) {
+      nextErrors.medicalAcknowledged = "You must acknowledge the medical-use disclaimer.";
+    }
 
     setErrors(nextErrors);
 
@@ -432,6 +465,23 @@ export function RegisterForm({ error, status }: FormMessageProps) {
           </span>
         </label>
 
+        <label className={styles.checkbox}>
+          <input
+            id="medicalAcknowledged"
+            name="medicalAcknowledged"
+            type="checkbox"
+            value="true"
+            required
+          />
+          <div className={styles.checkboxIndicator}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          </div>
+          <span>
+            I understand GenoNexus provides medication-safety guidance and does not replace medical advice.
+            <ErrorText message={errors.medicalAcknowledged} />
+          </span>
+        </label>
+
         <button className={styles.submitBtn} type="submit">
           Create Account
         </button>
@@ -439,6 +489,112 @@ export function RegisterForm({ error, status }: FormMessageProps) {
         <p className={styles.switchLine}>
           Already have an account? <Link className={styles.link} href="/login">Sign in here</Link>
         </p>
+      </form>
+    </div>
+  );
+}
+
+/* =========================================
+   SET NEW PASSWORD FORM
+   ========================================= */
+export function SetNewPasswordForm({
+  error,
+  status,
+  token
+}: FormMessageProps & { token: string }) {
+  const [showPassword, setShowPassword] = useState(false);
+  const [errors, setErrors] = useState<ErrorMap>({});
+
+  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    const formData = new FormData(event.currentTarget);
+    const password = String(formData.get("password") ?? "");
+    const confirmPassword = String(formData.get("confirmPassword") ?? "");
+    const nextErrors: ErrorMap = {};
+    const passwordError = getStrongPasswordError(password);
+
+    if (passwordError) {
+      nextErrors.password = passwordError;
+    }
+
+    if (password !== confirmPassword) {
+      nextErrors.confirmPassword = "Passwords must match.";
+    }
+
+    setErrors(nextErrors);
+
+    if (Object.keys(nextErrors).length > 0) {
+      event.preventDefault();
+    }
+  }
+
+  return (
+    <div className="animate-fade-in-up">
+      <div className={styles.headerBlock}>
+        <h1 className={styles.title}>Choose a new password</h1>
+        <p className={styles.subtitle}>
+          Set a fresh password for your GenoNexus account and invalidate old sessions.
+        </p>
+      </div>
+
+      <form className={styles.form} action="/api/auth/reset-password" method="post" onSubmit={handleSubmit}>
+        <StatusMessage error={error} status={status} />
+        <input name="token" type="hidden" value={token} />
+
+        <div className={styles.fieldWrapper}>
+          <svg className={styles.inputIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+          </svg>
+          <input
+            className={`${styles.floatInput} ${styles.hasIcon}`}
+            id="reset-password"
+            name="password"
+            type={showPassword ? "text" : "password"}
+            autoComplete="new-password"
+            placeholder=" "
+            minLength={12}
+            required
+          />
+          <label className={`${styles.floatingLabel} ${styles.hasIconLabel}`} htmlFor="reset-password">
+            New password
+          </label>
+          <button
+            type="button"
+            className={styles.eyeIconBtn}
+            onClick={() => setShowPassword(!showPassword)}
+            aria-label={showPassword ? "Hide password" : "Show password"}
+          >
+            {showPassword ? (
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+            ) : (
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+            )}
+          </button>
+          <ErrorText message={errors.password} />
+        </div>
+
+        <div className={styles.fieldWrapper}>
+          <svg className={styles.inputIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+             <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
+          </svg>
+          <input
+            className={`${styles.floatInput} ${styles.hasIcon}`}
+            id="reset-confirm-password"
+            name="confirmPassword"
+            type={showPassword ? "text" : "password"}
+            autoComplete="new-password"
+            placeholder=" "
+            required
+          />
+          <label className={`${styles.floatingLabel} ${styles.hasIconLabel}`} htmlFor="reset-confirm-password">
+            Confirm new password
+          </label>
+          <ErrorText message={errors.confirmPassword} />
+        </div>
+
+        <button className={styles.submitBtn} type="submit">
+          Update Password
+        </button>
       </form>
     </div>
   );

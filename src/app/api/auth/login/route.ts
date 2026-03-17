@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
   try {
     const user = await findUserByEmail(parsed.data.email);
 
-    if (!user || !verifyPassword(parsed.data.password, user.passwordHash)) {
+    if (!user || !(await verifyPassword(parsed.data.password, user.passwordHash))) {
       const attempts = Number(request.cookies.get(ATTEMPT_COOKIE)?.value ?? "0") + 1;
       const response = redirectTo(request, "/login?error=invalid_credentials");
       response.cookies.set({
@@ -49,4 +49,3 @@ export async function POST(request: NextRequest) {
     return redirectTo(request, "/login?error=service_unavailable");
   }
 }
-

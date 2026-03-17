@@ -1,5 +1,5 @@
 import { AuthShell } from "@/components/auth/auth-shell";
-import { ResetPasswordForm } from "@/components/auth/forms";
+import { ResetPasswordForm, SetNewPasswordForm } from "@/components/auth/forms";
 
 interface ResetPasswordPageProps {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -13,13 +13,22 @@ export default async function ResetPasswordPage({
   searchParams
 }: ResetPasswordPageProps) {
   const params = await searchParams;
+  const token = getSingleParam(params.token);
 
   return (
     <AuthShell>
-      <ResetPasswordForm
-        error={getSingleParam(params.error)}
-        status={getSingleParam(params.status)}
-      />
+      {token ? (
+        <SetNewPasswordForm
+          token={token}
+          error={getSingleParam(params.error)}
+          status={getSingleParam(params.status)}
+        />
+      ) : (
+        <ResetPasswordForm
+          error={getSingleParam(params.error)}
+          status={getSingleParam(params.status)}
+        />
+      )}
     </AuthShell>
   );
 }
