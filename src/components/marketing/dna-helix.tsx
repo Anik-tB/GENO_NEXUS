@@ -15,6 +15,15 @@ export function DnaHelix() {
 
       {/* Grid pattern */}
       <div className={styles.gridOverlay} />
+      
+      {/* Background bitstream */}
+      <div className={styles.bitstream}>
+        {Array.from({ length: 20 }).map((_, i) => (
+          <div key={i}>01011001 10110001 00110101 11001010 10100111 00011011</div>
+        ))}
+      </div>
+
+      <div className={styles.crosshair} />
 
       {/* DNA Strand */}
       <div className={styles.strand}>
@@ -33,29 +42,33 @@ export function DnaHelix() {
       <aside className={styles.panel}>
         <p className={styles.panelHeader}>
           <span className={styles.liveDot} />
-          Live analysis preview
+          Live clinical monitoring
         </p>
+        <div className={styles.scanningLine} />
         <div className={styles.panelGrid}>
           <div className={`${styles.panelCard} ${styles.panelCardHigh}`}>
             <div className={styles.panelCardHeader}>
-              <strong>CYP2C19</strong>
-              <span className={styles.riskBadgeHigh}>High Risk</span>
+              <strong className={styles.markerCode}>CYP2C19</strong>
+              <span className={styles.riskBadgeHigh}>Critical</span>
             </div>
-            <span>Clopidogrel may be less effective for this profile.</span>
+            <p>Clopidogrel metabolism severely impaired. High thrombotic risk profile.</p>
+            <div className={styles.dataBar}><span style={{ width: "92%" }} /></div>
           </div>
           <div className={`${styles.panelCard} ${styles.panelCardModerate}`}>
             <div className={styles.panelCardHeader}>
-              <strong>CYP2D6</strong>
-              <span className={styles.riskBadgeModerate}>Moderate</span>
+              <strong className={styles.markerCode}>CYP2D6</strong>
+              <span className={styles.riskBadgeModerate}>Caution</span>
             </div>
-            <span>Codeine response may be unpredictable for this genotype.</span>
+            <p>Codeine toxicity risk detected. Atypical metabolic pathway identified.</p>
+            <div className={styles.dataBar}><span style={{ width: "64%" }} /></div>
           </div>
           <div className={`${styles.panelCard} ${styles.panelCardSafe}`}>
             <div className={styles.panelCardHeader}>
-              <strong>Data Control</strong>
-              <span className={styles.riskBadgeSafe}>Secure</span>
+              <strong className={styles.markerCode}>E2EE-DNA</strong>
+              <span className={styles.riskBadgeSafe}>Encrypted</span>
             </div>
-            <span>Your raw DNA file stays under your control and can be deleted.</span>
+            <p>End-to-end genomic encryption active. No unauthorized access possible.</p>
+            <div className={styles.dataBar}><span style={{ width: "100%" }} /></div>
           </div>
         </div>
       </aside>

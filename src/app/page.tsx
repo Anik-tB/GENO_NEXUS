@@ -149,11 +149,11 @@ export default function HomePage() {
         <div className={`pageShell ${styles.heroGrid}`}>
           <div className={`${styles.heroCopy} animate-fade-in-up`}>
             <p className="eyebrow">Pharmacogenomics medication safety platform</p>
-            <h1>Your DNA file knows which medications could harm you.</h1>
-            <p>
-              Upload a raw DNA file and receive a clear, patient-friendly medication safety report
-              in roughly 60 seconds, built to support safer conversations with your doctor and
-              pharmacist.
+            <h1>Your DNA knows which medications could harm you.</h1>
+            <p className={styles.heroSubText}>
+              GenoNexus transforms raw genetic data into high-fidelity medication safety reports 
+              in under 60 seconds. Built for patients, verified for clinical rigor, and 
+              designed for the future of personalized medicine.
             </p>
 
             <div className={styles.heroActions}>
@@ -303,45 +303,62 @@ export default function HomePage() {
       <section className={`${styles.section} ${styles.sampleSection}`} id="sample-report">
         <div className="pageShell">
           <div className="sectionHeader">
-            <h2>Sample insight snapshot</h2>
+            <h2>Clinical Insight Architecture</h2>
             <p>
-              The report experience is designed to feel clinical, readable, and immediately useful
-              for both patients and physicians.
+              GenoNexus reports aren't just data—they're decision-support tools built to 
+              standardize complex pharmacogenomics into actionable clinical guidance.
             </p>
           </div>
-
+          
           <div className={styles.sampleGrid}>
             <article className={`cardSurface ${styles.sampleMain}`}>
-              <div className={styles.sampleTop}>
-                <div>
-                  <p className={styles.badgeTag}>Medication Safety Report</p>
-                  <h3>Clopidogrel response alert</h3>
+              <div className={styles.sampleHeaderStrip}>
+                <div className={styles.clinicalHeader}>
+                  <div className={styles.clinicalAvatar}>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                  </div>
+                  <div>
+                    <p className={styles.patientId}>Patient ID: GN-88392</p>
+                    <h3 className={styles.reportTitle}>Pharmacogenetic Profile: CYP2C19</h3>
+                  </div>
                 </div>
-                <span className={`${styles.samplePill} ${styles.sampleHigh}`}>High Risk</span>
+                <div className={styles.riskInidicator}>
+                  <span className={styles.riskPulse} />
+                  <span className={`${styles.samplePill} ${styles.sampleHigh}`}>High Safety Priority</span>
+                </div>
               </div>
-              <p className={styles.sampleText}>
-                Your CYP2C19 profile may reduce activation of clopidogrel, which can change how
-                well the medication works. A physician-facing summary can recommend reviewing
-                alternatives and dosing strategy with a licensed clinician.
-              </p>
+              
+              <div className={styles.clinicalBody}>
+                <div className={styles.findingSummary}>
+                  <h4>Finding: Poor Metabolizer (PM)</h4>
+                  <p>
+                    Genetic variants detected indicate significantly reduced enzyme activity. Clopidogrel 
+                    requires hepatic activation via CYP2C19. In Poor Metabolizers, therapeutic 
+                    activation is severely impaired.
+                  </p>
+                </div>
+                
+                <div className={styles.guidanceBox}>
+                  <strong>Clinical Guidance:</strong>
+                  <p>Consider alternative antiplatelet therapy (e.g., Prasugrel, Ticagrelor) unless contraindicated. Refer to CPIC Class A guidelines for dosing adjustments.</p>
+                </div>
+              </div>
             </article>
 
             <div className={styles.sampleList}>
               <article className={`cardSurface ${styles.sampleSideCard}`}>
-                <span className={`${styles.samplePill} ${styles.sampleModerate}`}>Moderate</span>
-                <h3>Codeine metabolism</h3>
-                <p>
-                  Codeine response can be inconsistent when CYP2D6 activity is reduced or increased
-                  outside the normal range.
-                </p>
+                <div className={styles.sideCardTop}>
+                  <span className={`${styles.samplePill} ${styles.sampleModerate}`}>Moderate</span>
+                  <h3>CYP2D6: Ultra-rapid</h3>
+                </div>
+                <p>Increased activation of Codeine to Morphine. Significant risk of respiratory depression and toxicity at standard dosages.</p>
               </article>
               <article className={`cardSurface ${styles.sampleSideCard}`}>
-                <span className={`${styles.samplePill} ${styles.sampleLow}`}>Low Risk</span>
-                <h3>Stable maintenance profile</h3>
-                <p>
-                  Normal metabolizer results are still shown so users can see where no major safety
-                  concern is currently identified.
-                </p>
+                <div className={styles.sideCardTop}>
+                  <span className={`${styles.samplePill} ${styles.sampleLow}`}>Safe Range</span>
+                  <h3>SLCO1B1: Normal</h3>
+                </div>
+                <p>Standard statin-related myopathy risk. No genotype-based dosing adjustments currently indicated for this specific marker.</p>
               </article>
             </div>
           </div>

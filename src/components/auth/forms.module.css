@@ -128,14 +128,14 @@
 .floatInput {
   display: block;
   width: 100%;
-  padding: 1.25rem 1rem 0.5rem 1rem;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  border-radius: 14px;
-  color: #f8fafc;
+  padding: 1.1rem 1.25rem;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  color: #fff;
   font-size: 1rem;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.15);
+  backdrop-filter: blur(4px);
   outline: none;
   height: 3.5rem;
 }
@@ -146,9 +146,10 @@
 
 /* Focus States with Neon Glow */
 .floatInput:focus {
-  background: rgba(14, 165, 233, 0.04);
-  border-color: rgba(56, 189, 248, 0.45);
-  box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.1), 0 0 20px rgba(14, 165, 233, 0.06), inset 0 2px 4px rgba(0, 0, 0, 0.1);
+  outline: none;
+  background: rgba(14, 165, 233, 0.05);
+  border-color: #0ea5e9;
+  box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.15), 0 0 20px rgba(14, 165, 233, 0.1);
 }
 
 .floatInput:focus + .floatingLabel,
@@ -226,14 +227,16 @@
   height: 100%;
   border-radius: 4px;
   transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.4s ease, box-shadow 0.4s ease;
+  box-shadow: 0 0 10px currentColor;
 }
 
 .strengthMeta {
   display: flex;
   justify-content: space-between;
-  margin-top: 0.4rem;
+  margin-top: 0.6rem;
   font-size: 0.75rem;
-  color: #64748b;
+  font-weight: 500;
+  color: #94a3b8;
 }
 
 /* =========================================
@@ -338,42 +341,35 @@
    SUBMIT BUTTON (Gradient + Glow)
    ========================================= */
 .submitBtn {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   width: 100%;
-  padding: 1.1rem 1.75rem;
-  border-radius: 14px;
+  padding: 1.1rem;
   background: linear-gradient(135deg, #0ea5e9, #6366f1);
-  color: #fff;
-  font-size: 1rem;
-  font-weight: 700;
   border: none;
+  border-radius: 16px;
+  color: #fff;
+  font-size: 1.05rem;
+  font-weight: 700;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 4px 20px rgba(14, 165, 233, 0.3), inset 0 1px 1px rgba(255,255,255,0.2);
+  box-shadow: 0 8px 20px rgba(14, 165, 233, 0.3);
+  position: relative;
   overflow: hidden;
   margin-top: 0.5rem;
   letter-spacing: 0.01em;
 }
 
-/* Shimmer on hover */
+.submitBtn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px rgba(14, 165, 233, 0.4), 0 0 30px rgba(99, 102, 241, 0.2);
+}
+
 .submitBtn::after {
   content: "";
   position: absolute;
-  top: 0;
-  left: -100%;
-  width: 50%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.25), transparent);
+  top: 0; left: -100%; width: 50%; height: 100%;
+  background: linear-gradient(to right, transparent, rgba(255,255,255,0.2), transparent);
   transform: skewX(-20deg);
-  transition: left 0.6s ease;
-}
-
-.submitBtn:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 30px rgba(14, 165, 233, 0.5), 0 0 40px rgba(99, 102, 241, 0.15), inset 0 1px 1px rgba(255,255,255,0.2);
+  transition: all 0.6s ease;
 }
 
 .submitBtn:hover::after {
@@ -427,19 +423,20 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.6rem;
+  gap: 0.75rem;
   width: 100%;
   padding: 0.9rem;
   border-radius: 12px;
   background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   color: #f8fafc;
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   overflow: hidden;
+  backdrop-filter: blur(8px);
 }
 
 .socialBtn::after {
@@ -460,9 +457,9 @@
 
 .socialBtn:hover {
   background: rgba(255, 255, 255, 0.06);
-  border-color: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.2);
   transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
 }
 
 /* =========================================
