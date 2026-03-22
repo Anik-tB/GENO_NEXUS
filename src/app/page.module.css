@@ -132,7 +132,7 @@
 
 .heroVisual {
   position: relative;
-  min-height: 640px;
+  min-height: 740px;
   display: grid;
   align-items: center;
 }
@@ -156,56 +156,33 @@
 .floatCard {
   position: absolute;
   z-index: 2;
-  width: min(260px, 45%);
+  width: min(280px, 45%);
   display: grid;
   gap: 0.45rem;
-  padding: 1.05rem 1.1rem 1.15rem;
-  border-radius: 24px;
-  border: 1px solid rgba(146, 183, 211, 0.16);
-  background: linear-gradient(180deg, rgba(6, 18, 31, 0.96) 0%, rgba(8, 23, 37, 0.84) 100%);
+  padding: 1.15rem 1.25rem;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(8, 14, 24, 0.65);
   box-shadow:
-    0 24px 48px rgba(0, 0, 0, 0.22),
-    inset 0 1px 0 rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
+    0 32px 64px rgba(0, 0, 0, 0.4),
+    inset 0 1px 1px rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
   overflow: hidden;
 }
 
-.floatCard::before {
-  content: "";
-  position: absolute;
-  inset: 10px;
-  border-radius: 18px;
-  border: 1px solid rgba(84, 132, 168, 0.16);
-  pointer-events: none;
-}
 
-.floatCard::after {
-  content: "";
-  position: absolute;
-  top: 50%;
-  right: -1.2rem;
-  width: 1.25rem;
-  height: 1px;
-  background: linear-gradient(90deg, rgba(22, 165, 150, 0.82), rgba(223, 246, 241, 0));
-  opacity: 0.85;
-  pointer-events: none;
-}
 
 .floatCardTop {
-  top: 4.4rem;
-  left: -0.2rem;
+  top: 10.5rem;
+  left: -2.5rem;
   animation: floatY 7s ease-in-out infinite;
 }
 
 .floatCardBottom {
-  bottom: 3rem;
-  left: -0.55rem;
+  top: 24.5rem;
+  left: -2.5rem;
   animation: floatY 9s ease-in-out infinite 300ms;
-}
-
-.floatCardBottom::after {
-  top: 36%;
 }
 
 .floatLabel {
@@ -219,7 +196,8 @@
 .floatCard strong {
   position: relative;
   z-index: 1;
-  font-size: 1.22rem;
+  font-size: 1.15rem;
+  font-weight: 700;
   line-height: 1.12;
 }
 
@@ -228,8 +206,8 @@
   z-index: 1;
   margin: 0;
   color: rgba(236, 244, 248, 0.76);
-  font-size: 0.9rem;
-  line-height: 1.65;
+  font-size: 0.88rem;
+  line-height: 1.55;
 }
 
 .heroBand {

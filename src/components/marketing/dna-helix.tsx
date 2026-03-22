@@ -1,3 +1,4 @@
+import Image from "next/image";
 import styles from "./dna-helix.module.css";
 
 const RUNGS = Array.from({ length: 14 }, (_, index) => ({
@@ -53,7 +54,7 @@ export function DnaHelix() {
 
       <div className={styles.platformChrome}>
         <div className={styles.platformBrand}>
-          <span className={styles.platformMark}>GN</span>
+          <Image src="/dna-icon.svg" alt="GenoNexus Platform Logo" width={32} height={32} className={styles.platformMark} />
           <div className={styles.platformText}>
             <strong>GenoNexus Platform</strong>
             <span>Live pharmacogenomics surface</span>
