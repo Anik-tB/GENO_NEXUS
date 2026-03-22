@@ -18,6 +18,7 @@ import styles from "./forms.module.css";
 type ErrorMap = Record<string, string>;
 
 const LOGIN_TAGS = ["Secure uploads", "Case review", "Report history"];
+const REGISTER_TAGS = ["Verified email", "Provider sign-in", "Clinical-ready safeguards"];
 
 function validateEmail(value: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
@@ -293,6 +294,26 @@ function SocialButton({
   );
 }
 
+function SectionCard({
+  title,
+  copy,
+  children
+}: {
+  title: string;
+  copy: string;
+  children: ReactNode;
+}) {
+  return (
+    <section className={styles.sectionCard}>
+      <div className={styles.sectionHeader}>
+        <h2 className={styles.sectionTitle}>{title}</h2>
+        <p className={styles.sectionCopy}>{copy}</p>
+      </div>
+      {children}
+    </section>
+  );
+}
+
 function GoogleButton({ onError }: { onError: (error?: string) => void }) {
   const [isLoading, setIsLoading] = useState(false);
 
@@ -500,6 +521,7 @@ export function LoginForm({
 }
 
 export function RegisterForm({ error, status }: FormMessageProps) {
+  const [socialError, setSocialError] = useState<string | undefined>();
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<ErrorMap>({});
@@ -556,143 +578,190 @@ export function RegisterForm({ error, status }: FormMessageProps) {
       <AuthTabs />
 
       <div className={styles.headerBlock}>
+        <p className={styles.kicker}>Launch your workspace</p>
         <h1 className={styles.title}>Create your account</h1>
         <p className={styles.subtitle}>Open a secure GenoNexus workspace for uploads, reports, and governed access.</p>
       </div>
 
+      <div className={styles.tagRow}>
+        {REGISTER_TAGS.map((item) => (
+          <span key={item} className={styles.tag}>
+            {item}
+          </span>
+        ))}
+      </div>
+
       <form className={styles.form} action="/api/auth/register" method="post" onSubmit={handleSubmit} noValidate>
-        <StatusMessage error={error} status={status} />
+        <div className={styles.statusStack}>
+          <StatusMessage error={socialError ?? error} status={status} />
+        </div>
 
         <div className={styles.noticeCard}>
-          Account creation signs you in immediately and sends a verification email to confirm ownership.
+          <p className={styles.noticeTitle}>What happens next</p>
+          <div className={styles.noticeSteps}>
+            <span className={styles.noticeStep}>1. Set up your account details</span>
+            <span className={styles.noticeStep}>2. Confirm ownership with a verification email</span>
+            <span className={styles.noticeStep}>3. Enter the dashboard immediately after signup</span>
+          </div>
         </div>
 
-        <div className={styles.row}>
-          <FieldShell id="register-fullName" label="Full name" error={errors.fullName}>
-            <input
-              className={`${styles.input} ${errors.fullName ? styles.inputError : ""}`}
-              id="register-fullName"
-              name="fullName"
-              type="text"
-              autoComplete="name"
-              aria-invalid={Boolean(errors.fullName)}
-              aria-describedby={errors.fullName ? "register-fullName-error" : undefined}
-              required
-            />
-          </FieldShell>
-
-          <FieldShell id="register-email" label="Email address" error={errors.email}>
-            <input
-              className={`${styles.input} ${errors.email ? styles.inputError : ""}`}
-              id="register-email"
-              name="email"
-              type="email"
-              autoComplete="email"
-              autoCapitalize="none"
-              autoCorrect="off"
-              aria-invalid={Boolean(errors.email)}
-              aria-describedby={errors.email ? "register-email-error" : undefined}
-              required
-            />
-          </FieldShell>
+        <div className={styles.socialGrid}>
+          <GoogleButton onError={setSocialError} />
+          <GithubButton />
         </div>
 
-        <FieldShell
-          id="register-accountCategory"
-          label="Account category"
-          error={errors.accountCategory}
-          helper="Choose the role that best matches how you will use GenoNexus."
-        >
-          <select
-            className={`${styles.input} ${errors.accountCategory ? styles.inputError : ""}`}
-            id="register-accountCategory"
-            name="accountCategory"
-            defaultValue=""
-            aria-invalid={Boolean(errors.accountCategory)}
-            aria-describedby={errors.accountCategory ? "register-accountCategory-error" : undefined}
-            required
+        <div className={styles.divider}>
+          <span>Or continue with email</span>
+        </div>
+
+        <div className={styles.sectionStack}>
+          <SectionCard
+            title="Identity"
+            copy="Use the name and email address that should own this workspace and receive verification messages."
           >
-            <option value="" disabled>
-              Select a category
-            </option>
-            {ACCOUNT_CATEGORIES.map((category) => (
-              <option key={category} value={category}>
-                {ACCOUNT_CATEGORY_LABELS[category]}
-              </option>
-            ))}
-          </select>
-        </FieldShell>
+            <div className={styles.row}>
+              <FieldShell id="register-fullName" label="Full name" error={errors.fullName}>
+                <input
+                  className={`${styles.input} ${errors.fullName ? styles.inputError : ""}`}
+                  id="register-fullName"
+                  name="fullName"
+                  type="text"
+                  autoComplete="name"
+                  aria-invalid={Boolean(errors.fullName)}
+                  aria-describedby={errors.fullName ? "register-fullName-error" : undefined}
+                  required
+                />
+              </FieldShell>
 
-        <FieldShell
-          id="register-password"
-          label="Create password"
-          error={errors.password}
-          helper="Use a password you do not reuse elsewhere."
-        >
-          <div className={styles.passwordControl}>
-            <input
-              className={`${styles.input} ${errors.password ? styles.inputError : ""}`}
+              <FieldShell id="register-email" label="Email address" error={errors.email}>
+                <input
+                  className={`${styles.input} ${errors.email ? styles.inputError : ""}`}
+                  id="register-email"
+                  name="email"
+                  type="email"
+                  autoComplete="email"
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  aria-invalid={Boolean(errors.email)}
+                  aria-describedby={errors.email ? "register-email-error" : undefined}
+                  required
+                />
+              </FieldShell>
+            </div>
+          </SectionCard>
+
+          <SectionCard
+            title="Workspace profile"
+            copy="Pick the account category that best fits how you will use GenoNexus so the workspace can be tailored correctly."
+          >
+            <FieldShell
+              id="register-accountCategory"
+              label="Account category"
+              error={errors.accountCategory}
+              helper="Choose the role that best matches how you will use GenoNexus."
+            >
+              <select
+                className={`${styles.input} ${errors.accountCategory ? styles.inputError : ""}`}
+                id="register-accountCategory"
+                name="accountCategory"
+                defaultValue=""
+                aria-invalid={Boolean(errors.accountCategory)}
+                aria-describedby={errors.accountCategory ? "register-accountCategory-error" : undefined}
+                required
+              >
+                <option value="" disabled>
+                  Select a category
+                </option>
+                {ACCOUNT_CATEGORIES.map((category) => (
+                  <option key={category} value={category}>
+                    {ACCOUNT_CATEGORY_LABELS[category]}
+                  </option>
+                ))}
+              </select>
+            </FieldShell>
+          </SectionCard>
+
+          <SectionCard
+            title="Security"
+            copy="Choose a strong password for direct email sign-in. Social sign-in remains available above if you prefer it."
+          >
+            <FieldShell
               id="register-password"
-              name="password"
-              type={showPassword ? "text" : "password"}
-              autoComplete="new-password"
-              minLength={12}
-              aria-invalid={Boolean(errors.password)}
-              aria-describedby={errors.password ? "register-password-error" : undefined}
-              onChange={(event) => setPassword(event.target.value)}
-              required
-            />
-            <PasswordToggle showPassword={showPassword} onToggle={() => setShowPassword((value) => !value)} />
-          </div>
-          <PasswordStrengthPanel password={password} />
-        </FieldShell>
+              label="Create password"
+              error={errors.password}
+              helper="Use a password you do not reuse elsewhere."
+            >
+              <div className={styles.passwordControl}>
+                <input
+                  className={`${styles.input} ${errors.password ? styles.inputError : ""}`}
+                  id="register-password"
+                  name="password"
+                  type={showPassword ? "text" : "password"}
+                  autoComplete="new-password"
+                  minLength={12}
+                  aria-invalid={Boolean(errors.password)}
+                  aria-describedby={errors.password ? "register-password-error" : undefined}
+                  onChange={(event) => setPassword(event.target.value)}
+                  required
+                />
+                <PasswordToggle showPassword={showPassword} onToggle={() => setShowPassword((value) => !value)} />
+              </div>
+              <PasswordStrengthPanel password={password} />
+            </FieldShell>
 
-        <FieldShell id="register-confirm-password" label="Confirm password" error={errors.confirmPassword}>
-          <div className={styles.passwordControl}>
-            <input
-              className={`${styles.input} ${errors.confirmPassword ? styles.inputError : ""}`}
-              id="register-confirm-password"
-              name="confirmPassword"
-              type={showPassword ? "text" : "password"}
-              autoComplete="new-password"
-              aria-invalid={Boolean(errors.confirmPassword)}
-              aria-describedby={errors.confirmPassword ? "register-confirm-password-error" : undefined}
-              required
-            />
-            <PasswordToggle showPassword={showPassword} onToggle={() => setShowPassword((value) => !value)} />
-          </div>
-        </FieldShell>
+            <FieldShell id="register-confirm-password" label="Confirm password" error={errors.confirmPassword}>
+              <div className={styles.passwordControl}>
+                <input
+                  className={`${styles.input} ${errors.confirmPassword ? styles.inputError : ""}`}
+                  id="register-confirm-password"
+                  name="confirmPassword"
+                  type={showPassword ? "text" : "password"}
+                  autoComplete="new-password"
+                  aria-invalid={Boolean(errors.confirmPassword)}
+                  aria-describedby={errors.confirmPassword ? "register-confirm-password-error" : undefined}
+                  required
+                />
+                <PasswordToggle showPassword={showPassword} onToggle={() => setShowPassword((value) => !value)} />
+              </div>
+            </FieldShell>
+          </SectionCard>
 
-        <div className={styles.consentPanel}>
-          <p className={styles.consentTitle}>Consent and clinical-use acknowledgement</p>
+          <SectionCard
+            title="Clinical and legal acknowledgement"
+            copy="These confirmations are required before a workspace can be provisioned."
+          >
+            <div className={styles.consentPanel}>
+              <p className={styles.consentTitle}>Consent and clinical-use acknowledgement</p>
 
-          <label className={styles.checkbox}>
-            <input id="termsAccepted" name="termsAccepted" type="checkbox" value="true" required />
-            <span className={styles.checkboxIndicator} />
-            <span className={styles.checkboxText}>
-              I agree to the GenoNexus Terms of Service and Privacy Policy.
-            </span>
-          </label>
-          <ErrorText id="termsAccepted-error" message={errors.termsAccepted} />
+              <label className={styles.checkbox}>
+                <input id="termsAccepted" name="termsAccepted" type="checkbox" value="true" required />
+                <span className={styles.checkboxIndicator} />
+                <span className={styles.checkboxText}>
+                  I agree to the GenoNexus Terms of Service and Privacy Policy.
+                </span>
+              </label>
+              <ErrorText id="termsAccepted-error" message={errors.termsAccepted} />
 
-          <label className={styles.checkbox}>
-            <input
-              id="medicalAcknowledged"
-              name="medicalAcknowledged"
-              type="checkbox"
-              value="true"
-              required
-            />
-            <span className={styles.checkboxIndicator} />
-            <span className={styles.checkboxText}>
-              I understand GenoNexus provides decision support and does not replace medical advice.
-            </span>
-          </label>
-          <ErrorText id="medicalAcknowledged-error" message={errors.medicalAcknowledged} />
+              <label className={styles.checkbox}>
+                <input
+                  id="medicalAcknowledged"
+                  name="medicalAcknowledged"
+                  type="checkbox"
+                  value="true"
+                  required
+                />
+                <span className={styles.checkboxIndicator} />
+                <span className={styles.checkboxText}>
+                  I understand GenoNexus provides decision support and does not replace medical advice.
+                </span>
+              </label>
+              <ErrorText id="medicalAcknowledged-error" message={errors.medicalAcknowledged} />
+            </div>
+          </SectionCard>
         </div>
 
         <button className={styles.submitBtn} type="submit">
-          Create account
+          Create secure account
         </button>
 
         <p className={styles.switchLine}>
