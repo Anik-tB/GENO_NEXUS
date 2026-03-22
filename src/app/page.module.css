@@ -111,9 +111,16 @@
 
 .heroContent h1 {
   margin: 0;
-  max-width: 10ch;
-  font-size: clamp(3.2rem, 7vw, 5.8rem);
-  line-height: 0.94;
+  max-width: 100%;
+  font-size: clamp(3rem, 6.5vw, 5.2rem);
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  text-wrap: balance;
+  background: linear-gradient(180deg, #ffffff 15%, rgba(255, 255, 255, 0.45) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: #fff;
 }
 
 .heroDescription {
