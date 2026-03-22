@@ -7,12 +7,7 @@ const RUNGS = Array.from({ length: 14 }, (_, index) => ({
   className: index % 2 === 0 ? styles.rungA : styles.rungB
 }));
 
-const SEQUENCE_ROWS = [
-  "ACTG TCCA GATC CGTA",
-  "GGTA CCTA ACGT TTGA",
-  "CTAG GTAC CAGT ACCT",
-  "TCAA GGCT ATGC CGAT"
-];
+
 
 const CHROME_CHIPS = ["Medication safety", "Consent-aware"];
 
@@ -68,11 +63,7 @@ export function DnaHelix() {
         </div>
       </div>
 
-      <div className={styles.sequenceField}>
-        {Array.from({ length: 18 }).map((_, index) => (
-          <div key={index}>{SEQUENCE_ROWS[index % SEQUENCE_ROWS.length]}</div>
-        ))}
-      </div>
+
 
       <div className={styles.workflowLegend}>
         {WORKFLOW_LABELS.map((item) => (
@@ -83,7 +74,7 @@ export function DnaHelix() {
         ))}
       </div>
 
-      <div className={styles.crosshair} />
+
 
       <div className={styles.strand}>
         {RUNGS.map((rung) => (
@@ -106,7 +97,7 @@ export function DnaHelix() {
           <span className={styles.panelCase}>Case GN-88392</span>
         </div>
 
-        <div className={styles.scanningLine} />
+
 
         <div className={styles.panelGrid}>
           {PANEL_ITEMS.map((item) => (

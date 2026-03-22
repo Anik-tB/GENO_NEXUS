@@ -180,7 +180,7 @@
 }
 
 .floatCardBottom {
-  top: 24.5rem;
+  top: 28.5rem;
   left: -2.5rem;
   animation: floatY 9s ease-in-out infinite 300ms;
 }
