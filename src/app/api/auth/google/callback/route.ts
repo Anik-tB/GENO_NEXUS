@@ -7,38 +7,40 @@ export async function GET(request: NextRequest) {
   const url = new URL(request.url);
   const code = url.searchParams.get("code");
   const state = url.searchParams.get("state");
-  const storedState = request.cookies.get(getOAuthStateCookieName("github"))?.value;
+  const storedState = request.cookies.get(getOAuthStateCookieName("google"))?.value;
 
   if (!state || !storedState || state !== storedState) {
     const response = NextResponse.redirect(new URL("/login?error=invalid_token", request.url));
-    response.cookies.set(buildExpiredOAuthStateCookie("github"));
+    response.cookies.set(buildExpiredOAuthStateCookie("google"));
     return response;
   }
 
   if (!code) {
     const response = NextResponse.redirect(new URL("/login?error=invalid_token", request.url));
-    response.cookies.set(buildExpiredOAuthStateCookie("github"));
+    response.cookies.set(buildExpiredOAuthStateCookie("google"));
     return response;
   }
 
-  const clientId = process.env.GITHUB_CLIENT_ID;
-  const clientSecret = process.env.GITHUB_CLIENT_SECRET;
+  const clientId = process.env.GOOGLE_CLIENT_ID;
+  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
 
   if (!clientId || !clientSecret) {
     return NextResponse.redirect(new URL("/login?error=service_unavailable", request.url));
   }
 
   try {
-    const tokenResponse = await fetch("https://github.com/login/oauth/access_token", {
+    const redirectUri = new URL("/api/auth/google/callback", request.url).toString();
+    const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
       method: "POST",
       headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json"
+        "Content-Type": "application/x-www-form-urlencoded"
       },
-      body: JSON.stringify({
+      body: new URLSearchParams({
+        code,
         client_id: clientId,
         client_secret: clientSecret,
-        code
+        redirect_uri: redirectUri,
+        grant_type: "authorization_code"
       })
     });
 
@@ -46,58 +48,49 @@ export async function GET(request: NextRequest) {
     const accessToken = tokenData.access_token as string | undefined;
 
     if (!accessToken) {
-      throw new Error("Failed to get access token from GitHub");
+      throw new Error("Failed to get access token from Google");
     }
 
-    const userResponse = await fetch("https://api.github.com/user", {
+    const userResponse = await fetch("https://openidconnect.googleapis.com/v1/userinfo", {
       headers: {
         Authorization: `Bearer ${accessToken}`
       }
     });
 
     const userData = await userResponse.json();
-    const githubId = String(userData.id ?? "");
-    const emailResponse = await fetch("https://api.github.com/user/emails", {
-      headers: {
-        Authorization: `Bearer ${accessToken}`
-      }
-    });
-    const emailsData = (await emailResponse.json()) as Array<{
-      email?: string;
-      primary?: boolean;
-      verified?: boolean;
-    }>;
-    const primaryVerifiedEmail = emailsData.find((entry) => entry.primary && entry.verified);
-    const fallbackVerifiedEmail = emailsData.find((entry) => entry.verified);
-    const githubEmail = primaryVerifiedEmail?.email ?? fallbackVerifiedEmail?.email;
+    const googleId = String(userData.sub ?? "");
+    const email = String(userData.email ?? "");
+    const emailVerified = userData.email_verified === true;
 
-    if (!githubId || !githubEmail) {
+    if (!googleId || !email || !emailVerified) {
       const response = NextResponse.redirect(new URL("/login?error=invalid_credentials", request.url));
-      response.cookies.set(buildExpiredOAuthStateCookie("github"));
+      response.cookies.set(buildExpiredOAuthStateCookie("google"));
       return response;
     }
 
-    const nameParts = String(userData.name || userData.login || "GitHub User").trim().split(/\s+/);
-    const firstName = nameParts[0] || "GitHub";
-    const lastName = nameParts.slice(1).join(" ") || "User";
+    const firstName = String(userData.given_name || userData.name || "Google").trim() || "Google";
+    const lastName =
+      String(userData.family_name || "").trim() ||
+      String(userData.name || "").trim().split(/\s+/).slice(1).join(" ") ||
+      "User";
 
     const user = await findOrCreateOAuthUser({
-      provider: "github",
-      providerId: githubId,
-      email: githubEmail,
+      provider: "google",
+      providerId: googleId,
+      email,
       firstName,
       lastName
     });
 
     const session = await createSession(user.id, true);
     const response = NextResponse.redirect(new URL("/dashboard", request.url));
-    response.cookies.set(buildExpiredOAuthStateCookie("github"));
+    response.cookies.set(buildExpiredOAuthStateCookie("google"));
     response.cookies.set(buildSessionCookie(session.token, session.expiresAt));
     return response;
   } catch (error) {
-    console.error("GitHub OAuth Error:", error);
+    console.error("Google OAuth Error:", error);
     const response = NextResponse.redirect(new URL("/login?error=service_unavailable", request.url));
-    response.cookies.set(buildExpiredOAuthStateCookie("github"));
+    response.cookies.set(buildExpiredOAuthStateCookie("google"));
     return response;
   }
 }

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createPasswordResetToken, consumePasswordResetToken } from "@/lib/auth/password-resets";
 import { hashPassword } from "@/lib/auth/password";
 import { findUserByEmail } from "@/lib/auth/users";
+import { sendPasswordResetEmail } from "@/lib/auth/email";
 import { env } from "@/lib/env";
 import {
   completePasswordResetSchema,
@@ -53,6 +54,7 @@ export async function POST(request: NextRequest) {
 
     if (user) {
       const reset = await createPasswordResetToken(user.id);
+      await sendPasswordResetEmail(user.email, reset.token);
 
       if (!env.isProduction) {
         const resetUrl = new URL(

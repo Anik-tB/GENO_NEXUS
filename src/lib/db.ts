@@ -1,6 +1,8 @@
 import { Pool } from "pg";
 import { env, hasDatabaseConfig } from "@/lib/env";
 
+export type DatabaseQueryExecutor = Pick<Pool, "query">;
+
 declare global {
   var __genonexusPool__: Pool | undefined;
 }
@@ -23,4 +25,3 @@ export function assertDatabase() {
 
   return db;
 }
-

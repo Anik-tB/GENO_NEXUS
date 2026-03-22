@@ -25,7 +25,26 @@ export async function POST(request: NextRequest) {
   try {
     const user = await findUserByEmail(parsed.data.email);
 
-    if (!user || !(await verifyPassword(parsed.data.password, user.passwordHash))) {
+    if (!user) {
+      const attempts = Number(request.cookies.get(ATTEMPT_COOKIE)?.value ?? "0") + 1;
+      const response = redirectTo(request, "/login?error=invalid_credentials");
+      response.cookies.set({
+        name: ATTEMPT_COOKIE,
+        value: String(attempts),
+        httpOnly: true,
+        sameSite: "lax",
+        secure: process.env.NODE_ENV === "production",
+        path: "/",
+        maxAge: 60 * 30
+      });
+      return response;
+    }
+
+    if (!user.passwordHash) {
+      return redirectTo(request, "/login?error=social_account");
+    }
+
+    if (!(await verifyPassword(parsed.data.password, user.passwordHash))) {
       const attempts = Number(request.cookies.get(ATTEMPT_COOKIE)?.value ?? "0") + 1;
       const response = redirectTo(request, "/login?error=invalid_credentials");
       response.cookies.set({

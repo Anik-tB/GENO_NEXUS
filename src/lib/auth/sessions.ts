@@ -1,5 +1,5 @@
 import { createHash, randomBytes } from "node:crypto";
-import { assertDatabase } from "@/lib/db";
+import { assertDatabase, type DatabaseQueryExecutor } from "@/lib/db";
 import { env } from "@/lib/env";
 import type { AuthUser } from "@/lib/auth/users";
 
@@ -7,8 +7,12 @@ function hashSessionToken(token: string) {
   return createHash("sha256").update(token).digest("hex");
 }
 
-export async function createSession(userId: string, remember = false) {
-  const client = assertDatabase();
+export async function createSession(
+  userId: string,
+  remember = false,
+  executor: DatabaseQueryExecutor = assertDatabase()
+) {
+  const client = executor;
   const token = randomBytes(32).toString("hex");
   const tokenHash = hashSessionToken(token);
   const days = remember ? 30 : 7;
@@ -42,7 +46,11 @@ export async function getUserFromSessionToken(token: string): Promise<AuthUser |
         users.first_name,
         users.last_name,
         users.email,
-        users.password_hash
+        users.account_category,
+        users.password_hash,
+        users.github_id,
+        users.google_id,
+        users.firebase_uid
       FROM sessions
       INNER JOIN users ON users.id = sessions.user_id
       WHERE sessions.token_hash = $1
@@ -61,7 +69,11 @@ export async function getUserFromSessionToken(token: string): Promise<AuthUser |
     firstName: result.rows[0].first_name,
     lastName: result.rows[0].last_name,
     email: result.rows[0].email,
-    passwordHash: result.rows[0].password_hash
+    accountCategory: result.rows[0].account_category,
+    passwordHash: result.rows[0].password_hash,
+    githubId: result.rows[0].github_id,
+    googleId: result.rows[0].google_id,
+    firebaseUid: result.rows[0].firebase_uid
   };
 }
 
@@ -76,4 +88,3 @@ export function buildSessionCookie(token: string, expiresAt: Date) {
     expires: expiresAt
   };
 }
-

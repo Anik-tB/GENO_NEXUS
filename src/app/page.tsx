@@ -3,96 +3,180 @@ import { DnaHelix } from "@/components/marketing/dna-helix";
 import { FaqAccordion } from "@/components/marketing/faq-accordion";
 import styles from "./page.module.css";
 
-const FAQ_ITEMS = [
+const HERO_METRICS = [
   {
-    question: "What DNA files can I use?",
-    answer:
-      "GenoNexus is designed for the raw export files most people receive from consumer DNA services such as 23andMe and AncestryDNA. VCF support can be added as the product expands."
+    value: "DNA",
+    label: "consumer and clinical files move through one guided intake flow"
   },
   {
-    question: "How fast is the report?",
-    answer:
-      "The initial product story targets a fast turnaround so people can upload once and get a concise medication-safety summary in about a minute, depending on file size and processing demand."
+    value: "AI",
+    label: "signal layers turn markers into medication and phenotype insight"
   },
   {
-    question: "Will you sell my genetic data?",
-    answer:
-      "No. The product positioning in your spec is privacy-first: user-controlled uploads, deletion on request, and no data-selling workflow."
-  },
-  {
-    question: "Is this medical advice?",
-    answer:
-      "No. GenoNexus is positioned as a decision-support and safety-awareness product. Final prescribing and treatment decisions remain with licensed clinicians."
-  },
-  {
-    question: "Why start with auth and the landing pages?",
-    answer:
-      "These pages establish the trust surface, conversion funnel, and the core user entry path. They also let the database and auth model be shaped correctly before deeper clinical features are added."
+    value: "HQ",
+    label: "reporting, collaboration, and governance stay in the same workspace"
   }
 ];
 
-const FEATURES = [
+const HERO_CHIPS = [
+  "23andMe + AncestryDNA",
+  "VCF normalization",
+  "Medication safety",
+  "Clinician-ready reports"
+];
+
+const HERO_FLOW = ["Upload once", "Interpret clearly", "Share safely"];
+
+const PLATFORM_SUMMARY = [
   {
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M2 15c6.667-6 13.333 0 20-6" />
-        <path d="M9 22c1.798-1.998 2.518-3.995 2.8-5.993" />
-        <path d="M15 2c-1.798 1.998-2.518 3.995-2.8 5.993" />
-      </svg>
-    ),
-    title: "Multi-Format DNA Analysis",
-    description: "Process raw DNA files from 23andMe, AncestryDNA, and VCF formats with deep-learning powered variant detection."
+    label: "Input stack",
+    value: "Consumer DNA exports and VCF files"
   },
   {
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-      </svg>
-    ),
-    title: "Variant Pathogenicity Scoring",
-    description: "AI-driven classification with 93.5% accuracy across diverse genomic datasets using graph neural networks."
+    label: "Release focus",
+    value: "Medication safety and phenotype review"
   },
   {
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="12" cy="12" r="10" />
-        <path d="M12 6v6l4 2" />
-      </svg>
-    ),
-    title: "Real-Time Medication Alerts",
-    description: "Instant safety notifications when drug-gene interactions are detected, with risk-tier classification."
+    label: "Control layer",
+    value: "Consent, access, audit, and handoff"
+  }
+];
+
+const PLATFORM_SIGNALS = [
+  {
+    label: "Ingest",
+    title: "Guided upload",
+    text: "Normalize raw DNA without exposing users to technical friction.",
+    position: "meshNorth"
   },
   {
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-        <path d="M14 2v6h6" />
-        <path d="M16 13H8" /><path d="M16 17H8" /><path d="M10 9H8" />
-      </svg>
-    ),
-    title: "Physician-Ready Reports",
-    description: "Clinician-formatted summaries with clear risk tiers and plain-English language designed for care conversations."
+    label: "Interpret",
+    title: "Signal engine",
+    text: "Surface pharmacogenomic and phenotype cues in a readable layer.",
+    position: "meshEast"
   },
   {
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-      </svg>
-    ),
-    title: "Privacy-First Architecture",
-    description: "HIPAA-aligned infrastructure with end-to-end encryption, user-controlled deletion, and zero data resale."
+    label: "Govern",
+    title: "Ownership vault",
+    text: "Make consent, access, and deletion posture visible from the start.",
+    position: "meshSouth"
   },
   {
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
-        <path d="M3.27 6.96L12 12.01l8.73-5.05" />
-        <path d="M12 22.08V12" />
-      </svg>
-    ),
-    title: "AI-Powered Chatbot",
-    description: "Ask questions about your genomic data in natural language and get research-backed answers instantly."
+    label: "Collaborate",
+    title: "Shared review",
+    text: "Create a cleaner handoff path for patients, clinicians, and labs.",
+    position: "meshWest"
+  }
+];
+
+const WORKSPACE_VIEWS = [
+  {
+    stage: "Upload lane",
+    value: "VCF + consumer DNA",
+    caption: "Queued and normalized",
+    progress: "88%"
+  },
+  {
+    stage: "Interpret lane",
+    value: "Drug-gene panel",
+    caption: "Guidelines matched",
+    progress: "72%"
+  },
+  {
+    stage: "Report lane",
+    value: "Clinical summary",
+    caption: "Ready for review",
+    progress: "93%"
+  }
+];
+
+const SIGNAL_MIX = [
+  { label: "Pharmacogenomics", width: "88%" },
+  { label: "Phenotype cues", width: "64%" },
+  { label: "Research flags", width: "46%" }
+];
+
+const AUDIT_EVENTS = ["Consent captured", "Variant pipeline locked", "Report handoff logged"];
+
+const WORKFLOW_STEPS = [
+  {
+    step: "01",
+    title: "Start with raw DNA",
+    text: "Users drop in exports once and land in a guided intake state."
+  },
+  {
+    step: "02",
+    title: "Turn data into signal",
+    text: "Markers, evidence layers, and risk posture surface fast."
+  },
+  {
+    step: "03",
+    title: "Deliver a readable report",
+    text: "Results become clear summaries instead of raw genomic jargon."
+  },
+  {
+    step: "04",
+    title: "Keep control visible",
+    text: "Audit, access, and ownership stay present through the workflow."
+  }
+];
+
+const REPORT_FINDINGS = [
+  {
+    gene: "CYP2C19",
+    phenotype: "Reduced response",
+    implication: "Review clopidogrel alternatives"
+  },
+  {
+    gene: "CYP2D6",
+    phenotype: "Rapid metabolism",
+    implication: "Avoid codeine-heavy pathways"
+  },
+  {
+    gene: "SLCO1B1",
+    phenotype: "Routine risk",
+    implication: "Baseline statin plan stays stable"
+  }
+];
+
+const TRUST_SIGNALS = [
+  {
+    tag: "Evidence",
+    title: "Calm report hierarchy",
+    text: "High-priority findings lead while details stay easy to scan."
+  },
+  {
+    tag: "Privacy",
+    title: "Ownership stays explicit",
+    text: "Consent and access show up as product features, not footnotes."
+  },
+  {
+    tag: "Clinical",
+    title: "Decision support tone",
+    text: "The UI assists judgment without pretending to replace it."
+  },
+  {
+    tag: "Scale",
+    title: "Modular expansion path",
+    text: "The same surface can grow into research and simulation workflows."
+  }
+];
+
+const FAQ_ITEMS = [
+  {
+    question: "What opens first in GenoNexus?",
+    answer:
+      "A secure onboarding flow, guided DNA intake, and the medication-safety workspace."
+  },
+  {
+    question: "Who is this interface designed for?",
+    answer:
+      "Patients, clinicians, and research teams that need readable genomic signals in one place."
+  },
+  {
+    question: "How is privacy represented in the UI?",
+    answer:
+      "Consent, access, and audit states are visible inside the workflow instead of being buried in settings."
   }
 ];
 
@@ -100,320 +184,307 @@ export default function HomePage() {
   return (
     <div className={styles.page}>
       <section className={styles.hero}>
-        {/* Ambient glow orbs */}
-        <div className={styles.heroOrbs}>
-          <div className={styles.heroOrb1} />
-          <div className={styles.heroOrb2} />
-        </div>
+        <div className={styles.heroBackdrop} />
 
         <div className={`pageShell ${styles.nav}`}>
           <Link href="/" className={styles.brand}>
-            <span className={styles.brandMark}>
-              <svg 
-                width="24" 
-                height="24" 
-                viewBox="0 0 24 24" 
-                fill="none" 
-                stroke="currentColor" 
-                strokeWidth="2" 
-                strokeLinecap="round" 
-                strokeLinejoin="round"
-              >
-                <path d="M2 15c6.667-6 13.333 0 20-6" />
-                <path d="M9 22c1.798-1.998 2.518-3.995 2.8-5.993" />
-                <path d="M15 2c-1.798 1.998-2.518 3.995-2.8 5.993" />
-                <path d="m17 6-2.5-2.5" />
-                <path d="m14 8-1-1" />
-                <path d="m7 18 2.5 2.5" />
-                <path d="m3.5 14.5.5.5" />
-                <path d="m20 9 .5.5" />
-                <path d="m6.5 12.5 1 1" />
-                <path d="m16.5 11.5 1 1" />
-                <path d="m10 16 1.5 1.5" />
-              </svg>
-            </span>
+            <span className={styles.brandMark}>GN</span>
             <span>GenoNexus</span>
           </Link>
 
           <nav className={styles.navLinks}>
-            <a href="#features">Features</a>
-            <a href="#how-it-works">How it works</a>
-            <a href="#trust">Security</a>
-            <a href="#pricing">Pricing</a>
-            <Link className="buttonSecondary" href="/login">
-              Sign In
+            <a href="#platform">Platform</a>
+            <a href="#workflow">Workflow</a>
+            <a href="#report">Report</a>
+            <a href="#faq">FAQ</a>
+            <Link className={styles.navLogin} href="/login">
+              Sign in
+            </Link>
+            <Link className="buttonPrimary" href="/register">
+              Create account
             </Link>
           </nav>
         </div>
 
         <div className={`pageShell ${styles.heroGrid}`}>
-          <div className={`${styles.heroCopy} animate-fade-in-up`}>
-            <p className="eyebrow">Pharmacogenomics medication safety platform</p>
-            <h1>Your DNA knows which medications could harm you.</h1>
-            <p className={styles.heroSubText}>
-              GenoNexus transforms raw genetic data into high-fidelity medication safety reports 
-              in under 60 seconds. Built for patients, verified for clinical rigor, and 
-              designed for the future of personalized medicine.
-            </p>
+          <div className={`${styles.heroContent} animate-fade-in-up`}>
+            <p className="eyebrow">Genomics intelligence, made visual</p>
+
+            <div className={styles.heroCopy}>
+              <h1>See GenoNexus as a live platform, not a wall of copy.</h1>
+              <p className={styles.heroDescription}>
+                Secure intake, signal-rich interpretation, clinician-ready reporting, and
+                governance controls inside one modern workspace.
+              </p>
+            </div>
 
             <div className={styles.heroActions}>
               <Link className="buttonPrimary" href="/register">
-                Upload My DNA File
+                Start secure onboarding
               </Link>
-              <a className="buttonSecondary" href="#sample-report">
-                See sample report
+              <a className="buttonSecondary" href="#platform">
+                Explore the platform
               </a>
             </div>
+          </div>
 
-            <div className={styles.trustLine}>
-              <span />
-              <p>Your file is processed securely. Never sold. Deleted on request.</p>
+          <div className={`${styles.heroVisual} animate-fade-in-scale delay-200`}>
+            <div className={styles.visualHalo} />
+            <div className={styles.visualFrame}>
+              <DnaHelix />
             </div>
+
+            <article className={`${styles.floatCard} ${styles.floatCardTop}`}>
+              <span className={styles.floatLabel}>GenoNexus workspace</span>
+              <strong>Medication safety lane</strong>
+              <p>Patient intake, DNA normalization, and review routing stay on one platform surface.</p>
+            </article>
+
+            <article className={`${styles.floatCard} ${styles.floatCardBottom}`}>
+              <span className={styles.floatLabel}>Governance vault</span>
+              <strong>Consent, access + audit</strong>
+              <p>Ownership states stay visible beside signal review instead of hidden in settings.</p>
+            </article>
           </div>
-
-          <DnaHelix />
         </div>
-      </section>
 
-      <section className={styles.stats}>
-        <div className={`pageShell ${styles.statsGrid}`}>
-          <article className={`${styles.statCard} animate-fade-in-up`}>
-            <p className={styles.statValue}>125K</p>
-            <p className={styles.statLabel}>
-              medication-related deaths cited in the platform&apos;s problem framing
-            </p>
-          </article>
-          <article className={`${styles.statCard} animate-fade-in-up delay-100`}>
-            <p className={styles.statValue}>$136B</p>
-            <p className={styles.statLabel}>
-              in annual cost burden tied to preventable medication complications
-            </p>
-          </article>
-          <article className={`${styles.statCard} animate-fade-in-up delay-200`}>
-            <p className={styles.statValue}>1 in 4</p>
-            <p className={styles.statLabel}>
-              people may carry genetic traits that change how common drugs should be used
-            </p>
-          </article>
-        </div>
-      </section>
+        <div className={`pageShell ${styles.heroBand}`}>
+          <article className={styles.heroBandLead}>
+            <div className={styles.heroChips}>
+              {HERO_CHIPS.map((item) => (
+                <span key={item} className={styles.heroChip}>
+                  {item}
+                </span>
+              ))}
+            </div>
 
-      {/* Features Showcase */}
-      <section className={styles.featuresSection} id="features">
-        <div className="pageShell">
-          <div className="sectionHeader">
-            <h2>Powerful genomics tools, built for everyone.</h2>
-            <p>
-              From DNA analysis to AI-powered medication safety insights, GenoNexus brings
-              clinical-grade pharmacogenomics to patients, physicians, and researchers.
-            </p>
-          </div>
+            <h2>Built to move from raw genomic files to confident clinical handoff.</h2>
 
-          <div className={styles.featuresGrid}>
-            {FEATURES.map((feature, i) => (
+            <div className={styles.heroFlow}>
+              {HERO_FLOW.map((item) => (
+                <span key={item} className={styles.flowPill}>
+                  {item}
+                </span>
+              ))}
+            </div>
+          </article>
+
+          <div className={styles.heroMetrics}>
+            {HERO_METRICS.map((metric, index) => (
               <article
-                key={feature.title}
-                className={`${styles.featureCard} animate-fade-in-up delay-${(i % 3) * 100 + 100}`}
+                key={metric.value}
+                className={`${styles.metricCard} animate-fade-in-up delay-${(index + 1) * 100}`}
               >
-                <div className={styles.featureIconWrap}>
-                  {feature.icon}
-                </div>
-                <h3>{feature.title}</h3>
-                <p>{feature.description}</p>
+                <strong>{metric.value}</strong>
+                <span>{metric.label}</span>
               </article>
             ))}
           </div>
         </div>
       </section>
 
-      <section className={styles.darkSection} id="how-it-works">
+      <section className={styles.section} id="platform">
         <div className="pageShell">
-          <div className={`sectionHeader ${styles.sectionHeaderDark}`}>
-            <h2>Three steps from raw DNA file to a safer medication conversation.</h2>
-            <p>
-              The first release is built around a calm, trust-heavy workflow: upload once, review
-              high-priority findings, and bring a clear summary into care decisions.
-            </p>
-          </div>
+          <div className={styles.platformShell}>
+            <div className={styles.platformHeader}>
+              <div className={styles.sectionIntro}>
+                <p className="eyebrow">Platform map</p>
+                <h2>One core workspace with four visible signal layers.</h2>
+                <p>
+                  The page now explains GenoNexus in a cleaner order: what enters the platform,
+                  how signal is generated, and where trust stays visible.
+                </p>
+              </div>
 
-          <div className={styles.steps}>
-            <article className={`${styles.stepCard} animate-fade-in-up`}>
-              <span className={styles.stepNumber}>1</span>
-              <h3>Upload your raw file</h3>
-              <p>
-                Start with a consumer DNA export and move through a guided, privacy-first intake
-                flow with clear expectations before any analysis begins.
-              </p>
-            </article>
-            <article className={`${styles.stepCard} animate-fade-in-up delay-100`}>
-              <span className={styles.stepNumber}>2</span>
-              <h3>Map actionable pharmacogenes</h3>
-              <p>
-                GenoNexus focuses on the medication-related variants that matter for interpretation
-                rather than overwhelming users with a full genome dump.
-              </p>
-            </article>
-            <article className={`${styles.stepCard} animate-fade-in-up delay-200`}>
-              <span className={styles.stepNumber}>3</span>
-              <h3>Review report-ready guidance</h3>
-              <p>
-                Receive a professional summary with clear risk tiers, plain-English language, and a
-                format designed to be shared with clinicians.
-              </p>
-            </article>
+              <div className={styles.platformSummary}>
+                {PLATFORM_SUMMARY.map((item) => (
+                  <article key={item.label} className={styles.platformSummaryCard}>
+                    <span>{item.label}</span>
+                    <strong>{item.value}</strong>
+                  </article>
+                ))}
+              </div>
+            </div>
+
+            <div className={styles.meshBoard}>
+              <div className={styles.meshGlow} />
+
+              <div className={styles.meshCore}>
+                <span>GenoNexus Core</span>
+                <strong>Live orchestration</strong>
+                <p>DNA data moves through guided steps instead of disconnected tools.</p>
+              </div>
+
+              {PLATFORM_SIGNALS.map((signal) => (
+                <article
+                  key={signal.title}
+                  className={`${styles.meshNode} ${styles[signal.position]}`}
+                >
+                  <span>{signal.label}</span>
+                  <h3>{signal.title}</h3>
+                  <p>{signal.text}</p>
+                </article>
+              ))}
+            </div>
           </div>
         </div>
       </section>
 
-      <section className={styles.section} id="trust">
+      <section className={`${styles.section} ${styles.workspaceSection}`} id="workflow">
         <div className="pageShell">
-          <div className="sectionHeader">
-            <h2>Trust has to be visible before anyone uploads a genetic file.</h2>
-            <p>
-              The first screens are built to communicate clinical rigor, privacy controls, and
-              transparent ownership of user data.
-            </p>
-          </div>
+          <div className={styles.workflowStack}>
+            <div className={styles.workflowIntro}>
+              <p className="eyebrow">Workflow</p>
+              <h2>Short journey. Clear states.</h2>
+              <p>
+                The workflow section now reads in one sequence: guided steps first, interactive
+                workspace second.
+              </p>
+            </div>
 
-          <div className={styles.badgeGrid}>
-            <article className={`${styles.badgeCard} animate-fade-in-up`}>
-              <span className={styles.badgeTag}>HIPAA-aligned</span>
-              <h3>Secure foundations</h3>
-              <p>Authentication, session handling, and database design are structured for sensitive data.</p>
-            </article>
-            <article className={`${styles.badgeCard} animate-fade-in-up delay-100`}>
-              <span className={styles.badgeTag}>CPIC Level A</span>
-              <h3>Clinical relevance</h3>
-              <p>Future result views are shaped around guideline-backed medication interpretation patterns.</p>
-            </article>
-            <article className={`${styles.badgeCard} animate-fade-in-up delay-200`}>
-              <span className={styles.badgeTag}>Your Data</span>
-              <h3>User control</h3>
-              <p>Deletion-ready workflows and explicit consent checkpoints are part of the product story.</p>
-            </article>
-            <article className={`${styles.badgeCard} animate-fade-in-up delay-300`}>
-              <span className={styles.badgeTag}>No Selling</span>
-              <h3>Privacy by default</h3>
-              <p>No resale positioning, no growth-hack tone, and no ambiguity around ownership of uploads.</p>
-            </article>
-          </div>
-        </div>
-      </section>
+            <div className={styles.workflowShowcase}>
+              <div className={styles.workflowRail}>
+                {WORKFLOW_STEPS.map((item, index) => (
+                  <article
+                    key={item.step}
+                    className={`${styles.workflowStep} animate-fade-in-up delay-${index * 100}`}
+                  >
+                    <span className={styles.workflowBadge}>{item.step}</span>
+                    <div>
+                      <h3>{item.title}</h3>
+                      <p>{item.text}</p>
+                    </div>
+                  </article>
+                ))}
+              </div>
 
-      <section className={`${styles.section} ${styles.sampleSection}`} id="sample-report">
-        <div className="pageShell">
-          <div className="sectionHeader">
-            <h2>Clinical Insight Architecture</h2>
-            <p>
-              GenoNexus reports aren't just data—they're decision-support tools built to 
-              standardize complex pharmacogenomics into actionable clinical guidance.
-            </p>
-          </div>
-          
-          <div className={styles.sampleGrid}>
-            <article className={`cardSurface ${styles.sampleMain}`}>
-              <div className={styles.sampleHeaderStrip}>
-                <div className={styles.clinicalHeader}>
-                  <div className={styles.clinicalAvatar}>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                  </div>
+              <article className={styles.workspacePanel}>
+                <div className={styles.workspaceHeader}>
                   <div>
-                    <p className={styles.patientId}>Patient ID: GN-88392</p>
-                    <h3 className={styles.reportTitle}>Pharmacogenetic Profile: CYP2C19</h3>
+                    <p className={styles.panelEyebrow}>Interactive surfaces</p>
+                    <h2>Show the product through motion, states, and data cues.</h2>
+                  </div>
+                  <span className={styles.workspaceStatus}>Guided mode</span>
+                </div>
+
+                <div className={styles.workspaceTabs}>
+                  <span className={`${styles.workspaceTab} ${styles.workspaceTabActive}`}>
+                    Upload
+                  </span>
+                  <span className={styles.workspaceTab}>Interpret</span>
+                  <span className={styles.workspaceTab}>Report</span>
+                </div>
+
+                <div className={styles.pipelineCanvas}>
+                  {WORKSPACE_VIEWS.map((view) => (
+                    <article key={view.stage} className={styles.pipelineNode}>
+                      <span className={styles.nodeKicker}>{view.stage}</span>
+                      <strong>{view.value}</strong>
+                      <p>{view.caption}</p>
+                      <div className={styles.track}>
+                        <span style={{ width: view.progress }} />
+                      </div>
+                    </article>
+                  ))}
+                </div>
+
+                <div className={styles.workspaceMiniGrid}>
+                  <div className={styles.miniPanel}>
+                    <p className={styles.miniLabel}>Signal mix</p>
+                    <div className={styles.signalBars}>
+                      {SIGNAL_MIX.map((item) => (
+                        <div key={item.label} className={styles.barRow}>
+                          <span>{item.label}</span>
+                          <div className={styles.barTrack}>
+                            <span style={{ width: item.width }} />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className={styles.miniPanel}>
+                    <p className={styles.miniLabel}>Audit trail</p>
+                    <div className={styles.auditList}>
+                      {AUDIT_EVENTS.map((item) => (
+                        <div key={item} className={styles.auditItem}>
+                          <span className={styles.auditDot} />
+                          <span>{item}</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
-                <div className={styles.riskInidicator}>
-                  <span className={styles.riskPulse} />
-                  <span className={`${styles.samplePill} ${styles.sampleHigh}`}>High Safety Priority</span>
-                </div>
-              </div>
-              
-              <div className={styles.clinicalBody}>
-                <div className={styles.findingSummary}>
-                  <h4>Finding: Poor Metabolizer (PM)</h4>
-                  <p>
-                    Genetic variants detected indicate significantly reduced enzyme activity. Clopidogrel 
-                    requires hepatic activation via CYP2C19. In Poor Metabolizers, therapeutic 
-                    activation is severely impaired.
-                  </p>
-                </div>
-                
-                <div className={styles.guidanceBox}>
-                  <strong>Clinical Guidance:</strong>
-                  <p>Consider alternative antiplatelet therapy (e.g., Prasugrel, Ticagrelor) unless contraindicated. Refer to CPIC Class A guidelines for dosing adjustments.</p>
-                </div>
-              </div>
-            </article>
-
-            <div className={styles.sampleList}>
-              <article className={`cardSurface ${styles.sampleSideCard}`}>
-                <div className={styles.sideCardTop}>
-                  <span className={`${styles.samplePill} ${styles.sampleModerate}`}>Moderate</span>
-                  <h3>CYP2D6: Ultra-rapid</h3>
-                </div>
-                <p>Increased activation of Codeine to Morphine. Significant risk of respiratory depression and toxicity at standard dosages.</p>
-              </article>
-              <article className={`cardSurface ${styles.sampleSideCard}`}>
-                <div className={styles.sideCardTop}>
-                  <span className={`${styles.samplePill} ${styles.sampleLow}`}>Safe Range</span>
-                  <h3>SLCO1B1: Normal</h3>
-                </div>
-                <p>Standard statin-related myopathy risk. No genotype-based dosing adjustments currently indicated for this specific marker.</p>
               </article>
             </div>
           </div>
         </div>
       </section>
 
-      <section className={styles.section} id="pricing">
+      <section className={styles.section} id="report">
         <div className="pageShell">
-          <div className="sectionHeader">
-            <h2>Pricing that feels like a clinical product, not a gimmick.</h2>
-            <p>
-              The landing page frames a clear one-time report option and an annual plan for people
-              who want continued access, refreshed reporting, and future medication updates.
-            </p>
-          </div>
+          <div className={styles.reportLayout}>
+            <article className={styles.reportCard}>
+              <div className={styles.reportHeader}>
+                <div>
+                  <p className={styles.reportMeta}>Clinical preview</p>
+                  <h2>Medication safety dossier</h2>
+                </div>
+                <span className={styles.reportPill}>Priority review</span>
+              </div>
 
-          <div className={styles.pricingGrid}>
-            <article className={`cardSurface ${styles.priceCard} animate-fade-in-up`}>
-              <h3>One-time report</h3>
-              <div className={styles.price}>
-                $49 <small>once</small>
+              <div className={styles.reportSummary}>
+                <div>
+                  <span className={styles.reportLabel}>Patient ID</span>
+                  <strong>GN-88392</strong>
+                </div>
+                <div>
+                  <span className={styles.reportLabel}>Guideline layer</span>
+                  <strong>CPIC aligned</strong>
+                </div>
+                <div>
+                  <span className={styles.reportLabel}>Status</span>
+                  <strong>Ready to share</strong>
+                </div>
               </div>
-              <p>
-                Best for people who want a single upload, one polished medication safety report, and
-                a physician-ready summary they can bring into a visit.
-              </p>
-              <div className={styles.features}>
-                <span>Secure account and report history</span>
-                <span>Medication safety summary</span>
-                <span>Physician-ready export structure</span>
+
+              <div className={styles.findingTable}>
+                {REPORT_FINDINGS.map((finding) => (
+                  <div key={finding.gene} className={styles.findingRow}>
+                    <strong>{finding.gene}</strong>
+                    <span>{finding.phenotype}</span>
+                    <p>{finding.implication}</p>
+                  </div>
+                ))}
               </div>
-              <Link className="buttonSecondary" href="/register">
-                Start one-time report
-              </Link>
+
+              <div className={styles.reportNote}>
+                <p className={styles.reportNoteLabel}>Design goal</p>
+                <p>
+                  High-priority signals lead the report, and the recommended action stays readable
+                  at a glance.
+                </p>
+              </div>
             </article>
 
-            <article className={`cardSurface ${styles.priceCard} animate-fade-in-up delay-100`}>
-              <span className={styles.recommendation}>Recommended</span>
-              <h3>Annual access</h3>
-              <div className={styles.price}>
-                $29 <small>per year</small>
+            <aside className={styles.trustStack}>
+              <div className={styles.trustIntro}>
+                <p className="eyebrow">Trust layer</p>
+                <h2>Less marketing noise, more usable confidence.</h2>
+                <p>
+                  Clear evidence, visible governance, and calmer hierarchy make the platform feel
+                  credible faster.
+                </p>
               </div>
-              <p>
-                Designed for returning users who want secure storage, future feature expansion, and
-                ongoing access to medication safety intelligence.
-              </p>
-              <div className={styles.features}>
-                <span>Everything in one-time access</span>
-                <span>Persistent account and result access</span>
-                <span>Future clinician-sharing and update workflows</span>
-              </div>
-              <Link className="buttonPrimary" href="/register">
-                Choose annual access
-              </Link>
-            </article>
+
+              {TRUST_SIGNALS.map((item) => (
+                <article key={item.title} className={styles.trustCard}>
+                  <span className={styles.trustTag}>{item.tag}</span>
+                  <h3>{item.title}</h3>
+                  <p>{item.text}</p>
+                </article>
+              ))}
+            </aside>
           </div>
         </div>
       </section>
@@ -421,29 +492,36 @@ export default function HomePage() {
       <section className={styles.section} id="faq">
         <div className="pageShell">
           <div className="sectionHeader">
-            <h2>Frequently asked questions</h2>
+            <h2>Keep the answers short and the interface obvious.</h2>
             <p>
-              The answers below are framed for early-stage trust building while the deeper clinical
-              features are still being implemented.
+              A few concise answers still help conversion when the product handles genomic data.
             </p>
           </div>
+
           <FaqAccordion items={FAQ_ITEMS} />
         </div>
       </section>
 
-      {/* CTA Band */}
-      <section className={styles.ctaBand}>
-        <div className={styles.ctaGlow} />
-        <div className={`pageShell ${styles.ctaInner}`}>
-          <h2>Ready to understand your medication safety profile?</h2>
-          <p>Upload your raw DNA file and get a clinician-ready report in under 60 seconds.</p>
-          <div className={styles.ctaActions}>
-            <Link className="buttonPrimary" href="/register">
-              Get Started Free
-            </Link>
-            <Link className="buttonSecondary" href="/login">
-              Sign In
-            </Link>
+      <section className={styles.ctaSection}>
+        <div className="pageShell">
+          <div className={styles.ctaCard}>
+            <div>
+              <p className="eyebrow">Workspace access</p>
+              <h2>Open the secure workspace and start with the first real flow.</h2>
+              <p>
+                The landing page now leads directly into onboarding instead of stopping at a
+                marketing shell.
+              </p>
+            </div>
+
+            <div className={styles.ctaActions}>
+              <Link className="buttonPrimary" href="/register">
+                Create account
+              </Link>
+              <Link className="buttonGhost" href="/login">
+                Sign in
+              </Link>
+            </div>
           </div>
         </div>
       </section>
@@ -453,36 +531,27 @@ export default function HomePage() {
           <div>
             <h3>GenoNexus</h3>
             <p>
-              A pharmacogenomics medication safety platform built to make raw DNA files clinically
-              understandable, privacy-aware, and easier to act on responsibly.
+              Genomics intelligence for medication safety, clinical review, and governed data
+              operations.
             </p>
           </div>
+
           <div>
-            <h4>Platform</h4>
+            <h4>Workspace</h4>
             <div className={styles.footerLinks}>
               <Link href="/register">Create account</Link>
               <Link href="/login">Sign in</Link>
-              <a href="#sample-report">Sample report</a>
             </div>
           </div>
+
           <div>
-            <h4>Trust</h4>
+            <h4>Explore</h4>
             <div className={styles.footerLinks}>
-              <a href="#trust">Data ownership</a>
-              <a href="#faq">Privacy posture</a>
-              <a href="#how-it-works">Workflow</a>
+              <a href="#platform">Platform</a>
+              <a href="#workflow">Workflow</a>
+              <a href="#report">Report</a>
             </div>
           </div>
-          <div>
-            <h4>Contact</h4>
-            <div className={styles.footerLinks}>
-              <a href="mailto:hello@genonexus.com">hello@genonexus.com</a>
-              <p>Medication safety support for patients, families, and clinicians.</p>
-            </div>
-          </div>
-        </div>
-        <div className={`pageShell ${styles.footerBottom}`}>
-          <p>© 2025 GenoNexus. All rights reserved. Not a substitute for medical advice.</p>
         </div>
       </footer>
     </div>

@@ -1,5 +1,5 @@
 import { createTransport } from "nodemailer";
-import { assertDatabase } from "@/lib/db";
+import { assertDatabase, type DatabaseQueryExecutor } from "@/lib/db";
 import { randomBytes } from "node:crypto";
 import { env } from "@/lib/env";
 
@@ -13,11 +13,14 @@ const transporter = createTransport({
   secure: process.env.EMAIL_SERVER_PORT === "465",
 });
 
-export async function generateVerificationToken(userId: string) {
+export async function generateVerificationToken(
+  userId: string,
+  executor: DatabaseQueryExecutor = assertDatabase()
+) {
   const token = randomBytes(32).toString("hex");
   const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24); // 24 hours
   
-  const client = assertDatabase();
+  const client = executor;
   
   // Clean up any existing tokens for this user
   await client.query("DELETE FROM verification_tokens WHERE user_id = $1", [userId]);
@@ -31,7 +34,7 @@ export async function generateVerificationToken(userId: string) {
 }
 
 export async function sendVerificationEmail(email: string, token: string) {
-  const verificationUrl = `${env.appUrl}/api/auth/verify?token=${token}`;
+  const verificationUrl = new URL(`/api/auth/verify?token=${encodeURIComponent(token)}`, env.appUrl).toString();
   
   await transporter.sendMail({
     from: process.env.EMAIL_FROM || '"GenoNexus" <noreply@genonexus.com>',
@@ -42,6 +45,22 @@ export async function sendVerificationEmail(email: string, token: string) {
       <p>Please click the link below to verify your email address:</p>
       <a href="${verificationUrl}">${verificationUrl}</a>
       <p>This link will expire in 24 hours.</p>
+    `
+  });
+}
+
+export async function sendPasswordResetEmail(email: string, token: string) {
+  const resetUrl = new URL(`/reset-password?token=${encodeURIComponent(token)}`, env.appUrl).toString();
+
+  await transporter.sendMail({
+    from: process.env.EMAIL_FROM || '"GenoNexus" <noreply@genonexus.com>',
+    to: email,
+    subject: "Reset your password - GenoNexus",
+    html: `
+      <h2>Reset your GenoNexus password</h2>
+      <p>Use the link below to choose a new password:</p>
+      <a href="${resetUrl}">${resetUrl}</a>
+      <p>This link will expire in 1 hour.</p>
     `
   });
 }

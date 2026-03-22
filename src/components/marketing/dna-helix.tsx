@@ -2,30 +2,88 @@ import styles from "./dna-helix.module.css";
 
 const RUNGS = Array.from({ length: 14 }, (_, index) => ({
   id: index,
-  top: `${6 + index * 6.5}%`,
+  top: `${8 + index * 6.1}%`,
   className: index % 2 === 0 ? styles.rungA : styles.rungB
 }));
+
+const SEQUENCE_ROWS = [
+  "ACTG TCCA GATC CGTA",
+  "GGTA CCTA ACGT TTGA",
+  "CTAG GTAC CAGT ACCT",
+  "TCAA GGCT ATGC CGAT"
+];
+
+const CHROME_CHIPS = ["Medication safety", "Consent-aware"];
+
+const WORKFLOW_LABELS = ["DNA intake", "AI review", "Clinical handoff"];
+
+const PANEL_ITEMS = [
+  {
+    marker: "CYP2C19",
+    status: "Priority",
+    toneClass: styles.panelCardHigh,
+    badgeClass: styles.riskBadgeHigh,
+    text: "Reduced response surfaced in the medication-safety layer.",
+    width: "88%"
+  },
+  {
+    marker: "CYP2D6",
+    status: "Review",
+    toneClass: styles.panelCardModerate,
+    badgeClass: styles.riskBadgeModerate,
+    text: "Rapid metabolism pathway flagged for clinician review.",
+    width: "64%"
+  },
+  {
+    marker: "Vault",
+    status: "Protected",
+    toneClass: styles.panelCardSafe,
+    badgeClass: styles.riskBadgeSafe,
+    text: "Consent, access, and audit controls remain locked to the case.",
+    width: "100%"
+  }
+];
 
 export function DnaHelix() {
   return (
     <div className={styles.helixFrame}>
-      {/* Animated glow orbs */}
       <div className={styles.glowOrb1} />
       <div className={styles.glowOrb2} />
-
-      {/* Grid pattern */}
       <div className={styles.gridOverlay} />
-      
-      {/* Background bitstream */}
-      <div className={styles.bitstream}>
-        {Array.from({ length: 20 }).map((_, i) => (
-          <div key={i}>01011001 10110001 00110101 11001010 10100111 00011011</div>
+
+      <div className={styles.platformChrome}>
+        <div className={styles.platformBrand}>
+          <span className={styles.platformMark}>GN</span>
+          <div className={styles.platformText}>
+            <strong>GenoNexus Platform</strong>
+            <span>Live pharmacogenomics surface</span>
+          </div>
+        </div>
+
+        <div className={styles.platformChips}>
+          {CHROME_CHIPS.map((item) => (
+            <span key={item}>{item}</span>
+          ))}
+        </div>
+      </div>
+
+      <div className={styles.sequenceField}>
+        {Array.from({ length: 18 }).map((_, index) => (
+          <div key={index}>{SEQUENCE_ROWS[index % SEQUENCE_ROWS.length]}</div>
+        ))}
+      </div>
+
+      <div className={styles.workflowLegend}>
+        {WORKFLOW_LABELS.map((item) => (
+          <div key={item} className={styles.workflowLegendItem}>
+            <span className={styles.workflowLegendDot} />
+            <span>{item}</span>
+          </div>
         ))}
       </div>
 
       <div className={styles.crosshair} />
 
-      {/* DNA Strand */}
       <div className={styles.strand}>
         {RUNGS.map((rung) => (
           <div
@@ -38,38 +96,36 @@ export function DnaHelix() {
         ))}
       </div>
 
-      {/* Floating insight panel */}
       <aside className={styles.panel}>
-        <p className={styles.panelHeader}>
-          <span className={styles.liveDot} />
-          Live clinical monitoring
-        </p>
+        <div className={styles.panelTopbar}>
+          <p className={styles.panelHeader}>
+            <span className={styles.liveDot} />
+            Active signal board
+          </p>
+          <span className={styles.panelCase}>Case GN-88392</span>
+        </div>
+
         <div className={styles.scanningLine} />
+
         <div className={styles.panelGrid}>
-          <div className={`${styles.panelCard} ${styles.panelCardHigh}`}>
-            <div className={styles.panelCardHeader}>
-              <strong className={styles.markerCode}>CYP2C19</strong>
-              <span className={styles.riskBadgeHigh}>Critical</span>
+          {PANEL_ITEMS.map((item) => (
+            <div key={item.marker} className={`${styles.panelCard} ${item.toneClass}`}>
+              <div className={styles.panelCardHeader}>
+                <strong className={styles.markerCode}>{item.marker}</strong>
+                <span className={item.badgeClass}>{item.status}</span>
+              </div>
+              <p>{item.text}</p>
+              <div className={styles.dataBar}>
+                <span style={{ width: item.width }} />
+              </div>
             </div>
-            <p>Clopidogrel metabolism severely impaired. High thrombotic risk profile.</p>
-            <div className={styles.dataBar}><span style={{ width: "92%" }} /></div>
-          </div>
-          <div className={`${styles.panelCard} ${styles.panelCardModerate}`}>
-            <div className={styles.panelCardHeader}>
-              <strong className={styles.markerCode}>CYP2D6</strong>
-              <span className={styles.riskBadgeModerate}>Caution</span>
-            </div>
-            <p>Codeine toxicity risk detected. Atypical metabolic pathway identified.</p>
-            <div className={styles.dataBar}><span style={{ width: "64%" }} /></div>
-          </div>
-          <div className={`${styles.panelCard} ${styles.panelCardSafe}`}>
-            <div className={styles.panelCardHeader}>
-              <strong className={styles.markerCode}>E2EE-DNA</strong>
-              <span className={styles.riskBadgeSafe}>Encrypted</span>
-            </div>
-            <p>End-to-end genomic encryption active. No unauthorized access possible.</p>
-            <div className={styles.dataBar}><span style={{ width: "100%" }} /></div>
-          </div>
+          ))}
+        </div>
+
+        <div className={styles.statusStrip}>
+          {["Ingest", "Interpret", "Report", "Govern"].map((item) => (
+            <span key={item}>{item}</span>
+          ))}
         </div>
       </aside>
     </div>

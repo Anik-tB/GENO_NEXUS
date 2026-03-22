@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { ACCOUNT_CATEGORIES } from "@/lib/auth/account-category";
 
 function hasFirstAndLastName(value: string) {
   return value
@@ -22,6 +23,7 @@ export const registerSchema = z
       .max(100)
       .refine(hasFirstAndLastName, "Please enter your first and last name."),
     email: z.string().trim().email(),
+    accountCategory: z.enum(ACCOUNT_CATEGORIES),
     password: z
       .string()
       .min(12)
