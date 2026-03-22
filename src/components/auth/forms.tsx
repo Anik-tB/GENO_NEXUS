@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { type FormEvent, type ReactNode, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { startTransition, type FormEvent, type ReactNode, useState } from "react";
 import { signInWithPopup } from "firebase/auth";
 import {
   ACCOUNT_CATEGORIES,
@@ -315,6 +315,7 @@ function SectionCard({
 }
 
 function GoogleButton({ onError }: { onError: (error?: string) => void }) {
+  const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
 
   async function handleClick() {
@@ -349,12 +350,13 @@ function GoogleButton({ onError }: { onError: (error?: string) => void }) {
         return;
       }
 
-      await auth.signOut();
-      window.location.assign(data?.redirectTo || "/dashboard");
+      startTransition(() => {
+        router.replace(data?.redirectTo || "/dashboard");
+        router.refresh();
+      });
     } catch (error) {
       console.error("Google sign-in failed:", error);
       onError("google_sign_in_failed");
-      await auth.signOut().catch(() => undefined);
     } finally {
       setIsLoading(false);
     }

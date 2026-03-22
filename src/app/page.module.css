@@ -62,9 +62,7 @@
   justify-content: center;
   width: 2.8rem;
   height: 2.8rem;
-  border-radius: 18px;
-  background: linear-gradient(135deg, rgba(22, 165, 150, 0.88) 0%, rgba(34, 106, 168, 0.92) 100%);
-  color: var(--gn-white);
+  border-radius: 50%;
   box-shadow: 0 12px 22px rgba(0, 0, 0, 0.24);
 }
 

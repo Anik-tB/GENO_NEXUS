@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import styles from "./auth-shell.module.css";
 
 const PLATFORM_TAGS = ["DNA uploads", "Report history", "Google + GitHub"];
@@ -40,7 +41,7 @@ export function AuthShell({ children }: AuthShellProps) {
 
         <div className={styles.brandInner}>
           <Link href="/" className={styles.logo}>
-            <span className={styles.logoMark}>GN</span>
+            <Image src="/dna-icon.svg" alt="GenoNexus Logo" width={46} height={46} className={styles.logoMark} priority />
             <span>GenoNexus</span>
           </Link>
 

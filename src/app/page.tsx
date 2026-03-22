@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { DnaHelix } from "@/components/marketing/dna-helix";
 import { FaqAccordion } from "@/components/marketing/faq-accordion";
 import styles from "./page.module.css";
@@ -188,7 +189,7 @@ export default function HomePage() {
 
         <div className={`pageShell ${styles.nav}`}>
           <Link href="/" className={styles.brand}>
-            <span className={styles.brandMark}>GN</span>
+            <Image src="/dna-icon.svg" alt="GenoNexus Logo" width={44} height={44} className={styles.brandMark} priority />
             <span>GenoNexus</span>
           </Link>
 

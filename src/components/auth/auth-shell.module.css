@@ -62,8 +62,7 @@
   justify-content: center;
   width: 2.9rem;
   height: 2.9rem;
-  border-radius: 18px;
-  background: linear-gradient(135deg, rgba(22, 165, 150, 0.95) 0%, rgba(34, 106, 168, 0.95) 100%);
+  border-radius: 50%;
   box-shadow: 0 16px 28px rgba(0, 0, 0, 0.18);
 }
 
