@@ -3,6 +3,10 @@ import { buildSessionCookie, createSession } from "@/lib/auth/sessions";
 import { findOrCreateOAuthUser } from "@/lib/auth/users";
 import { buildExpiredOAuthStateCookie, getOAuthStateCookieName } from "@/lib/auth/oauth-state";
 
+function getClientIp(request: NextRequest) {
+  return request.headers.get("x-forwarded-for")?.split(",")[0] || request.headers.get("x-real-ip") || "unknown";
+}
+
 export async function GET(request: NextRequest) {
   const url = new URL(request.url);
   const code = url.searchParams.get("code");
@@ -82,7 +86,11 @@ export async function GET(request: NextRequest) {
       lastName
     });
 
-    const session = await createSession(user.id, true);
+    const session = await createSession(user.id, true, undefined, {
+      ipAddress: getClientIp(request),
+      userAgent: request.headers.get("user-agent") || "unknown",
+      isTrusted: true,
+    });
     const response = NextResponse.redirect(new URL("/dashboard", request.url));
     response.cookies.set(buildExpiredOAuthStateCookie("google"));
     response.cookies.set(buildSessionCookie(session.token, session.expiresAt));

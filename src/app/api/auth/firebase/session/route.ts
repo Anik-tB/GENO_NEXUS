@@ -3,6 +3,10 @@ import { buildSessionCookie, createSession } from "@/lib/auth/sessions";
 import { findOrCreateFirebaseGoogleUser } from "@/lib/auth/users";
 import { getFirebaseAdminAuth, isFirebaseAdminConfigured } from "@/lib/firebase/admin";
 
+function getClientIp(request: NextRequest) {
+  return request.headers.get("x-forwarded-for")?.split(",")[0] || request.headers.get("x-real-ip") || "unknown";
+}
+
 interface FirebaseSessionRequestBody {
   idToken?: unknown;
   remember?: unknown;
@@ -60,7 +64,11 @@ export async function POST(request: NextRequest) {
       lastName
     });
 
-    const session = await createSession(user.id, remember);
+    const session = await createSession(user.id, remember, undefined, {
+      ipAddress: getClientIp(request),
+      userAgent: request.headers.get("user-agent") || "unknown",
+      isTrusted: true,
+    });
     const response = NextResponse.json({ ok: true, redirectTo: "/dashboard" });
     response.cookies.set(buildSessionCookie(session.token, session.expiresAt));
     return response;

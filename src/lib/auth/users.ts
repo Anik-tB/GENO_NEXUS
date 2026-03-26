@@ -1,5 +1,8 @@
 import { assertDatabase, type DatabaseQueryExecutor } from "@/lib/db";
-import { DEFAULT_ACCOUNT_CATEGORY, type AccountCategory } from "@/lib/auth/account-category";
+import {
+  DEFAULT_ACCOUNT_CATEGORY,
+  type AccountCategory,
+} from "@/lib/auth/account-category";
 
 export interface AuthUser {
   id: string;
@@ -11,6 +14,8 @@ export interface AuthUser {
   githubId: string | null;
   googleId: string | null;
   firebaseUid: string | null;
+  accountLockedUntil: Date | null;
+  failedLoginCount: number;
 }
 
 interface CreateUserInput {
@@ -38,24 +43,30 @@ interface FirebaseGoogleUserInput {
 
 const PROVIDER_COLUMNS = {
   github: "github_id",
-  google: "google_id"
+  google: "google_id",
 } as const;
 
 function normalizeEmail(email: string) {
   return email.trim().toLowerCase();
 }
 
-function mapUser(row: Record<string, string | null>): AuthUser {
+function mapUser(row: Record<string, any>): AuthUser {
   return {
     id: row.id ?? "",
     firstName: row.first_name ?? "",
     lastName: row.last_name ?? "",
     email: row.email ?? "",
-    accountCategory: (row.account_category as AccountCategory | null) ?? DEFAULT_ACCOUNT_CATEGORY,
+    accountCategory:
+      (row.account_category as AccountCategory | null) ??
+      DEFAULT_ACCOUNT_CATEGORY,
     passwordHash: row.password_hash,
     githubId: row.github_id,
     googleId: row.google_id,
-    firebaseUid: row.firebase_uid
+    firebaseUid: row.firebase_uid,
+    accountLockedUntil: row.account_locked_until
+      ? new Date(row.account_locked_until)
+      : null,
+    failedLoginCount: row.failed_login_count ?? 0,
   };
 }
 
@@ -63,18 +74,21 @@ export async function findUserByEmail(email: string) {
   const client = assertDatabase();
   const result = await client.query(
     `
-      SELECT id, first_name, last_name, email, account_category, password_hash, github_id, google_id, firebase_uid
+      SELECT id, first_name, last_name, email, account_category, password_hash, github_id, google_id, firebase_uid, account_locked_until, failed_login_count
       FROM users
       WHERE email = $1
       LIMIT 1
     `,
-    [normalizeEmail(email)]
+    [normalizeEmail(email)],
   );
 
   return result.rows[0] ? mapUser(result.rows[0]) : null;
 }
 
-export async function createUser(input: CreateUserInput, executor: DatabaseQueryExecutor = assertDatabase()) {
+export async function createUser(
+  input: CreateUserInput,
+  executor: DatabaseQueryExecutor = assertDatabase(),
+) {
   const client = executor;
   const result = await client.query(
     `
@@ -88,9 +102,15 @@ export async function createUser(input: CreateUserInput, executor: DatabaseQuery
         medical_acknowledged_at
       )
       VALUES ($1, $2, lower($3), $4, $5, NOW(), NOW())
-      RETURNING id, first_name, last_name, email, account_category, password_hash, github_id, google_id, firebase_uid
+      RETURNING id, first_name, last_name, email, account_category, password_hash, github_id, google_id, firebase_uid, account_locked_until, failed_login_count
     `,
-    [input.firstName, input.lastName, normalizeEmail(input.email), input.accountCategory, input.passwordHash]
+    [
+      input.firstName,
+      input.lastName,
+      normalizeEmail(input.email),
+      input.accountCategory,
+      input.passwordHash,
+    ],
   );
 
   return mapUser(result.rows[0]);
@@ -103,12 +123,12 @@ export async function findOrCreateOAuthUser(input: OAuthUserInput) {
 
   const existingUserResult = await client.query(
     `
-      SELECT id, first_name, last_name, email, account_category, password_hash, github_id, google_id, firebase_uid
+      SELECT id, first_name, last_name, email, account_category, password_hash, github_id, google_id, firebase_uid, account_locked_until, failed_login_count
       FROM users
       WHERE ${providerColumn} = $1 OR email = $2
       LIMIT 1
     `,
-    [input.providerId, email]
+    [input.providerId, email],
   );
 
   if (existingUserResult.rows[0]) {
@@ -119,9 +139,9 @@ export async function findOrCreateOAuthUser(input: OAuthUserInput) {
         UPDATE users
         SET ${providerColumn} = $1, email_verified = COALESCE(email_verified, NOW()), updated_at = NOW()
         WHERE id = $2
-        RETURNING id, first_name, last_name, email, account_category, password_hash, github_id, google_id, firebase_uid
+        RETURNING id, first_name, last_name, email, account_category, password_hash, github_id, google_id, firebase_uid, account_locked_until, failed_login_count
       `,
-      [input.providerId, existingUser.id]
+      [input.providerId, existingUser.id],
     );
 
     return mapUser(updatedUser.rows[0]);
@@ -141,26 +161,34 @@ export async function findOrCreateOAuthUser(input: OAuthUserInput) {
         medical_acknowledged_at
       )
       VALUES ($1, $2, lower($3), $4, NULL, $5, NOW(), NOW(), NOW())
-      RETURNING id, first_name, last_name, email, account_category, password_hash, github_id, google_id, firebase_uid
+      RETURNING id, first_name, last_name, email, account_category, password_hash, github_id, google_id, firebase_uid, account_locked_until, failed_login_count
     `,
-    [input.firstName, input.lastName, email, DEFAULT_ACCOUNT_CATEGORY, input.providerId]
+    [
+      input.firstName,
+      input.lastName,
+      email,
+      DEFAULT_ACCOUNT_CATEGORY,
+      input.providerId,
+    ],
   );
 
   return mapUser(result.rows[0]);
 }
 
-export async function findOrCreateFirebaseGoogleUser(input: FirebaseGoogleUserInput) {
+export async function findOrCreateFirebaseGoogleUser(
+  input: FirebaseGoogleUserInput,
+) {
   const client = assertDatabase();
   const email = normalizeEmail(input.email);
 
   const existingUserResult = await client.query(
     `
-      SELECT id, first_name, last_name, email, account_category, password_hash, github_id, google_id, firebase_uid
+      SELECT id, first_name, last_name, email, account_category, password_hash, github_id, google_id, firebase_uid, account_locked_until, failed_login_count
       FROM users
       WHERE firebase_uid = $1 OR email = $2
       LIMIT 1
     `,
-    [input.firebaseUid, email]
+    [input.firebaseUid, email],
   );
 
   if (existingUserResult.rows[0]) {
@@ -171,9 +199,9 @@ export async function findOrCreateFirebaseGoogleUser(input: FirebaseGoogleUserIn
         UPDATE users
         SET firebase_uid = $1, email_verified = COALESCE(email_verified, NOW()), updated_at = NOW()
         WHERE id = $2
-        RETURNING id, first_name, last_name, email, account_category, password_hash, github_id, google_id, firebase_uid
+        RETURNING id, first_name, last_name, email, account_category, password_hash, github_id, google_id, firebase_uid, account_locked_until, failed_login_count
       `,
-      [input.firebaseUid, existingUser.id]
+      [input.firebaseUid, existingUser.id],
     );
 
     return mapUser(updatedUser.rows[0]);
@@ -193,9 +221,15 @@ export async function findOrCreateFirebaseGoogleUser(input: FirebaseGoogleUserIn
         medical_acknowledged_at
       )
       VALUES ($1, $2, lower($3), $4, NULL, $5, NOW(), NOW(), NOW())
-      RETURNING id, first_name, last_name, email, account_category, password_hash, github_id, google_id, firebase_uid
+      RETURNING id, first_name, last_name, email, account_category, password_hash, github_id, google_id, firebase_uid, account_locked_until, failed_login_count
     `,
-    [input.firstName, input.lastName, email, DEFAULT_ACCOUNT_CATEGORY, input.firebaseUid]
+    [
+      input.firstName,
+      input.lastName,
+      email,
+      DEFAULT_ACCOUNT_CATEGORY,
+      input.firebaseUid,
+    ],
   );
 
   return mapUser(result.rows[0]);
@@ -209,6 +243,6 @@ export async function updateUserPassword(userId: string, passwordHash: string) {
       SET password_hash = $2, updated_at = NOW()
       WHERE id = $1
     `,
-    [userId, passwordHash]
+    [userId, passwordHash],
   );
 }

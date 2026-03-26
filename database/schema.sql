@@ -84,3 +84,64 @@ CREATE TABLE IF NOT EXISTS verification_tokens (
 
 CREATE INDEX IF NOT EXISTS idx_verification_tokens_user_id
   ON verification_tokens(user_id);
+
+-- ============================================================================
+-- SECURITY TABLES
+-- ============================================================================
+
+-- Rate limiting for brute force protection
+CREATE TABLE IF NOT EXISTS rate_limit_attempts (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  identifier_hash TEXT NOT NULL,
+  attempt_type TEXT NOT NULL DEFAULT 'login',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CONSTRAINT rate_limit_attempts_type_check CHECK (
+    attempt_type IN ('login', 'register', 'password_reset')
+  )
+);
+
+CREATE INDEX IF NOT EXISTS idx_rate_limit_attempts_identifier
+  ON rate_limit_attempts(identifier_hash, attempt_type, created_at);
+
+-- CSRF token storage
+CREATE TABLE IF NOT EXISTS csrf_tokens (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  token_hash TEXT NOT NULL UNIQUE,
+  used BOOLEAN NOT NULL DEFAULT false,
+  expires_at TIMESTAMPTZ NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_csrf_tokens_expires_at
+  ON csrf_tokens(expires_at);
+
+-- Audit logging for compliance
+CREATE TABLE IF NOT EXISTS audit_logs (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+  event_type TEXT NOT NULL,
+  details JSONB,
+  ip_address TEXT NOT NULL,
+  user_agent TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_audit_logs_user_id
+  ON audit_logs(user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_event_type
+  ON audit_logs(event_type, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_ip_address
+  ON audit_logs(ip_address, created_at DESC);
+
+-- Two-factor authentication
+ALTER TABLE users ADD COLUMN IF NOT EXISTS two_factor_enabled BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS two_factor_secret TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS backup_codes JSONB;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS last_login_at TIMESTAMPTZ;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS failed_login_count INT NOT NULL DEFAULT 0;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS account_locked_until TIMESTAMPTZ;
+
+-- Session security enhancements
+ALTER TABLE sessions ADD COLUMN IF NOT EXISTS ip_address TEXT;
+ALTER TABLE sessions ADD COLUMN IF NOT EXISTS user_agent TEXT;
+ALTER TABLE sessions ADD COLUMN IF NOT EXISTS is_trusted BOOLEAN NOT NULL DEFAULT false;
