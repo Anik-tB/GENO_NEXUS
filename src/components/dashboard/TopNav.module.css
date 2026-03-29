@@ -11,12 +11,43 @@
   z-index: 40;
 }
 
+.spacer {
+  flex: 1;
+}
+
+.tools {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.infoPill {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: #111216;
+  border: 1px solid #1c1d22;
+  padding: 0.5rem 1rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  color: var(--gn-text-secondary);
+}
+
+.pillDivider {
+  width: 1px;
+  height: 14px;
+  background: #272a30;
+}
+
+.pillIcon {
+  opacity: 0.8;
+}
+
 .searchContainer {
   position: relative;
   display: flex;
   align-items: center;
-  width: 100%;
-  max-width: 480px;
+  width: 280px;
 }
 
 .searchIcon {
@@ -47,24 +78,6 @@
   color: var(--gn-text-muted);
 }
 
-.slashKey {
-  position: absolute;
-  right: 1rem;
-  background: rgba(255, 255, 255, 0.1);
-  color: var(--gn-text-secondary);
-  font-size: 0.75rem;
-  padding: 0.1rem 0.4rem;
-  border-radius: 4px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  pointer-events: none;
-}
-
-.tools {
-  display: flex;
-  align-items: center;
-  gap: 1.5rem;
-}
-
 .iconButton {
   position: relative;
   background: transparent;
@@ -83,29 +96,6 @@
 .iconButton:hover {
   background: rgba(255, 255, 255, 0.05);
   color: var(--gn-white);
-}
-
-.badge {
-  position: absolute;
-  top: 2px;
-  right: 2px;
-  background: #ff2055;
-  color: var(--gn-white);
-  font-size: 0.6rem;
-  font-weight: 700;
-  width: 16px;
-  height: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  border: 2px solid #09090b; /* Masking effect like the reference */
-}
-
-.divider {
-  width: 1px;
-  height: 24px;
-  background: #272a30;
 }
 
 .profile {
@@ -133,20 +123,4 @@
   font-weight: 700;
   color: var(--gn-white);
   font-size: 0.9rem;
-}
-
-.userInfo {
-  display: flex;
-  flex-direction: column;
-}
-
-.userName {
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: var(--gn-white);
-}
-
-.userRole {
-  font-size: 0.75rem;
-  color: var(--gn-text-muted);
 }

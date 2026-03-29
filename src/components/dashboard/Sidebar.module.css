@@ -24,14 +24,9 @@
 .logo {
   position: relative;
   z-index: 2;
-  filter: drop-shadow(0 0 8px var(--gn-primary-glow));
 }
 
-.logoGlow {
-  display: none;
-}
-
-.brand h2 {
+.brandTitle {
   font-size: 1.25rem;
   font-weight: 700;
   color: var(--gn-white);
@@ -39,32 +34,43 @@
   letter-spacing: -0.02em;
 }
 
-.brand span {
-  font-size: 0.65rem;
-  color: var(--gn-primary);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  font-weight: 700;
+.collapseIcon {
+  margin-left: auto;
+  color: var(--gn-text-muted);
+  font-weight: 400;
+  cursor: pointer;
 }
 
 .nav {
   flex: 1;
   overflow-y: auto;
   scrollbar-width: none;
-  padding: 0 1.5rem;
+  padding: 0 1rem;
 }
 .nav::-webkit-scrollbar {
   display: none;
 }
 
+.categoryBlock {
+  margin-bottom: 1.5rem;
+}
+
 .sectionTitle {
-  font-size: 0.7rem;
+  font-size: 0.65rem;
   color: var(--gn-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  font-weight: 700;
-  margin-bottom: 1rem;
-  padding-left: 0.5rem;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+  padding: 0 0.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.chevron {
+  cursor: pointer;
+  opacity: 0.5;
 }
 
 .menu {
@@ -81,22 +87,22 @@
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  padding: 0.75rem 1rem;
-  border-radius: var(--border-radius-md);
-  color: var(--gn-text-secondary);
+  padding: 0.6rem 0.75rem;
+  border-radius: var(--border-radius-sm);
+  color: var(--gn-text-muted);
   font-weight: 500;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   transition: all 0.2s ease;
   overflow: hidden;
 }
 
 .link:hover {
   background: var(--gn-surface-hover);
-  color: var(--gn-white);
+  color: var(--gn-text-primary);
 }
 
 .icon {
-  font-size: 1.2rem;
+  font-size: 1.1rem;
   opacity: 0.8;
   transition: transform 0.2s ease;
 }
@@ -107,74 +113,76 @@
 }
 
 .active {
-  background: rgba(255, 255, 255, 0.05);
-  color: var(--gn-primary);
+  background: linear-gradient(90deg, #18242e 0%, transparent 100%);
+  color: var(--gn-white);
   font-weight: 600;
+  position: relative;
 }
 
-.activeIndicator {
+.active::before {
+  content: "";
   position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
+  left: -2px;
+  top: 10%;
+  bottom: 10%;
   width: 3px;
   background: var(--gn-primary);
   border-radius: 0 4px 4px 0;
 }
 
-.statusCard {
-  margin: 1.5rem;
-  padding: 1rem;
-  background: rgba(0, 0, 0, 0.2);
-  border: 1px solid var(--gn-surface-border-strong);
+.upgradeCard {
+  margin: 1rem 0;
+  padding: 1.25rem;
+  background: linear-gradient(135deg, rgba(45, 212, 191, 0.08) 0%, rgba(0, 0, 0, 0.2) 100%);
+  border: 1px solid #1c1d22;
   border-radius: var(--border-radius-md);
 }
 
-.statusHeader {
+.upgradeHeader {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  font-size: 0.75rem;
+  font-size: 0.85rem;
   font-weight: 600;
   color: var(--gn-white);
-  margin-bottom: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.pulsingDot {
-  width: 8px;
-  height: 8px;
-  background: var(--gn-success);
-  border-radius: 50%;
-  box-shadow: 0 0 8px var(--gn-success);
-  animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
-  0% { opacity: 1; box-shadow: 0 0 8px var(--gn-success); }
-  50% { opacity: 0.5; box-shadow: 0 0 2px var(--gn-success); }
-  100% { opacity: 1; box-shadow: 0 0 8px var(--gn-success); }
-}
-
-.statusItem {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 0.8rem;
-  color: var(--gn-text-secondary);
   margin-bottom: 0.5rem;
 }
-.statusItem:last-child {
-  margin-bottom: 0;
+
+.upgradeText {
+  font-size: 0.7rem;
+  color: var(--gn-text-secondary);
+  line-height: 1.5;
+  margin: 0 0 1rem 0;
 }
 
-.statusValueOk {
-  color: var(--gn-success);
-  font-weight: 600;
+.upgradeActions {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
 }
 
-.statusValueWarning {
-  color: var(--gn-warning);
+.upgradeBtn {
+  background: var(--gn-primary);
+  color: #000;
+  border: none;
+  padding: 0.4rem 0.8rem;
+  border-radius: 999px;
   font-weight: 600;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.upgradeBtn:hover {
+  opacity: 0.9;
+}
+
+.learnMore {
+  color: var(--gn-text-secondary);
+  font-size: 0.75rem;
+  text-decoration: none;
+}
+
+.learnMore:hover {
+  color: var(--gn-white);
 }
