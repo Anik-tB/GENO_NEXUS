@@ -29,7 +29,7 @@ export default function ProcessingPage() {
       const step = STEPS[currentStepIndex];
       
       // Animate progress bar for the current step
-      let start = null;
+      let start: number | null = null;
       const animateProgress = (timestamp: number) => {
         if (!start) start = timestamp;
         const passed = timestamp - start;
