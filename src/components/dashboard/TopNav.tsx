@@ -9,32 +9,37 @@ interface TopNavProps {
 }
 
 export function TopNav({ userInitials, userName }: TopNavProps) {
+  // Use a mock datetime like the reference image
+  const timeString = "12:37 PM, Wed";
+
   return (
     <header className={styles.header}>
-      <div className={styles.searchContainer}>
-        <span className={styles.searchIcon}>🔍</span>
-        <input 
-          type="text" 
-          placeholder="Search genes, mutations, or patients..." 
-          className={styles.searchInput}
-        />
-        <div className={styles.slashKey}>/</div>
-      </div>
+      <div className={styles.spacer} /> {/* Pushes content to the right */}
 
       <div className={styles.tools}>
-        <button className={styles.iconButton} title="Notifications">
-          <span className={styles.bell}>🔔</span>
-          <span className={styles.badge}>3</span>
-        </button>
+        <div className={styles.infoPill}>
+          <span className={styles.pillIcon}>⏱️</span>
+          <span>Reports</span>
+          <div className={styles.pillDivider} />
+          <span className={styles.pillIcon}>📅</span>
+          <span>{timeString}</span>
+        </div>
 
-        <div className={styles.divider} />
+        <div className={styles.searchContainer}>
+          <span className={styles.searchIcon}>🔍</span>
+          <input 
+            type="text" 
+            placeholder="Search for any health metrics..." 
+            className={styles.searchInput}
+          />
+        </div>
+
+        <button className={styles.iconButton} title="Messages">
+          <span>📨</span>
+        </button>
 
         <div className={styles.profile}>
           <div className={styles.avatar}>{userInitials}</div>
-          <div className={styles.userInfo}>
-            <span className={styles.userName}>{userName}</span>
-            <span className={styles.userRole}>Lead Geneticist</span>
-          </div>
         </div>
       </div>
     </header>
