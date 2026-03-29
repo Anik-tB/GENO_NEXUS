@@ -6,8 +6,6 @@
   display: flex;
   flex-direction: column;
   background: var(--gn-surface);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
   border-right: 1px solid var(--gn-surface-border);
   padding: 1.5rem;
   z-index: 50;
@@ -30,17 +28,7 @@
 }
 
 .logoGlow {
-  position: absolute;
-  left: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 32px;
-  height: 32px;
-  background: var(--gn-primary);
-  border-radius: 50%;
-  filter: blur(16px);
-  opacity: 0.5;
-  z-index: 1;
+  display: none;
 }
 
 .brand h2 {
@@ -118,8 +106,8 @@
 }
 
 .active {
-  background: linear-gradient(90deg, rgba(0, 229, 255, 0.1) 0%, transparent 100%);
-  color: var(--gn-white);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--gn-primary);
   font-weight: 600;
 }
 
@@ -130,7 +118,6 @@
   bottom: 0;
   width: 3px;
   background: var(--gn-primary);
-  box-shadow: 0 0 10px var(--gn-primary);
   border-radius: 0 4px 4px 0;
 }
 
