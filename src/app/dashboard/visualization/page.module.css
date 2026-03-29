@@ -1,0 +1,256 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  max-width: var(--max-width-app);
+  height: calc(100vh - 120px);
+  margin: 0 auto;
+  animation: fadeIn 0.4s ease forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+
+.title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--gn-white);
+  margin: 0 0 0.25rem 0;
+  letter-spacing: -0.02em;
+}
+
+.subtitle {
+  color: var(--gn-text-secondary);
+  font-size: 1rem;
+  margin: 0;
+}
+
+.viewToggles {
+  display: flex;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 0.3rem;
+  border-radius: 999px;
+  border: 1px solid var(--gn-surface-border);
+}
+
+.toggleBtn {
+  background: transparent;
+  color: var(--gn-text-secondary);
+  border: none;
+  padding: 0.6rem 1.25rem;
+  border-radius: 999px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.toggleActive {
+  background: var(--gn-surface);
+  color: var(--gn-primary);
+  box-shadow: 0 0 10px rgba(0, 229, 255, 0.1);
+  border: 1px solid var(--gn-primary-glow);
+}
+
+.viewerWrapper {
+  flex: 1;
+  display: flex;
+  gap: 1.5rem;
+  min-height: 0;
+}
+
+/* Toolbox */
+.toolbox {
+  width: 260px;
+  background: var(--gn-surface);
+  border: 1px solid var(--gn-surface-border);
+  border-radius: var(--border-radius-lg);
+  padding: 1.5rem;
+  box-shadow: var(--shadow-soft);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.toolbox h3 {
+  font-size: 0.8rem;
+  color: var(--gn-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin: 0 0 1rem 0;
+}
+
+.mt4 {
+  margin-top: 2rem !important;
+}
+
+.tools {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.toolBtn {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--gn-surface-border);
+  color: var(--gn-text-primary);
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+}
+
+.toolBtn:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: var(--gn-primary-glow);
+}
+
+.toolBtn span {
+  font-size: 1.1rem;
+}
+
+.stats {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.statItem {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.statLabel {
+  font-size: 0.75rem;
+  color: var(--gn-text-secondary);
+}
+
+.statValue {
+  font-size: 0.95rem;
+  color: var(--gn-white);
+  font-weight: 600;
+}
+
+/* Render Area */
+.renderArea {
+  flex: 1;
+  background: linear-gradient(135deg, rgba(0, 0, 0, 0.6) 0%, rgba(10, 17, 34, 0.9) 100%);
+  border: 1px solid var(--gn-primary-glow);
+  border-radius: var(--border-radius-lg);
+  position: relative;
+  overflow: hidden;
+  box-shadow: inset 0 0 50px rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.renderOverlay {
+  position: absolute;
+  top: 1.5rem;
+  left: 1.5rem;
+  z-index: 10;
+}
+
+.overlayBadge {
+  background: rgba(0, 229, 255, 0.1);
+  color: var(--gn-primary);
+  border: 1px solid rgba(0, 229, 255, 0.2);
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  backdrop-filter: blur(4px);
+}
+
+.helixContainer {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0; left: 0;
+}
+
+/* Chromosome Placeholder */
+.chromosomePlaceholder {
+  width: 100%;
+  height: 100%;
+  padding: 3rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.chromosomes {
+  display: flex;
+  align-items: flex-end;
+  gap: 1.25rem;
+  height: 60%;
+  width: 100%;
+  justify-content: center;
+}
+
+.chromosomePair {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  height: 100%;
+  justify-content: flex-end;
+}
+
+.chromatid {
+  width: 14px;
+  background: linear-gradient(180deg, var(--gn-blue) 0%, var(--gn-accent) 100%);
+  border-radius: 999px;
+  position: relative;
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+  transition: transform 0.2s ease, filter 0.2s ease;
+  cursor: pointer;
+}
+
+.chromatid:hover {
+  transform: scaleY(1.05);
+  filter: brightness(1.2);
+  box-shadow: 0 0 20px rgba(180, 0, 255, 0.8);
+}
+
+.chromosomePair span {
+  font-size: 0.75rem;
+  color: var(--gn-text-muted);
+  font-weight: 600;
+}
+
+.mutationPin {
+  position: absolute;
+  top: 30%;
+  left: -4px;
+  width: 22px;
+  height: 4px;
+  background: var(--gn-danger);
+  border-radius: 2px;
+  box-shadow: 0 0 10px var(--gn-danger);
+  animation: pulsePin 1.5s infinite alternate;
+}
+
+@keyframes pulsePin {
+  from { opacity: 0.5; box-shadow: 0 0 5px var(--gn-danger); }
+  to { opacity: 1; box-shadow: 0 0 15px var(--gn-danger); }
+}
