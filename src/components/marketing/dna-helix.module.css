@@ -15,6 +15,10 @@
   perspective: 1200px;
 }
 
+.dashboardFrame {
+  min-height: 580px;
+}
+
 .helixFrame::before {
   content: "";
   position: absolute;
@@ -228,6 +232,10 @@
     inset 0 1px 1px rgba(255, 255, 255, 0.08);
   animation: floatPanel 7s ease-in-out infinite;
   overflow: hidden;
+}
+
+.dashboardFrame .panel {
+  width: 280px;
 }
 
 .panel::before {
@@ -493,6 +501,10 @@
     min-height: 520px;
   }
 
+  .dashboardFrame {
+    min-height: 480px;
+  }
+
   .platformChrome {
     flex-direction: column;
     align-items: flex-start;
@@ -525,6 +537,10 @@
   .helixFrame {
     min-height: 420px;
     border-radius: 28px;
+  }
+
+  .dashboardFrame {
+    min-height: 380px;
   }
 
   .platformChrome {

@@ -186,9 +186,17 @@ function DnaCanvas() {
   return <canvas ref={canvasRef} className={styles.helixCanvas} />;
 }
 
-export function DnaHelix() {
+type DnaHelixProps = {
+  variant?: "default" | "dashboard";
+};
+
+export function DnaHelix({ variant = "default" }: DnaHelixProps) {
   return (
-    <div className={styles.helixFrame}>
+    <div
+      className={`${styles.helixFrame} ${
+        variant === "dashboard" ? styles.dashboardFrame : ""
+      }`}
+    >
       <div className={styles.glowOrb1} />
       <div className={styles.glowOrb2} />
       <div className={styles.gridOverlay} />

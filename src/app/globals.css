@@ -1,57 +1,64 @@
-@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
 
 :root {
-  --font-body: "Manrope", sans-serif;
-  --font-display: "Space Grotesk", sans-serif;
+  --font-body: "Inter", sans-serif;
+  --font-display: "Inter", sans-serif;
 
-  --gn-bg: #edf4f1;
-  --gn-bg-soft: #f8fbfa;
-  --gn-paper: rgba(255, 255, 255, 0.88);
-  --gn-paper-strong: rgba(255, 255, 255, 0.96);
-  --gn-surface: rgba(255, 255, 255, 0.76);
-  --gn-surface-hover: rgba(255, 255, 255, 0.92);
-  --gn-surface-border: rgba(8, 23, 37, 0.08);
-  --gn-surface-border-strong: rgba(8, 23, 37, 0.14);
+  --gn-bg: #030713;
+  --gn-bg-soft: #0a1122;
+  --gn-paper: rgba(10, 17, 34, 0.7);
+  --gn-paper-strong: rgba(14, 24, 46, 0.85);
+  --gn-surface: rgba(14, 24, 46, 0.5);
+  --gn-surface-hover: rgba(22, 35, 62, 0.7);
+  --gn-surface-border: rgba(148, 163, 184, 0.1);
+  --gn-surface-border-strong: rgba(148, 163, 184, 0.25);
 
-  --gn-primary: #0b8f81;
-  --gn-primary-strong: #066f63;
-  --gn-primary-glow: rgba(11, 143, 129, 0.18);
-  --gn-blue: #226aa8;
-  --gn-blue-pale: #e8f2ff;
-  --gn-teal: #16a596;
-  --gn-teal-pale: #dff6f1;
-  --gn-amber: #b9832f;
-  --gn-amber-pale: #fff3dd;
-  --gn-navy: #081725;
-  --gn-navy-strong: #05111c;
-  --gn-navy-soft: #163149;
+  --gn-primary: #00e5ff; /* neon blue */
+  --gn-primary-strong: #00b3cc;
+  --gn-primary-glow: rgba(0, 229, 255, 0.25);
+  --gn-success: #00ffa3; /* neon green */
+  --gn-danger: #ff0055; /* neon red */
+  --gn-warning: #ffcc00;
+  --gn-accent: #b400ff; /* neon purple */
+
+  --gn-blue: #3b82f6;
+  --gn-blue-pale: rgba(59, 130, 246, 0.15);
+  --gn-teal: #14b8a6;
+  --gn-teal-pale: rgba(20, 184, 166, 0.15);
+  --gn-amber: #f59e0b;
+  --gn-amber-pale: rgba(245, 158, 11, 0.15);
+  
+  --gn-navy: #030713;
+  --gn-navy-strong: #000000;
+  --gn-navy-soft: #0a1122;
+  
   --gn-white: #ffffff;
-  --gn-gray-700: #52677a;
-  --gn-gray-600: #6d8090;
-  --gn-gray-500: #8ea0ae;
+  --gn-gray-700: #94a3b8;
+  --gn-gray-600: #64748b;
+  --gn-gray-500: #475569;
 
-  --gn-text-primary: var(--gn-navy);
-  --gn-text-secondary: #4b6275;
-  --gn-text-muted: #7f91a1;
+  --gn-text-primary: #f8fafc;
+  --gn-text-secondary: #cbd5e1;
+  --gn-text-muted: #94a3b8;
 
-  --risk-high: #ba4d3e;
-  --risk-high-bg: rgba(186, 77, 62, 0.1);
-  --risk-high-border: rgba(186, 77, 62, 0.24);
-  --risk-moderate: #c58a2f;
-  --risk-moderate-bg: rgba(197, 138, 47, 0.12);
-  --risk-moderate-border: rgba(197, 138, 47, 0.24);
-  --risk-low: #11806f;
-  --risk-low-bg: rgba(17, 128, 111, 0.1);
-  --risk-low-border: rgba(17, 128, 111, 0.2);
+  --risk-high: var(--gn-danger);
+  --risk-high-bg: rgba(255, 0, 85, 0.15);
+  --risk-high-border: rgba(255, 0, 85, 0.3);
+  --risk-moderate: var(--gn-warning);
+  --risk-moderate-bg: rgba(255, 204, 0, 0.15);
+  --risk-moderate-border: rgba(255, 204, 0, 0.3);
+  --risk-low: var(--gn-success);
+  --risk-low-bg: rgba(0, 255, 163, 0.15);
+  --risk-low-border: rgba(0, 255, 163, 0.3);
 
-  --max-width-app: 1240px;
-  --shadow-soft: 0 18px 40px rgba(8, 23, 37, 0.06);
-  --shadow-card: 0 24px 80px rgba(8, 23, 37, 0.09);
-  --shadow-focus: 0 0 0 4px rgba(11, 143, 129, 0.12);
+  --max-width-app: 1600px;
+  --shadow-soft: 0 10px 30px rgba(0, 0, 0, 0.3);
+  --shadow-card: 0 24px 60px rgba(0, 229, 255, 0.05);
+  --shadow-focus: 0 0 0 4px rgba(0, 229, 255, 0.15);
   --border-radius-xl: 32px;
   --border-radius-lg: 24px;
-  --border-radius-md: 18px;
-  --border-radius-sm: 12px;
+  --border-radius-md: 16px;
+  --border-radius-sm: 8px;
 }
 
 * {
@@ -66,9 +73,10 @@ body {
   margin: 0;
   min-height: 100vh;
   background:
-    radial-gradient(circle at top left, rgba(17, 128, 111, 0.12) 0%, transparent 28%),
-    radial-gradient(circle at top right, rgba(34, 106, 168, 0.12) 0%, transparent 30%),
-    linear-gradient(180deg, #f8fbfa 0%, #edf4f1 46%, #f8fbfa 100%);
+    radial-gradient(circle at top left, rgba(0, 229, 255, 0.1) 0%, transparent 40%),
+    radial-gradient(circle at top right, rgba(180, 0, 255, 0.1) 0%, transparent 40%),
+    radial-gradient(circle at bottom right, rgba(0, 255, 163, 0.08) 0%, transparent 50%),
+    var(--gn-bg);
   color: var(--gn-text-primary);
   font-family: var(--font-body);
   text-rendering: optimizeLegibility;
