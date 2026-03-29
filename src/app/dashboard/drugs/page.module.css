@@ -1,0 +1,248 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  max-width: var(--max-width-app);
+  margin: 0 auto;
+  animation: fadeIn 0.4s ease forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+}
+
+.title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--gn-white);
+  margin: 0 0 0.5rem 0;
+  letter-spacing: -0.02em;
+}
+
+.subtitle {
+  color: var(--gn-text-secondary);
+  font-size: 1.05rem;
+  margin: 0;
+}
+
+.columns {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 2rem;
+  align-items: start;
+}
+
+.column {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.columnHeader {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.25rem 1.5rem;
+  border-radius: var(--border-radius-lg);
+  background: var(--gn-surface);
+  border: 1px solid transparent;
+}
+
+.headerSuccess {
+  border-color: rgba(0, 255, 163, 0.3);
+  box-shadow: 0 4px 20px rgba(0, 255, 163, 0.05);
+  background: linear-gradient(135deg, rgba(0, 255, 163, 0.05) 0%, rgba(10, 17, 34, 0.8) 100%);
+}
+
+.headerSuccess .icon {
+  background: rgba(0, 255, 163, 0.2);
+  color: var(--gn-success);
+}
+
+.headerDanger {
+  border-color: rgba(255, 0, 85, 0.3);
+  box-shadow: 0 4px 20px rgba(255, 0, 85, 0.05);
+  background: linear-gradient(135deg, rgba(255, 0, 85, 0.05) 0%, rgba(10, 17, 34, 0.8) 100%);
+}
+
+.headerDanger .icon {
+  background: rgba(255, 0, 85, 0.2);
+  color: var(--gn-danger);
+}
+
+.icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.columnHeader h2 {
+  font-size: 1.25rem;
+  color: var(--gn-white);
+  margin: 0;
+  flex: 1;
+}
+
+.count {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 0.3rem 0.8rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--gn-text-secondary);
+}
+
+.drugList {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.drugCard {
+  background: var(--gn-surface);
+  border-left: 4px solid transparent;
+  border-top: 1px solid var(--gn-surface-border);
+  border-right: 1px solid var(--gn-surface-border);
+  border-bottom: 1px solid var(--gn-surface-border);
+  border-radius: var(--border-radius-md);
+  padding: 1.5rem;
+  box-shadow: var(--shadow-soft);
+  transition: transform 0.2s ease;
+}
+
+.drugCard:hover {
+  transform: translateX(4px);
+}
+
+.cardSuccess {
+  border-left-color: var(--gn-success);
+}
+
+.cardSuccess:hover {
+  box-shadow: 0 8px 24px rgba(0, 255, 163, 0.1);
+}
+
+.cardDanger {
+  border-left-color: var(--gn-danger);
+}
+
+.cardDanger:hover {
+  box-shadow: 0 8px 24px rgba(255, 0, 85, 0.1);
+}
+
+.cardTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+
+.drugName {
+  font-size: 1.2rem;
+  color: var(--gn-white);
+  margin: 0;
+}
+
+.scoreBadge {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  background: rgba(0, 255, 163, 0.1);
+  padding: 0.4rem 0.8rem;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 255, 163, 0.3);
+}
+
+.scoreValue {
+  color: var(--gn-success);
+  font-size: 1.1rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.scoreLabel {
+  font-size: 0.65rem;
+  color: var(--gn-text-secondary);
+  text-transform: uppercase;
+  margin-top: 0.2rem;
+}
+
+.severityIndicator {
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.4rem 0.8rem;
+  border-radius: 8px;
+  letter-spacing: 0.05em;
+}
+
+.sev_high {
+  background: var(--risk-high-bg);
+  color: var(--gn-danger);
+  border: 1px solid var(--risk-high-border);
+}
+
+.sev_medium {
+  background: var(--risk-moderate-bg);
+  color: var(--gn-warning);
+  border: 1px solid var(--risk-moderate-border);
+}
+
+.drugNote {
+  color: var(--gn-text-secondary);
+  font-size: 0.95rem;
+  line-height: 1.5;
+  margin: 0 0 1.25rem 0;
+}
+
+.pathwayTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.tag {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--gn-surface-border-strong);
+  color: var(--gn-text-muted);
+  font-size: 0.75rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 4px;
+}
+
+.failureScore {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.failureScore span {
+  font-size: 0.8rem;
+  color: var(--gn-danger);
+  font-weight: 600;
+  text-align: right;
+}
+
+.progressTrack {
+  height: 6px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.progressBar {
+  height: 100%;
+  background: var(--gn-danger);
+  border-radius: 999px;
+  box-shadow: 0 0 10px var(--gn-danger);
+}
