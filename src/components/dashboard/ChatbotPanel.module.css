@@ -1,0 +1,219 @@
+.toggleButton {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--gn-primary), var(--gn-accent));
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 100;
+  box-shadow: 0 8px 32px rgba(0, 229, 255, 0.4);
+  transition: transform 0.2s ease;
+}
+
+.toggleButton:hover {
+  transform: scale(1.05);
+}
+
+.botIcon {
+  font-size: 1.8rem;
+  z-index: 2;
+}
+
+.pulseRing {
+  position: absolute;
+  top: -2px; left: -2px; right: -2px; bottom: -2px;
+  border-radius: 50%;
+  border: 2px solid var(--gn-primary);
+  animation: radarPulse 2s infinite;
+  z-index: 1;
+}
+
+@keyframes radarPulse {
+  0% { transform: scale(1); opacity: 1; }
+  100% { transform: scale(1.5); opacity: 0; }
+}
+
+.panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 360px;
+  height: 100vh;
+  background: rgba(10, 17, 34, 0.85);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-left: 1px solid var(--gn-primary-glow);
+  display: flex;
+  flex-direction: column;
+  z-index: 100;
+  box-shadow: -10px 0 40px rgba(0, 0, 0, 0.5);
+  animation: slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes slideIn {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+.header {
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1.5rem;
+  border-bottom: 1px solid var(--gn-surface-border);
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.headerInfo {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.statusDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--gn-success);
+  box-shadow: 0 0 8px var(--gn-success);
+}
+
+.headerInfo strong {
+  color: var(--gn-white);
+  font-size: 1.1rem;
+  letter-spacing: 0.02em;
+}
+
+.closeButton {
+  background: transparent;
+  border: none;
+  color: var(--gn-text-muted);
+  font-size: 2rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.closeButton:hover {
+  color: var(--gn-danger);
+}
+
+.messageList {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.messageList::-webkit-scrollbar {
+  width: 6px;
+}
+.messageList::-webkit-scrollbar-thumb {
+  background: var(--gn-surface-border-strong);
+  border-radius: 999px;
+}
+
+.messageWrapper {
+  display: flex;
+  flex-direction: column;
+  max-width: 85%;
+}
+
+.aiMsg {
+  align-self: flex-start;
+}
+
+.userMsg {
+  align-self: flex-end;
+  align-items: flex-end;
+}
+
+.messageLabel {
+  font-size: 0.7rem;
+  color: var(--gn-text-muted);
+  margin-bottom: 0.3rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+}
+
+.bubble {
+  padding: 1rem;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.aiMsg .bubble {
+  background: rgba(0, 229, 255, 0.1);
+  border: 1px solid var(--gn-primary-glow);
+  color: var(--gn-white);
+  border-bottom-left-radius: 2px;
+}
+
+.userMsg .bubble {
+  background: var(--gn-surface-hover);
+  border: 1px solid var(--gn-surface-border-strong);
+  color: var(--gn-text-primary);
+  border-bottom-right-radius: 2px;
+}
+
+.inputArea {
+  padding: 1.5rem;
+  background: rgba(0, 0, 0, 0.3);
+  border-top: 1px solid var(--gn-surface-border);
+  display: flex;
+  gap: 0.75rem;
+}
+
+.input {
+  flex: 1;
+  background: var(--gn-surface);
+  border: 1px solid var(--gn-surface-border);
+  color: var(--gn-white);
+  padding: 0.8rem 1rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--gn-accent);
+  box-shadow: 0 0 0 2px rgba(180, 0, 255, 0.2);
+}
+
+.sendButton {
+  background: var(--gn-primary);
+  color: var(--gn-navy-strong);
+  border: none;
+  border-radius: 8px;
+  width: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.sendButton:disabled {
+  background: var(--gn-surface-hover);
+  color: var(--gn-text-muted);
+  cursor: not-allowed;
+}
+
+.sendButton:not(:disabled):hover {
+  background: var(--gn-primary-strong);
+  box-shadow: 0 0 12px var(--gn-primary);
+}
