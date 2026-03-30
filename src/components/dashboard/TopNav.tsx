@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 
 import styles from "./TopNav.module.css";
 import Image from "next/image";
@@ -11,8 +12,21 @@ interface TopNavProps {
 }
 
 export function TopNav({ userInitials, userName }: TopNavProps) {
+  const router = useRouter();
   const [theme, setTheme] = useState("dark");
   const [mounted, setMounted] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const profileRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
+        setIsProfileOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   useEffect(() => {
     setMounted(true);
@@ -34,6 +48,22 @@ export function TopNav({ userInitials, userName }: TopNavProps) {
     } else {
       document.documentElement.removeAttribute("data-theme");
     }
+  };
+
+  const handleNavigation = (path: string) => {
+    setIsProfileOpen(false);
+    router.push(path);
+  };
+
+  const handleLogout = async () => {
+    setIsProfileOpen(false);
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+    } catch (e) {
+      console.error('Logout error:', e);
+    }
+    // Regardless of API success, perform navigation redirect
+    router.push('/login');
   };
 
   // Use a mock datetime like the reference image
@@ -95,8 +125,54 @@ export function TopNav({ userInitials, userName }: TopNavProps) {
           </svg>
         </button>
 
-        <div className={styles.profile}>
-          <div className={styles.avatar}>{userInitials}</div>
+        <div className={styles.profileContainer} ref={profileRef}>
+          <button 
+            className={styles.profile} 
+            onClick={() => setIsProfileOpen(!isProfileOpen)}
+            aria-label="User Menu"
+            title="Profile & Settings"
+          >
+            <div className={styles.avatar}>
+              {userInitials}
+            </div>
+          </button>
+
+          {isProfileOpen && (
+            <div className={styles.profileDropdown}>
+              <div className={styles.profileHeader}>
+                <p className={styles.profileName}>{userName}</p>
+                <p className={styles.profileEmail}>user@genonexus.com</p>
+              </div>
+              <div className={styles.dropdownDivider} />
+              
+              <button 
+                className={styles.dropdownItem} 
+                onClick={() => handleNavigation('/dashboard/profile')}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                Profile
+              </button>
+
+              <button 
+                className={styles.dropdownItem} 
+                onClick={() => handleNavigation('/dashboard/settings')}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                Settings
+              </button>
+              
+              <div className={styles.dropdownDivider} />
+
+              <button 
+                className={styles.dropdownItem} 
+                style={{ color: 'var(--gn-danger)' }}
+                onClick={handleLogout}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                Logout
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </header>
