@@ -59,6 +59,79 @@
   --border-radius-lg: 20px;
   --border-radius-md: 12px;
   --border-radius-sm: 8px;
+
+  --gn-inverse-bg: #ffffff;
+  --gn-inverse-text: #000000;
+  --gn-border-light: rgba(255, 255, 255, 0.05); /* Outer glass rim */
+  --gn-border-light-strong: rgba(255, 255, 255, 0.1); /* Inner glass rim */
+  --gn-bg-glass: rgba(24, 24, 27, 0.5); /* Glass surface */
+  --gn-bg-glass-hover: rgba(24, 24, 27, 0.6);
+  --gn-bg-glass-light: rgba(255, 255, 255, 0.04); /* Subtle highlights */
+  --gn-shadow-glass: 0 8px 32px rgba(0, 0, 0, 0.3);
+  --gn-shadow-glass-hover: 0 12px 40px rgba(0, 0, 0, 0.4);
+}
+
+[data-theme='light'] {
+  --gn-bg: #f8fafc;
+  --gn-bg-soft: #f1f5f9;
+  --gn-paper: #ffffff;
+  --gn-paper-strong: #e2e8f0;
+  --gn-surface: #ffffff;
+  --gn-surface-hover: #f1f5f9;
+  --gn-surface-border: #e2e8f0;
+  --gn-surface-border-strong: #cbd5e1;
+
+  --gn-primary: #0f766e;
+  --gn-primary-strong: #115e59;
+  --gn-primary-glow: rgba(15, 118, 110, 0.1);
+  --gn-success: #059669;
+  --gn-danger: #e11d48;
+  --gn-warning: #d97706;
+  --gn-accent: #7e22ce;
+
+  --gn-blue: #2563eb;
+  --gn-blue-pale: rgba(37, 99, 235, 0.1);
+  --gn-teal: #0f766e;
+  --gn-teal-pale: rgba(15, 118, 110, 0.1);
+  --gn-amber: #d97706;
+  --gn-amber-pale: rgba(217, 119, 6, 0.1);
+
+  --gn-navy: #ffffff;
+  --gn-navy-strong: #f8fafc;
+  --gn-navy-soft: #ffffff;
+
+  --gn-white: #0f172a; 
+  --gn-gray-700: #cbd5e1;
+  --gn-gray-600: #94a3b8;
+  --gn-gray-500: #64748b;
+
+  --gn-text-primary: #0f172a;
+  --gn-text-secondary: #475569;
+  --gn-text-muted: #94a3b8;
+
+  --risk-high: var(--gn-danger);
+  --risk-high-bg: rgba(225, 29, 72, 0.08);
+  --risk-high-border: rgba(225, 29, 72, 0.2);
+  --risk-moderate: var(--gn-warning);
+  --risk-moderate-bg: rgba(217, 119, 6, 0.08);
+  --risk-moderate-border: rgba(217, 119, 6, 0.2);
+  --risk-low: var(--gn-success);
+  --risk-low-bg: rgba(5, 150, 105, 0.08);
+  --risk-low-border: rgba(5, 150, 105, 0.2);
+
+  --shadow-soft: 0 4px 20px rgba(0, 0, 0, 0.05);
+  --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.06);
+  --shadow-focus: 0 0 0 4px rgba(15, 118, 110, 0.15);
+
+  --gn-inverse-bg: #0f172a;
+  --gn-inverse-text: #ffffff;
+  --gn-border-light: rgba(0, 0, 0, 0.06);
+  --gn-border-light-strong: rgba(0, 0, 0, 0.12);
+  --gn-bg-glass: rgba(255, 255, 255, 0.85);
+  --gn-bg-glass-hover: #ffffff;
+  --gn-bg-glass-light: rgba(0, 0, 0, 0.03);
+  --gn-shadow-glass: 0 8px 32px rgba(0, 0, 0, 0.05);
+  --gn-shadow-glass-hover: 0 12px 40px rgba(0, 0, 0, 0.08);
 }
 
 * {
