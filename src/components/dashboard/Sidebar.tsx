@@ -9,9 +9,9 @@ import Image from "next/image";
 const Icons = {
   Overview: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>,
   Upload: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>,
-  Analysis: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4.5 3h15"></path><path d="M10 14h4"></path><path d="M15.2 22H8.8a1.5 1.5 0 0 1-1.5-1.5V9l-3-4.5V3h15.4v1.5L16.7 9v11.5a1.5 1.5 0 0 1-1.5 1.5z"></path></svg>,
+  Analysis: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 3v8l-4 9h14l-4-9V3"></path><path d="M9 3h6"></path><path d="M8 14h8"></path></svg>,
   Reports: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>,
-  Predictions: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12h4l3-9 5 18 3-9h5"></path></svg>,
+  Predictions: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg>,
   Drugs: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.5 20.5 4 14l6.5-6.5a4.95 4.95 0 1 1 7 7z"></path><path d="M10.5 14 14 10.5"></path></svg>,
   Outbreak: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>,
   Visualization: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path><path d="M22 12A10 10 0 0 0 12 2v10z"></path></svg>,
@@ -44,7 +44,6 @@ const MENU_CATEGORIES = [
     title: "TOOLS",
     items: [
       { label: "Collaboration", href: "/dashboard/collaboration", icon: Icons.Collaboration },
-      { label: "Settings", href: "/dashboard/settings", icon: Icons.Settings },
     ]
   }
 ];
@@ -118,7 +117,7 @@ export function Sidebar() {
 
         <div className={styles.upgradeCard}>
           <div className={styles.upgradeHeader}>
-            <span className={styles.upgradeIcon}>💎</span> Upgrade to Pro
+            <span className={styles.upgradeIcon}>💎</span> <span className={styles.upgradeTitleText}>Upgrade to Pro</span>
           </div>
           <p className={styles.upgradeText}>Get insights on coverage and eligibility with AI. Simplify decisions.</p>
           <div className={styles.upgradeActions}>
