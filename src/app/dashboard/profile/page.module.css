@@ -86,25 +86,49 @@
   margin: 0;
 }
 
-/* Info Box */
-.infoBox {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.75rem;
-  background: var(--gn-bg-glass-light);
-  border: 1px dashed var(--gn-border-light-strong);
-  padding: 1rem;
-  border-radius: var(--border-radius-md);
-  color: var(--gn-text-secondary);
-  font-size: 0.9rem;
-  line-height: 1.5;
+.divider {
+  height: 1px;
+  background: var(--gn-border-light-strong);
+  margin: 0.5rem 0;
 }
 
-.infoBox p {
-  margin: 0;
+/* Avatar Section */
+.avatarSection {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.avatarLarge {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--gn-primary) 0%, var(--gn-blue) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  font-weight: 700;
+  color: #fff;
+  box-shadow: var(--gn-shadow-glass);
+}
+
+.avatarActions {
+  display: flex;
+  gap: 0.75rem;
 }
 
 /* Forms */
+.formRow {
+  display: flex;
+  gap: 1.5rem;
+}
+
+.formRow > * {
+  flex: 1;
+}
+
 .formGroup {
   display: flex;
   flex-direction: column;
@@ -136,6 +160,7 @@
   box-shadow: var(--shadow-focus);
 }
 
+/* Buttons */
 .primaryBtn {
   background: var(--gn-primary);
   color: #fff;
@@ -150,91 +175,13 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  align-self: flex-start;
 }
 
 .primaryBtn:hover {
   transform: translateY(-2px);
   background: var(--gn-primary-strong);
   box-shadow: 0 6px 20px var(--gn-primary-glow);
-}
-
-.settingDesc {
-  color: var(--gn-text-secondary);
-  font-size: 0.95rem;
-  margin: 0;
-  line-height: 1.5;
-}
-
-/* Toggles */
-.toggleRow {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 2rem;
-}
-
-.toggleLabel {
-  display: block;
-  color: var(--gn-text-primary);
-  font-size: 1rem;
-  margin-bottom: 0.25rem;
-}
-
-.divider {
-  height: 1px;
-  background: var(--gn-border-light-strong);
-  margin: 0.5rem 0;
-}
-
-/* Toggle Switch UI */
-.switch {
-  position: relative;
-  display: inline-block;
-  width: 50px;
-  height: 28px;
-  flex-shrink: 0;
-}
-
-.switch input { 
-  opacity: 0;
-  width: 0;
-  height: 0;
-}
-
-.slider {
-  position: absolute;
-  cursor: pointer;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: var(--gn-bg-glass-light);
-  transition: .4s;
-  border-radius: 34px;
-  border: 1px solid var(--gn-border-light-strong);
-}
-
-.slider:before {
-  position: absolute;
-  content: "";
-  height: 20px;
-  width: 20px;
-  left: 3px;
-  bottom: 3px;
-  background-color: var(--gn-text-muted);
-  transition: .3s cubic-bezier(0.16, 1, 0.3, 1);
-  border-radius: 50%;
-}
-
-input:checked + .slider {
-  background-color: var(--gn-primary-glow);
-  border-color: var(--gn-primary);
-}
-
-input:checked + .slider:before {
-  transform: translateX(22px);
-  background-color: var(--gn-primary);
-  box-shadow: 0 0 10px var(--gn-primary-glow);
 }
 
 .dangerBtn {
@@ -247,9 +194,49 @@ input:checked + .slider:before {
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
-  margin-top: 0.5rem;
+  align-self: flex-start;
 }
 
 .dangerBtn:hover {
   background: var(--risk-high-bg);
+}
+
+/* Activity List */
+.activityList {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.activityItem {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.activityDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--gn-primary);
+  margin-top: 0.4rem;
+  box-shadow: 0 0 10px var(--gn-primary-glow);
+}
+
+.activityContent {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.activityTitle {
+  margin: 0;
+  color: var(--gn-text-primary);
+  font-weight: 500;
+  font-size: 0.95rem;
+}
+
+.activityTime {
+  color: var(--gn-text-muted);
+  font-size: 0.85rem;
 }
