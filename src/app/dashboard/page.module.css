@@ -49,11 +49,10 @@
 .secondaryButton {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
   gap: 0.5rem;
-  padding: 0.6rem 1.1rem;
-  border-radius: 6px;
-  font-size: 0.85rem;
+  padding: 0.6rem 1.2rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -63,24 +62,23 @@
 .primaryButton {
   background: var(--gn-inverse-bg);
   color: var(--gn-inverse-text);
-  border: 1px solid transparent;
+  border: 1px solid var(--gn-border-light-strong);
 }
 
 .primaryButton:hover {
-  background: var(--gn-text-secondary);
-  color: var(--gn-white);
+  background: var(--gn-surface-hover);
+  color: var(--gn-text-primary);
 }
 
 .secondaryButton {
   background: transparent;
   color: var(--gn-text-secondary);
-  border: 1px solid var(--gn-surface-border-strong);
+  border: 1px solid var(--gn-border-light-strong);
 }
 
 .secondaryButton:hover {
   background: var(--gn-surface-hover);
   color: var(--gn-text-primary);
-  border-color: var(--gn-gray-600);
 }
 
 .btnIcon {

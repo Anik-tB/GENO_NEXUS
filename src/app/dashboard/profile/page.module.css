@@ -162,16 +162,15 @@
 
 /* Buttons */
 .primaryBtn {
-  background: var(--gn-primary);
-  color: #fff;
-  border: 1px solid transparent;
-  padding: 0.9rem 1.25rem;
+  background: var(--gn-inverse-bg);
+  color: var(--gn-inverse-text);
+  border: 1px solid var(--gn-border-light-strong);
+  padding: 0.6rem 1.2rem;
   border-radius: 8px;
-  font-size: 0.95rem;
-  font-weight: 600;
+  font-size: 0.9rem;
+  font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: 0 4px 15px var(--gn-primary-glow);
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -180,18 +179,18 @@
 
 .primaryBtn:hover {
   transform: translateY(-2px);
-  background: var(--gn-primary-strong);
-  box-shadow: 0 6px 20px var(--gn-primary-glow);
+  background: var(--gn-surface-hover);
+  color: var(--gn-text-primary);
 }
 
 .dangerBtn {
   background: transparent;
   color: var(--gn-danger);
   border: 1px solid var(--risk-high-border);
-  padding: 0.9rem;
+  padding: 0.6rem 1.2rem;
   border-radius: 8px;
-  font-size: 0.95rem;
-  font-weight: 600;
+  font-size: 0.9rem;
+  font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
   align-self: flex-start;
