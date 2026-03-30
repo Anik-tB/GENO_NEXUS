@@ -15,9 +15,9 @@
 .header {
   display: flex;
   justify-content: space-between;
-  align-items: flex-end;
-  padding-bottom: 0.5rem;
-  border-bottom: 1px solid var(--gn-surface-border);
+  align-items: center;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .headerContent {
@@ -51,10 +51,10 @@
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  padding: 0.75rem 1.25rem;
-  border-radius: var(--border-radius-sm);
-  font-size: 0.9rem;
-  font-weight: 600;
+  padding: 0.6rem 1.1rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
   line-height: 1;
@@ -62,12 +62,12 @@
 
 .primaryButton {
   background: var(--gn-white);
-  color: var(--gn-navy-strong);
+  color: #000;
   border: 1px solid transparent;
 }
 
 .primaryButton:hover {
-  background: var(--gn-gray-600);
+  background: var(--gn-text-secondary);
   color: var(--gn-white);
 }
 
@@ -90,15 +90,30 @@
 
 /* AI Insights Banner */
 .insightsBanner {
-  background: var(--gn-surface);
-  border: 1px solid var(--gn-surface-border-strong);
-  border-left: 4px solid var(--gn-primary);
-  border-radius: var(--border-radius-md);
+  background: rgba(24, 24, 27, 0.5);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  border-radius: 16px;
   padding: 1.25rem 1.5rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 2rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.insightsBanner::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: var(--gn-primary);
 }
 
 .insightsContent {
@@ -110,13 +125,14 @@
 
 .insightsIcon {
   font-size: 1.5rem;
-  background: rgba(45, 212, 191, 0.1);
+  background: linear-gradient(135deg, rgba(45, 212, 191, 0.15) 0%, rgba(168, 85, 247, 0.15) 100%);
   width: 40px;
   height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 50%;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .insightText {
@@ -132,13 +148,13 @@
 }
 
 .insightText code {
-  background: var(--gn-surface-hover);
+  background: rgba(255, 255, 255, 0.1);
   padding: 0.1rem 0.4rem;
   border-radius: 4px;
   color: var(--gn-primary);
   font-family: inherit;
   font-size: 0.85em;
-  border: 1px solid var(--gn-surface-border);
+  border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .insightAction {
@@ -172,15 +188,26 @@
 }
 
 .summaryCard {
-  background: var(--gn-surface);
-  border: 1px solid var(--gn-surface-border);
-  border-radius: var(--border-radius-md);
+  background: rgba(24, 24, 27, 0.5);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
   padding: 1.5rem;
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
   position: relative;
   overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.summaryCard:hover {
+  background: rgba(24, 24, 27, 0.6);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
 }
 
 /* Risk specific left accents */
@@ -190,7 +217,7 @@
   left: 0;
   top: 0;
   bottom: 0;
-  width: 3px;
+  width: 4px;
 }
 
 .low::before { background: var(--gn-success); }
@@ -228,12 +255,16 @@
 
 /* Cards */
 .card {
-  background: var(--gn-surface);
-  border: 1px solid var(--gn-surface-border);
-  border-radius: var(--border-radius-lg);
+  background: rgba(24, 24, 27, 0.5);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
   padding: 1.5rem;
   display: flex;
   flex-direction: column;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
 }
 
 .cardHeader {
@@ -242,7 +273,7 @@
   align-items: center;
   margin-bottom: 1.5rem;
   padding-bottom: 1rem;
-  border-bottom: 1px solid var(--gn-surface-border);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .cardTitle {
@@ -253,18 +284,20 @@
 }
 
 .dropdown {
-  background: var(--gn-surface-hover);
-  border: 1px solid var(--gn-surface-border-strong);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   color: var(--gn-text-secondary);
   padding: 0.35rem 0.75rem;
   border-radius: var(--border-radius-sm);
   font-size: 0.85rem;
   outline: none;
   cursor: pointer;
+  transition: all 0.2s ease;
 }
 
 .dropdown:focus {
   border-color: var(--gn-primary);
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .graphContainer {
@@ -314,23 +347,22 @@
   align-items: center;
   gap: 1rem;
   padding: 1rem 0;
-  border-bottom: 1px auto var(--gn-surface-border);
 }
 
 .activityItem:not(:last-child) {
-  border-bottom: 1px solid var(--gn-surface-border);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .activityIconWrapper {
-  width: 36px;
-  height: 36px;
-  background: var(--gn-surface-hover);
-  border: 1px solid var(--gn-surface-border-strong);
-  border-radius: var(--border-radius-sm);
+  width: 38px;
+  height: 38px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1rem;
+  font-size: 1.1rem;
 }
 
 .activityDetails {
@@ -372,18 +404,19 @@
   font-weight: 600;
   letter-spacing: 0.02em;
   text-transform: uppercase;
+  border: 1px solid transparent;
 }
 
 .statusComplete {
   background: rgba(16, 185, 129, 0.1);
   color: var(--gn-success);
-  border: 1px solid rgba(16, 185, 129, 0.2);
+  border-color: rgba(16, 185, 129, 0.2);
 }
 
 .statusProgress {
   background: rgba(234, 179, 8, 0.1);
   color: var(--gn-warning);
-  border: 1px solid rgba(234, 179, 8, 0.2);
+  border-color: rgba(234, 179, 8, 0.2);
 }
 
 /* Responsive Design */
