@@ -128,8 +128,6 @@
   top: 1rem;
 }
 
-.insightHeader {}
-
 .aiBadge {
   display: inline-flex;
   align-items: center;
@@ -189,7 +187,6 @@
   gap: 0.3rem;
 }
 
-.insightGenes {}
 .smallLabel { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.07em; color: var(--gn-text-muted); font-weight: 700; margin: 0 0 0.5rem; }
 .geneChips { display: flex; flex-wrap: wrap; gap: 0.4rem; }
 .geneCode {
@@ -202,7 +199,6 @@
   font-family: monospace;
 }
 
-.insightExplanation {}
 .explanationText { margin: 0; font-size: 0.875rem; color: var(--gn-text-secondary); line-height: 1.6; }
 
 .insightActions { display: flex; flex-direction: column; gap: 0.6rem; }

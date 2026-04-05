@@ -126,8 +126,6 @@
 .maxSizeValue { font-size: 1rem; font-weight: 700; color: var(--gn-white); }
 
 /* ── Dropzone ──────────────────────────────────────────────────── */
-.uploadSection {}
-
 .dropzone {
   border: 2px dashed var(--gn-border-light-strong);
   border-radius: 16px;

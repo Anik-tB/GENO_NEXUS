@@ -1,0 +1,313 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  max-width: var(--max-width-app);
+  margin: 0 auto;
+  animation: fadeIn 0.4s ease forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.orgHeader {
+  display: flex;
+  align-items: flex-start;
+  gap: 1.5rem;
+  padding-bottom: 2rem;
+  border-bottom: 1px solid var(--gn-border-light);
+}
+
+.orgAvatar {
+  width: 100px;
+  height: 100px;
+  border-radius: 16px;
+  background: var(--gn-primary-glow);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  font-size: 3rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.orgInfo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.orgName {
+  margin: 0;
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--gn-white);
+  letter-spacing: -0.02em;
+}
+
+.orgHandle {
+  margin: 0 0 0.5rem;
+  font-size: 1rem;
+  color: var(--gn-text-secondary);
+}
+
+.orgDesc {
+  margin: 0 0 0.75rem;
+  font-size: 0.95rem;
+  color: var(--gn-text-primary);
+  max-width: 600px;
+  line-height: 1.5;
+}
+
+.orgMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+  font-size: 0.85rem;
+  color: var(--gn-text-muted);
+}
+
+.orgMeta span {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.orgMeta a {
+  color: var(--gn-white);
+  text-decoration: none;
+}
+.orgMeta a:hover { color: var(--gn-primary); text-decoration: underline; }
+
+.orgActions {
+  flex-shrink: 0;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  gap: 2rem;
+  align-items: start;
+}
+
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.sideBlock h3 {
+  margin: 0 0 1rem;
+  font-size: 1rem;
+  color: var(--gn-white);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.badge {
+  background: var(--gn-bg-glass-strong);
+  border: 1px solid var(--gn-border-light-strong);
+  font-size: 0.75rem;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  color: var(--gn-text-muted);
+}
+
+.avatarGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(32px, 1fr));
+  gap: 0.4rem;
+  margin-bottom: 0.75rem;
+}
+
+.miniAvatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid;
+}
+
+.viewAll {
+  font-size: 0.8rem;
+  color: var(--gn-primary);
+  text-decoration: none;
+  font-weight: 600;
+}
+.viewAll:hover { text-decoration: underline; }
+
+.teamList {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 0.75rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.teamList li {
+  font-size: 0.85rem;
+  color: var(--gn-primary);
+  cursor: pointer;
+}
+.teamList li:hover { text-decoration: underline; }
+
+.main {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  border-bottom: 1px solid var(--gn-border-light);
+  padding-bottom: 1rem;
+}
+
+.searchInput {
+  flex: 1;
+  background: var(--gn-bg-glass);
+  border: 1px solid var(--gn-border-light-strong);
+  color: var(--gn-white);
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-family: var(--font-body);
+  outline: none;
+}
+.searchInput:focus { border-color: var(--gn-primary); }
+
+.filterSelect {
+  background: var(--gn-bg-glass);
+  border: 1px solid var(--gn-border-light-strong);
+  color: var(--gn-text-primary);
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  outline: none;
+  cursor: pointer;
+}
+
+.btnPrimary {
+  background: var(--gn-primary);
+  color: #fff;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.btnPrimary:hover { background: var(--gn-primary-strong); }
+
+.btnSecondary {
+  background: var(--gn-bg-glass);
+  color: var(--gn-text-secondary);
+  border: 1px solid var(--gn-border-light-strong);
+  padding: 0.4rem 1rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.btnSecondary:hover { background: var(--gn-bg-glass-hover); color: var(--gn-white); }
+
+.repoList {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border: 1px solid var(--gn-border-light);
+  border-radius: 8px;
+  background: var(--gn-bg-glass-light);
+}
+
+.repoCard {
+  padding: 1.5rem;
+  border-bottom: 1px solid var(--gn-border-light);
+}
+.repoCard:last-child { border-bottom: none; }
+
+.repoCardTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 0.5rem;
+}
+
+.repoCardTitle {
+  font-size: 1.25rem;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.repoCardTitle a {
+  color: var(--gn-primary);
+  text-decoration: none;
+  font-weight: 700;
+}
+.repoCardTitle a:hover { text-decoration: underline; }
+
+.privacyBadge {
+  font-size: 0.7rem;
+  font-weight: 600;
+  border: 1px solid var(--gn-border-light-strong);
+  color: var(--gn-text-muted);
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+}
+
+.starBtn {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: var(--gn-bg-glass);
+  border: 1px solid var(--gn-border-light-strong);
+  padding: 0.25rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--gn-text-secondary);
+  cursor: pointer;
+}
+.starBtn:hover { background: var(--gn-bg-glass-hover); color: var(--gn-white); }
+
+.repoCardDesc {
+  margin: 0 0 1rem;
+  font-size: 0.875rem;
+  color: var(--gn-text-secondary);
+  max-width: 80%;
+  line-height: 1.5;
+}
+
+.repoCardMeta {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  font-size: 0.75rem;
+  color: var(--gn-text-muted);
+}
+
+.metaItem {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.langDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+@media (max-width: 800px) {
+  .layout { grid-template-columns: 1fr; }
+  .orgHeader { flex-direction: column; }
+}

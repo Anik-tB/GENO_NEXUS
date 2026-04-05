@@ -1,248 +1,57 @@
-.container {
-  display: flex;
-  flex-direction: column;
-  gap: 2rem;
-  max-width: var(--max-width-app);
-  margin: 0 auto;
-  animation: fadeIn 0.4s ease forwards;
-}
+/* Container */
+.container { display: flex; flex-direction: column; gap: 1.75rem; max-width: var(--max-width-app); margin: 0 auto; animation: fadeIn 0.4s ease forwards; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
 
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
+/* Header */
+.header { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; padding-bottom: 1.25rem; border-bottom: 1px solid var(--gn-border-light); flex-wrap: wrap; }
+.headerContent { display: flex; flex-direction: column; gap: 0.4rem; }
+.eyebrow { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--gn-primary); background: var(--gn-primary-glow); border: 1px solid rgba(16,185,129,0.25); border-radius: 999px; padding: 0.28rem 0.75rem; width: fit-content; }
+.title { font-size: 1.85rem; font-weight: 700; color: var(--gn-white); margin: 0; letter-spacing: -0.03em; }
+.subtitle { color: var(--gn-text-secondary); font-size: 0.88rem; margin: 0; line-height: 1.5; }
+.statRow { display: flex; gap: 0.65rem; flex-shrink: 0; }
+.statChip { display: flex; flex-direction: column; align-items: center; gap: 0.1rem; padding: 0.5rem 0.85rem; border-radius: 12px; border: 1px solid var(--gn-border-light); min-width: 64px; }
+.statChip span { font-size: 1rem; font-weight: 700; }
+.statChipLabel { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--gn-text-muted); }
 
-.header {
-  display: flex;
-  flex-direction: column;
-}
+/* Columns */
+.columns { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; align-items: start; }
+.column { display: flex; flex-direction: column; gap: 0.85rem; }
 
-.title {
-  font-size: 2rem;
-  font-weight: 700;
-  color: var(--gn-white);
-  margin: 0 0 0.5rem 0;
-  letter-spacing: -0.02em;
-}
+.columnHeader { display: flex; align-items: flex-start; gap: 0.85rem; background: var(--gn-bg-glass); border: 1px solid var(--gn-border-light); border-radius: 12px; padding: 1rem 1.25rem; }
+.headerIcon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.headerSuccess .headerIcon { background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.25); color: var(--gn-success); }
+.columnHeader h2 { font-size: 0.95rem; font-weight: 700; color: var(--gn-white); margin: 0 0 0.15rem; }
+.columnHeader p { font-size: 0.75rem; color: var(--gn-text-muted); margin: 0; }
 
-.subtitle {
-  color: var(--gn-text-secondary);
-  font-size: 1.05rem;
-  margin: 0;
-}
+/* Drug Cards */
+.drugList { display: flex; flex-direction: column; gap: 0.75rem; }
 
-.columns {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 2rem;
-  align-items: start;
-}
+.drugCard { background: var(--gn-bg-glass); border: 1px solid var(--gn-border-light); border-radius: 12px; padding: 1.25rem; display: flex; flex-direction: column; gap: 0.75rem; transition: all 0.2s ease; }
+.drugCard:hover { background: var(--gn-bg-glass-hover); transform: translateY(-2px); }
+.cardSuccess { border-left: 3px solid var(--gn-success); }
+.cardDanger  { border-left: 3px solid var(--gn-danger); }
 
-.column {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
+.cardTop { display: flex; justify-content: space-between; align-items: flex-start; gap: 0.75rem; }
+.drugName { margin: 0 0 0.2rem; font-size: 1rem; font-weight: 700; color: var(--gn-white); letter-spacing: -0.01em; }
+.geneTag { font-size: 0.72rem; color: var(--gn-primary); background: var(--gn-primary-glow); border: 1px solid rgba(16,185,129,0.2); padding: 0.1rem 0.4rem; border-radius: 4px; font-family: monospace; }
+.scoreBadge { display: flex; flex-direction: column; align-items: center; background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.2); border-radius: 10px; padding: 0.4rem 0.65rem; flex-shrink: 0; }
+.scoreVal { font-size: 1.1rem; font-weight: 700; color: var(--gn-success); line-height: 1; }
+.scoreLbl { font-size: 0.62rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--gn-text-muted); }
+.efficacyBar { height: 4px; background: var(--gn-bg-glass-light); border-radius: 999px; overflow: hidden; }
+.efficacyFill { height: 100%; background: var(--gn-success); border-radius: 999px; }
+.drugNote { margin: 0; color: var(--gn-text-secondary); font-size: 0.82rem; line-height: 1.5; }
+.pathwayTags { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.tag { background: var(--gn-bg-glass-light); border: 1px solid var(--gn-border-light); color: var(--gn-text-muted); font-size: 0.7rem; padding: 0.18rem 0.55rem; border-radius: 999px; font-weight: 600; }
 
-.columnHeader {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 1.25rem 1.5rem;
-  border-radius: var(--border-radius-lg);
-  background: var(--gn-surface);
-  border: 1px solid transparent;
-}
+.sevBadge { font-size: 0.72rem; font-weight: 700; padding: 0.25rem 0.6rem; border-radius: 999px; white-space: nowrap; flex-shrink: 0; }
+.sev_high   { background: rgba(244,63,94,0.1); color: var(--gn-danger); border: 1px solid rgba(244,63,94,0.25); }
+.sev_medium { background: rgba(234,179,8,0.1); color: var(--gn-warning); border: 1px solid rgba(234,179,8,0.25); }
 
-.headerSuccess {
-  border-color: rgba(0, 255, 163, 0.3);
-  box-shadow: 0 4px 20px rgba(0, 255, 163, 0.05);
-  background: linear-gradient(135deg, rgba(0, 255, 163, 0.05) 0%, rgba(10, 17, 34, 0.8) 100%);
-}
+.failureRow { display: flex; align-items: center; gap: 0.65rem; }
+.failureLabel { font-size: 0.72rem; color: var(--gn-text-muted); min-width: 110px; font-weight: 500; }
+.failureTrack { flex: 1; height: 5px; background: var(--gn-bg-glass-light); border-radius: 999px; overflow: hidden; }
+.failureBar { height: 100%; background: var(--gn-danger); border-radius: 999px; }
+.failurePct { font-size: 0.78rem; font-weight: 700; color: var(--gn-danger); min-width: 32px; text-align: right; }
 
-.headerSuccess .icon {
-  background: rgba(0, 255, 163, 0.2);
-  color: var(--gn-success);
-}
-
-.headerDanger {
-  border-color: rgba(255, 0, 85, 0.3);
-  box-shadow: 0 4px 20px rgba(255, 0, 85, 0.05);
-  background: linear-gradient(135deg, rgba(255, 0, 85, 0.05) 0%, rgba(10, 17, 34, 0.8) 100%);
-}
-
-.headerDanger .icon {
-  background: rgba(255, 0, 85, 0.2);
-  color: var(--gn-danger);
-}
-
-.icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.5rem;
-  font-weight: 700;
-}
-
-.columnHeader h2 {
-  font-size: 1.25rem;
-  color: var(--gn-white);
-  margin: 0;
-  flex: 1;
-}
-
-.count {
-  background: rgba(255, 255, 255, 0.1);
-  padding: 0.3rem 0.8rem;
-  border-radius: 999px;
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--gn-text-secondary);
-}
-
-.drugList {
-  display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
-}
-
-.drugCard {
-  background: var(--gn-surface);
-  border-left: 4px solid transparent;
-  border-top: 1px solid var(--gn-surface-border);
-  border-right: 1px solid var(--gn-surface-border);
-  border-bottom: 1px solid var(--gn-surface-border);
-  border-radius: var(--border-radius-md);
-  padding: 1.5rem;
-  box-shadow: var(--shadow-soft);
-  transition: transform 0.2s ease;
-}
-
-.drugCard:hover {
-  transform: translateX(4px);
-}
-
-.cardSuccess {
-  border-left-color: var(--gn-success);
-}
-
-.cardSuccess:hover {
-  box-shadow: 0 8px 24px rgba(0, 255, 163, 0.1);
-}
-
-.cardDanger {
-  border-left-color: var(--gn-danger);
-}
-
-.cardDanger:hover {
-  box-shadow: 0 8px 24px rgba(255, 0, 85, 0.1);
-}
-
-.cardTop {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 1rem;
-}
-
-.drugName {
-  font-size: 1.2rem;
-  color: var(--gn-white);
-  margin: 0;
-}
-
-.scoreBadge {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  background: rgba(0, 255, 163, 0.1);
-  padding: 0.4rem 0.8rem;
-  border-radius: 8px;
-  border: 1px solid rgba(0, 255, 163, 0.3);
-}
-
-.scoreValue {
-  color: var(--gn-success);
-  font-size: 1.1rem;
-  font-weight: 700;
-  line-height: 1;
-}
-
-.scoreLabel {
-  font-size: 0.65rem;
-  color: var(--gn-text-secondary);
-  text-transform: uppercase;
-  margin-top: 0.2rem;
-}
-
-.severityIndicator {
-  font-size: 0.75rem;
-  font-weight: 700;
-  padding: 0.4rem 0.8rem;
-  border-radius: 8px;
-  letter-spacing: 0.05em;
-}
-
-.sev_high {
-  background: var(--risk-high-bg);
-  color: var(--gn-danger);
-  border: 1px solid var(--risk-high-border);
-}
-
-.sev_medium {
-  background: var(--risk-moderate-bg);
-  color: var(--gn-warning);
-  border: 1px solid var(--risk-moderate-border);
-}
-
-.drugNote {
-  color: var(--gn-text-secondary);
-  font-size: 0.95rem;
-  line-height: 1.5;
-  margin: 0 0 1.25rem 0;
-}
-
-.pathwayTags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-
-.tag {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid var(--gn-surface-border-strong);
-  color: var(--gn-text-muted);
-  font-size: 0.75rem;
-  padding: 0.2rem 0.6rem;
-  border-radius: 4px;
-}
-
-.failureScore {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.failureScore span {
-  font-size: 0.8rem;
-  color: var(--gn-danger);
-  font-weight: 600;
-  text-align: right;
-}
-
-.progressTrack {
-  height: 6px;
-  background: rgba(0, 0, 0, 0.3);
-  border-radius: 999px;
-  overflow: hidden;
-}
-
-.progressBar {
-  height: 100%;
-  background: var(--gn-danger);
-  border-radius: 999px;
-  box-shadow: 0 0 10px var(--gn-danger);
-}
+@media (max-width: 900px) { .columns { grid-template-columns: 1fr; } }
+@media (max-width: 640px) { .header { flex-direction: column; } }
