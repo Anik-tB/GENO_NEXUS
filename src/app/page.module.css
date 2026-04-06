@@ -379,7 +379,7 @@
 }
 
 .platformSummaryCard strong {
-  color: var(--gn-text-primary);
+  color: #0f172a;
   font-size: 1rem;
   line-height: 1.5;
 }
@@ -489,13 +489,13 @@
 
 .meshNode h3 {
   margin: 0;
-  color: var(--gn-text-primary);
+  color: #0f172a;
   font-size: 1.15rem;
 }
 
 .meshNode p {
   margin: 0;
-  color: var(--gn-text-secondary);
+  color: #475569;
   font-size: 0.92rem;
   line-height: 1.65;
 }
@@ -595,13 +595,13 @@
 
 .workflowStep h3 {
   margin: 0 0 0.45rem;
-  color: var(--gn-text-primary);
+  color: #0f172a;
   font-size: 1.18rem;
 }
 
 .workflowStep p {
   margin: 0;
-  color: var(--gn-text-secondary);
+  color: #475569;
   line-height: 1.7;
 }
 
@@ -856,7 +856,7 @@
 
 .reportHeader h2 {
   margin: 0;
-  color: var(--gn-text-primary);
+  color: #0f172a;
   font-size: clamp(1.7rem, 4vw, 2.4rem);
   line-height: 1.04;
 }
@@ -899,7 +899,7 @@
 }
 
 .reportSummary strong {
-  color: var(--gn-text-primary);
+  color: #0f172a;
   font-size: 1rem;
 }
 
@@ -923,7 +923,7 @@
 }
 
 .findingRow strong {
-  color: var(--gn-text-primary);
+  color: #0f172a;
   font-size: 1rem;
 }
 
@@ -934,7 +934,7 @@
 
 .findingRow p {
   margin: 0;
-  color: var(--gn-text-secondary);
+  color: #475569;
   line-height: 1.7;
 }
 
@@ -956,7 +956,7 @@
 
 .reportNote p:last-child {
   margin: 0;
-  color: var(--gn-text-primary);
+  color: #475569;
   line-height: 1.75;
 }
 
@@ -1011,13 +1011,13 @@
 
 .trustCard h3 {
   margin: 0;
-  color: var(--gn-text-primary);
+  color: #0f172a;
   font-size: 1.16rem;
 }
 
 .trustCard p {
   margin: 0;
-  color: var(--gn-text-secondary);
+  color: #475569;
   line-height: 1.7;
 }
 
@@ -1039,7 +1039,7 @@
 
 .ctaCard h2 {
   margin: 0 0 0.75rem;
-  color: var(--gn-text-primary);
+  color: #0f172a;
   font-size: clamp(2rem, 4vw, 3rem);
   line-height: 1.02;
 }
@@ -1047,7 +1047,7 @@
 .ctaCard p:last-child {
   margin: 0;
   max-width: 40rem;
-  color: var(--gn-text-secondary);
+  color: #475569;
   line-height: 1.8;
 }
 
