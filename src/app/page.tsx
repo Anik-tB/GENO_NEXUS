@@ -103,22 +103,22 @@ const WORKFLOW_STEPS = [
   {
     step: "01",
     title: "Start with raw DNA",
-    text: "Users drop in exports once and land in a guided intake state."
+    text: "Users drop in exports once and land in a guided intake state. Support for 23andMe, AncestryDNA, and raw VCF formats ensures flexible onboarding without exposing patients to technical friction."
   },
   {
     step: "02",
     title: "Turn data into signal",
-    text: "Markers, evidence layers, and risk posture surface fast."
+    text: "Markers, evidence layers, and risk posture surface fast. The platform normalizes variant data against clinical guidelines to identify actionable pharmacogenomic and phenotypic cues in real-time."
   },
   {
     step: "03",
     title: "Deliver a readable report",
-    text: "Results become clear summaries instead of raw genomic jargon."
+    text: "Results become clear summaries instead of raw genomic jargon. Clinician-ready views prioritize high-impact findings, mapping metabolism risks seamlessly to specific medication guidance."
   },
   {
     step: "04",
     title: "Keep control visible",
-    text: "Audit, access, and ownership stay present through the workflow."
+    text: "Audit, access, and ownership stay present through the workflow. Instead of burying privacy in settings, consent status and data tracking remain visibly anchored alongside clinical review."
   }
 ];
 

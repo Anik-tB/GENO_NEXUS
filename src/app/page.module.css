@@ -557,7 +557,7 @@
 .workflowShowcase {
   display: grid;
   gap: 1.5rem;
-  align-items: start;
+  align-items: stretch;
   grid-template-columns: minmax(0, 0.84fr) minmax(360px, 1.16fr);
 }
 
@@ -824,7 +824,7 @@
 .reportLayout {
   display: grid;
   gap: 1.5rem;
-  align-items: start;
+  align-items: stretch;
   grid-template-columns: minmax(0, 1.08fr) minmax(320px, 0.92fr);
 }
 
@@ -843,6 +843,7 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: 1rem;
+  margin-top: 5rem;
 }
 
 .reportMeta {
