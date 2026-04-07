@@ -15,19 +15,19 @@
   justify-content: center;
   min-height: 2.8rem;
   border-radius: 14px;
-  color: var(--gn-text-secondary);
+  color: #475569;
   font-size: 0.94rem;
   font-weight: 700;
   transition: background 180ms ease, color 180ms ease, box-shadow 180ms ease;
 }
 
 .tab:hover {
-  color: var(--gn-text-primary);
+  color: #0f172a;
 }
 
 .tabActive {
-  background: var(--gn-paper-strong);
-  color: var(--gn-text-primary);
+  background: #ffffff;
+  color: #0f172a;
   box-shadow: 0 10px 22px rgba(8, 23, 37, 0.08);
 }
 
@@ -48,14 +48,14 @@
 
 .title {
   margin: 0;
-  color: var(--gn-text-primary);
+  color: #0f172a;
   font-size: clamp(2rem, 5vw, 2.6rem);
   line-height: 1.02;
 }
 
 .subtitle {
   margin: 0;
-  color: var(--gn-text-secondary);
+  color: #475569;
   line-height: 1.65;
   max-width: 34rem;
 }
@@ -75,7 +75,7 @@
   padding: 0.48rem 0.72rem;
   background: rgba(8, 23, 37, 0.04);
   border: 1px solid rgba(8, 23, 37, 0.06);
-  color: var(--gn-text-secondary);
+  color: #475569;
   font-size: 0.76rem;
   font-weight: 800;
   letter-spacing: 0.08em;
@@ -116,7 +116,7 @@
 .socialButtonGoogle {
   border: 1px solid rgba(8, 23, 37, 0.1);
   background: rgba(255, 255, 255, 0.96);
-  color: var(--gn-text-primary);
+  color: #0f172a;
 }
 
 .socialButtonGithub {
@@ -132,28 +132,22 @@
 }
 
 .divider {
-  position: relative;
   display: flex;
   align-items: center;
-  justify-content: center;
   margin: 0.2rem 0 1.2rem;
 }
 
-.divider::before {
+.divider::before,
+.divider::after {
   content: "";
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 50%;
+  flex: 1;
   height: 1px;
   background: rgba(8, 23, 37, 0.08);
 }
 
 .divider span {
-  position: relative;
   padding: 0 0.85rem;
-  background: rgba(255, 255, 255, 0.92);
-  color: var(--gn-text-muted);
+  color: #64748b;
   font-size: 0.78rem;
   font-weight: 800;
   letter-spacing: 0.08em;
@@ -188,14 +182,14 @@
 
 .sectionTitle {
   margin: 0;
-  color: var(--gn-text-primary);
+  color: #0f172a;
   font-size: 1rem;
   font-weight: 800;
 }
 
 .sectionCopy {
   margin: 0;
-  color: var(--gn-text-secondary);
+  color: #475569;
   font-size: 0.88rem;
   line-height: 1.65;
 }
@@ -219,14 +213,14 @@
 }
 
 .label {
-  color: var(--gn-text-primary);
+  color: #0f172a;
   font-size: 0.9rem;
   font-weight: 700;
 }
 
 .helperText {
   margin: -0.05rem 0 0;
-  color: var(--gn-text-muted);
+  color: #64748b;
   font-size: 0.82rem;
   line-height: 1.55;
 }
@@ -237,7 +231,7 @@
   border: 1px solid rgba(8, 23, 37, 0.12);
   border-radius: 18px;
   background: rgba(255, 255, 255, 0.92);
-  color: var(--gn-text-primary);
+  color: #0f172a;
   padding: 0.92rem 1rem;
   transition: border-color 180ms ease, box-shadow 180ms ease, background 180ms ease;
 }
@@ -246,7 +240,7 @@
   outline: none;
   border-color: rgba(11, 143, 129, 0.54);
   box-shadow: var(--shadow-focus);
-  background: var(--gn-paper-strong);
+  background: #ffffff;
 }
 
 .inputError {
@@ -293,12 +287,12 @@
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
-  color: var(--gn-text-secondary);
+  color: #475569;
   font-size: 0.84rem;
 }
 
 .meterHeader strong {
-  color: var(--gn-text-primary);
+  color: #0f172a;
 }
 
 .meterTrack {
@@ -344,7 +338,7 @@
   border-radius: 999px;
   padding: 0.45rem 0.7rem;
   background: rgba(8, 23, 37, 0.06);
-  color: var(--gn-text-secondary);
+  color: #475569;
   font-size: 0.78rem;
   font-weight: 700;
 }
@@ -371,7 +365,7 @@
 }
 
 .metaHint {
-  color: var(--gn-text-muted);
+  color: #64748b;
   font-size: 0.84rem;
   font-weight: 600;
 }
@@ -382,7 +376,7 @@
   grid-template-columns: auto 1fr;
   gap: 0.7rem;
   align-items: start;
-  color: var(--gn-text-secondary);
+  color: #475569;
   cursor: pointer;
 }
 
@@ -421,7 +415,7 @@
 }
 
 .checkboxText {
-  color: var(--gn-text-secondary);
+  color: #475569;
   line-height: 1.65;
   font-size: 0.92rem;
 }
@@ -443,7 +437,7 @@
   padding: 0.95rem 1rem;
   background: linear-gradient(135deg, rgba(223, 246, 241, 0.72) 0%, rgba(232, 242, 255, 0.82) 100%);
   border: 1px solid rgba(11, 143, 129, 0.14);
-  color: var(--gn-text-primary);
+  color: #0f172a;
   line-height: 1.65;
   font-size: 0.9rem;
   font-weight: 600;
@@ -464,7 +458,7 @@
   display: inline-flex;
   align-items: center;
   gap: 0.55rem;
-  color: var(--gn-text-primary);
+  color: #0f172a;
   font-size: 0.88rem;
   font-weight: 700;
 }
@@ -490,7 +484,7 @@
 
 .consentTitle {
   margin: 0;
-  color: var(--gn-text-primary);
+  color: #0f172a;
   font-size: 0.92rem;
   font-weight: 800;
 }
@@ -516,7 +510,7 @@
 .switchLine {
   margin: 0;
   text-align: center;
-  color: var(--gn-text-secondary);
+  color: #475569;
   line-height: 1.6;
   font-size: 0.92rem;
 }
