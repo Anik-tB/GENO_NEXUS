@@ -145,3 +145,23 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS account_locked_until TIMESTAMPTZ;
 ALTER TABLE sessions ADD COLUMN IF NOT EXISTS ip_address TEXT;
 ALTER TABLE sessions ADD COLUMN IF NOT EXISTS user_agent TEXT;
 ALTER TABLE sessions ADD COLUMN IF NOT EXISTS is_trusted BOOLEAN NOT NULL DEFAULT false;
+
+-- ============================================================================
+-- GENOMIC DATA TABLES
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS dna_files (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  file_name TEXT NOT NULL,
+  file_size BIGINT NOT NULL,
+  file_type TEXT NOT NULL,
+  storage_path TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'uploading',
+  progress INTEGER DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_dna_files_user_id
+  ON dna_files(user_id, created_at DESC);

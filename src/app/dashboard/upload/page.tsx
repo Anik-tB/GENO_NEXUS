@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+
 import styles from "./page.module.css";
 
 type UploadStatus = "idle" | "uploading" | "validating" | "success" | "error";
@@ -33,8 +34,10 @@ export default function UploadPage() {
   const [isDragging, setIsDragging] = useState(false);
   const [files, setFiles] = useState<FileEntry[]>([]);
 
-  const processFileMock = (fileName: string, fileSize: number) => {
-    const id = Date.now().toString() + Math.random().toString();
+  const processFile = async (file: File) => {
+    const id = Date.now().toString() + Math.random().toString().slice(2, 8);
+    const fileName = file.name;
+    const fileSize = file.size;
     const isInvalid = !fileName.match(/\.(fasta|fastq|vcf|bam)$/i);
     const sizeStr = fileSize > 0 ? (fileSize / (1024 * 1024)).toFixed(2) + " MB" : "—";
     const type = fileName.split(".").pop()?.toUpperCase() || "UNKNOWN";
@@ -42,32 +45,57 @@ export default function UploadPage() {
     const newFile: FileEntry = { id, name: fileName, size: sizeStr, type, status: "uploading", progress: 0 };
     setFiles((prev) => [newFile, ...prev]);
 
-    let iters = 0;
-    const interval = setInterval(() => {
-      iters += 1;
-      setFiles((prev) =>
-        prev.map((f) => {
-          if (f.id === id) {
-            if (iters >= 10) {
-              clearInterval(interval);
-              return { ...f, progress: 100, status: isInvalid ? "error" : "success" };
-            }
-            return { ...f, progress: f.progress + 10, status: iters > 7 ? "validating" : "uploading" };
-          }
-          return f;
-        })
-      );
-    }, 350);
+    if (isInvalid) {
+      setFiles((prev) => prev.map((f) => (f.id === id ? { ...f, status: "error", progress: 100 } : f)));
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("fileType", type);
+
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", "/api/files", true);
+
+    // Track upload progress
+    xhr.upload.onprogress = (event) => {
+      if (event.lengthComputable) {
+        const currentProgress = Math.round((event.loaded / event.total) * 100);
+        setFiles((prev) => prev.map((f) => (f.id === id ? { ...f, progress: currentProgress } : f)));
+      }
+    };
+
+    // Handle completed upload
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        setFiles((prev) => prev.map((f) => (f.id === id ? { ...f, status: "validating", progress: 100 } : f)));
+        // Simulate validation phase locally since backend saves file automatically
+        setTimeout(() => {
+          setFiles((prev) => prev.map((f) => (f.id === id ? { ...f, status: "success" } : f)));
+        }, 500);
+      } else {
+        console.error("Upload backend failed:", xhr.responseText);
+        setFiles((prev) => prev.map((f) => (f.id === id ? { ...f, status: "error" } : f)));
+      }
+    };
+
+    xhr.onerror = () => {
+      console.error("Request failed during upload.");
+      setFiles((prev) => prev.map((f) => (f.id === id ? { ...f, status: "error" } : f)));
+    };
+
+    // Send the actual file payload
+    xhr.send(formData);
   };
 
   const handleDragOver = (e: React.DragEvent) => { e.preventDefault(); setIsDragging(true); };
   const handleDragLeave = () => setIsDragging(false);
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault(); setIsDragging(false);
-    if (e.dataTransfer.files?.length) Array.from(e.dataTransfer.files).forEach((f) => processFileMock(f.name, f.size));
+    if (e.dataTransfer.files?.length) Array.from(e.dataTransfer.files).forEach((f) => processFile(f));
   };
   const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files?.length) Array.from(e.target.files).forEach((f) => processFileMock(f.name, f.size));
+    if (e.target.files?.length) Array.from(e.target.files).forEach((f) => processFile(f));
   };
 
   const successCount = files.filter((f) => f.status === "success").length;
