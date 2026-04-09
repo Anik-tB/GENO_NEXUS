@@ -1,71 +1,127 @@
 # GenoNexus
 
-Initial implementation for the GenoNexus landing page, login flow, registration flow, and PostgreSQL auth foundation.
+GenoNexus is a comprehensive, enterprise-grade bioinformatics and genomics platform. Designed with a premium "Matte Dark" glassmorphic aesthetic, the platform unifies next-generation DNA analysis, artificial intelligence predictions, 3D visualizations, and secure biomedical research collaboration into a single Command Center.
 
-## Stack
+## 🌟 Core Features (The 15 Pillars of GenoNexus)
 
-- Next.js App Router
-- React + TypeScript
-- PostgreSQL via `pg`
-- GNDS-inspired custom CSS token system
+The platform is architected around 15 cutting-edge capabilities divided into four core groups:
 
-## Local setup
+### Group A: Genomics & Core Analysis
+- **Multi-Format DNA Analyzer**: Process diverse genomic data using state-of-the-art deep learning architectures.
+- **Variant Pathogenicity Predictor**: AI-driven classification of genetic variants and their disease implications.
+- **CRISPR Target Designer**: Precision AI tool for designing guide RNAs and predicting off-target effects.
+- **Non-Coding RNA Function Predictor**: Deep learning architecture for predicting ncRNA interactions and pathways.
 
-1. Copy `.env.example` to `.env.local` and set `DATABASE_URL` to match your local PostgreSQL credentials.
-2. Create a database named `genonexus` in your local PostgreSQL 18.
-3. Apply the schema by running: `psql -U postgres -d genonexus -f database/schema.sql`.
-4. Install dependencies with `npm install`.
-5. Run the app with `npm run dev`.
+### Group B: AI & Machine Learning
+- **AI Gene Chatbot**: An LLM-powered assistant (RAG-based) for interactive biomedical knowledge retrieval.
+- **Drug-Gene Interaction Predictor**: Graph Neural Network-based prediction of pharmacological responses based on genome profiles.
+- **Longitudinal Health Trajectory**: Time-series integration of EHR, wearable data, and DNA for personalized health tracking.
+- **Disease Outbreak Predictor**: Epidemic forecasting using global sequencing data streams and time-series ML models.
 
-## Database
+### Group C: Visualization
+- **3D / VR Genome Browser**: Interactive WebGL-based visualization of complex genomic sequences and chromosomes.
+- **Digital Cell Twin**: High-fidelity digital simulations of cellular responses and drug interactions.
+- **Phylogenetic Tree Builder**: Automated evolutionary tree inference from DNA sequences.
+- **Real-Time Virus Mutation Tracker**: Global interactive map tracking emerging viral mutations in real-time.
 
-The PostgreSQL bootstrap schema lives in `database/schema.sql`.
+### Group D: Collaboration & Privacy
+- **Research Collaboration Hub**: A bioinformatics-focused "Command Center" merging repository functionality with active computational data streams.
+- **Drag & Drop Pipeline Builder**: No-code workflow orchestrator for non-programmers to build bioinformatics pipelines.
+- **Blockchain Data Sovereignty & ZKP**: Secure genomic data sharing leveraging Zero-Knowledge Proofs and immutable ledger audits.
 
-### Viewing the Database
+---
 
-To interact with your local PostgreSQL database directly from your terminal, run:
+## 🛠️ Technology Stack
 
-```bash
-psql -U postgres -d genonexus
+This repository serves as the unified frontend and primary API gateway for GenoNexus:
+
+- **Frontend Core**: Next.js 15 App Router, React 19, TypeScript
+- **Styling**: Extensive custom CSS Token system (`globals.css`), featuring a unique "Matte Dark/Liquid Glass" aesthetic, eschewing utility-class frameworks for ultimate precision.
+- **Authentication**: Hybrid secure authentication using Next.js Middleware, Firebase Auth (for SSO/OAuth), and direct PostgreSQL sessions.
+- **Database Layer**: PostgreSQL via the `pg` client wrapper, managed through raw optimized SQL schema (`database/schema.sql`).
+- **Validation**: Strict schema typing with Zod across all API endpoints.
+
+*(Note: Advanced ML processing and bioinformatics pipelines are intended to hook into Python/FastAPI microservices communicating with this Next.js interface).*
+
+---
+
+## 📁 Application Structure Map
+
+The `src/app/` directory maps directly to the core features:
+
+```text
+src/app/
+├── (auth)/             # login, register, reset-password gateaways
+├── api/                # Core Next.js API Routes (auth, verify, user-data)
+└── dashboard/          # Protected User Domain Command Center
+    ├── analysis/       # DNA and Variant Analyzers
+    ├── collaboration/  # Research Collaboration Hub & Organizations
+    ├── drugs/          # Drug-Gene interaction predictions
+    ├── org/            # Institutional management
+    ├── outbreak/       # Epidemic & Viral trackers
+    ├── predictions/    # ncRNA and Health Trajectories
+    ├── processing/     # Drag & Drop pipeline executions
+    ├── reports/        # Comprehensive research readouts
+    ├── visualization/  # 3D Genome Browsers and Digital Twins
+    └── profile/        # User and security settings
 ```
 
-Once you are inside the `psql` shell, you can use the following commands:
-- `\dt` — List all tables in the database.
-- `\d <table_name>` — View the schema (columns, data types) of a specific table.
-- `SELECT * FROM <table_name>;` — View all data/rows inside a specific table.
-- `\q` — Quit and exit the database interface.
+---
 
-## Project Structure & File Meanings
+## 🚀 Getting Started & Local Setup
 
-This section explains the purpose of the core files and directories in this repository:
+### 1. Environment Configuration
+Copy `.env.example` to a new file named `.env.local` and configure it:
+```env
+# Essential Database String
+DATABASE_URL=postgresql://<username>:<password>@localhost:5432/genonexus
 
-### Root Files
-- **`package.json` / `package-lock.json`**: NPM dependencies and project scripts.
-- **`tsconfig.json` / `tsconfig.tsbuildinfo`**: TypeScript configuration and build cache.
-- **`next.config.ts`**: Configurations for the Next.js framework.
-- **`.env.example` / `.env.local`**: Environment variables (e.g., database connection string, auth secrets).
-- **`docker-compose.yml`**: Docker configuration for running the local PostgreSQL database.
-- **`GenoNexus.txt`**: A comprehensive project specification or design document containing historical information, styling tokens, and requirements.
+# Firebase configuration (Required for Google/GitHub Auth integrations)
+NEXT_PUBLIC_FIREBASE_API_KEY=...
+# ... (all other Firebase keys)
+```
 
-### `database/`
-- **`schema.sql`**: The PostgreSQL schema definition. Contains table creation scripts for users, sessions, email verifications, password resets, and OAuth state.
+### 2. Database Initialization
 
-### `src/app/` (Next.js App Router)
-- **`layout.tsx`**: The main application layout wrapping all pages.
-- **`globals.css`**: Global CSS styling and design tokens.
-- **`page.tsx` & `page.module.css`**: The main landing page view and its specific styling.
-- **`not-found.tsx`**: Custom 404 error page.
-- **`login/`, `register/`, `reset-password/`**: Authentication pages containing standard user ingress flows (`page.tsx` forms).
-- **`dashboard/`**: The protected user area (dashboard) after a successful login.
-- **`api/auth/`**: Backend API routes handling authentication (login, logout, google, github, register, reset-password, verify).
+To set up your PostgreSQL database using a direct local installation:
 
-### `src/components/` (Reusable UI Components)
-- **`auth/`**: Contains `auth-shell` (wrapper for auth pages) and `forms` (input components used in authentication).
-- **`marketing/`**: Contains `dna-helix` (an animated marketing element) and `faq-accordion` (frequently asked questions component).
+1. Open your terminal or `psql` command prompt.
+2. Create the database: `CREATE DATABASE genonexus;`
+3. Upload the schema into your designated database by running this in your standard terminal/cmd:
+   ```bash
+   psql -U your_postgres_username -d genonexus -f database/schema.sql
+   ```
+   *(Enter your PostgreSQL password when prompted)*
 
-### `src/lib/` (Core Logic & Utilities)
-- **`auth/`**: Core authentication and database access logic (`users.ts`, `sessions.ts`, `oauth-state.ts`, etc.).
-- **`db.ts`**: The primary database connection setup (configures `pg` pool).
-- **`env.ts`**: Centralized environment variable validation and typing.
-- **`firebase/`**: Integration logic for Firebase services (`client.ts`, `admin.ts`).
-- **`validation/`**: Zod schemas for input validation (`auth.ts`).
+### 3. Running the Development Server
+Install dependencies and launch the Next.js server:
+```bash
+npm install
+npm run dev
+```
+
+Your platform will now be live on `http://localhost:3000`.
+
+---
+
+## 🔍 PostgreSQL Management Guide
+
+Once the database is initialized, you can interact directly with your tables and verify data integrity via the `psql` command line tool on your physical machine.
+
+To connect:
+```bash
+psql -U your_postgres_username -d genonexus
+```
+
+### Essential Commands
+- **View All Tables:** 
+  Type `\dt` and press Enter. This lists `users`, `sessions`, `email_verifications`, etc.
+- **Inspect a Table's Columns:** 
+  Type `\d users` (or any table name). This shows you every column, its data type (e.g., `VARCHAR`, `TIMESTAMP`), and foreign key relationships.
+- **View Data (SQL Queries):**
+  - `SELECT * FROM users;` (View all registered users)
+  - `SELECT id, email, is_verified FROM users;` (View specific columns)
+- **Delete Data:**
+  - `DELETE FROM users WHERE email = 'test@example.com';`
+- **Exit PSQL:**
+  - `\q` (Closes the database connection and returns to your regular terminal).
