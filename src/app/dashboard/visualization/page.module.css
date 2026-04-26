@@ -216,6 +216,24 @@
   text-transform: uppercase;
   letter-spacing: 0.05em;
   backdrop-filter: blur(4px);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.blinkDot {
+  animation: pulseDot 2s ease-in-out infinite;
+}
+
+@keyframes pulseDot {
+  0%, 100% {
+    opacity: 1;
+    text-shadow: 0 0 8px currentColor;
+  }
+  50% {
+    opacity: 0.3;
+    text-shadow: none;
+  }
 }
 
 .helixContainer {
