@@ -19,6 +19,8 @@ export default function AnalysisPage() {
   const [heatmapData, setHeatmapData] = useState<string[]>(Array(64).fill("none"));
   const [selectedGene, setSelectedGene] = useState<any>(null);
   const [filter, setFilter] = useState("all");
+  const [currentComparisonId, setCurrentComparisonId] = useState<string | null>(null);
+  const [isDismissed, setIsDismissed] = useState(false);
 
   useEffect(() => {
     // Automatically trigger the Python pipeline silently
@@ -30,6 +32,8 @@ export default function AnalysisPage() {
         if (!data.success) {
           throw new Error(data.error || "Failed to trigger automated analysis workflow. Did you upload files?");
         }
+        
+        setCurrentComparisonId(data.comparisonId);
 
         // Poll for background progression
         const pollId = setInterval(async () => {
@@ -111,6 +115,11 @@ export default function AnalysisPage() {
                clearInterval(pollId);
                setError("Python Engine computation failed drastically.");
                setLoading(false);
+            } else if (sData.result.status === 'dismissed') {
+               clearInterval(pollId);
+               setError("Analysis dismissed.");
+               setIsDismissed(true);
+               setLoading(false);
             }
           }
         }, 1500);
@@ -135,20 +144,44 @@ export default function AnalysisPage() {
     );
   }
 
+  const handleDismiss = async () => {
+    if (!currentComparisonId) return;
+    try {
+      await fetch(`/api/analysis/dismiss/${currentComparisonId}`, { method: "POST" });
+      setError("Analysis dismissed.");
+      setIsDismissed(true);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   if (error) {
     const isMissing = error.includes("Missing either");
+    const isFriendly = isMissing || isDismissed;
+
     return (
       <div className={styles.container} style={{padding: '5rem', textAlign: 'center'}}>
-        <h2 style={{color: isMissing ? 'var(--gn-warning)' : '#ef4444'}}>
-          {isMissing ? "Action Required" : "Analysis System Failure"}
+        <h2 style={{color: isFriendly ? 'var(--gn-warning)' : '#ef4444'}}>
+          {isMissing ? "Action Required" : isDismissed ? "Dashboard Ready" : "Analysis System Failure"}
         </h2>
-        <p style={{color: '#888', marginTop: '1rem', marginBottom: '2rem'}}>{error}</p>
+        <p style={{color: '#888', marginTop: '1rem', marginBottom: '2rem'}}>
+          {isDismissed ? "No active analysis. Please upload new genomic data to begin." : error}
+        </p>
         
-        {isMissing && (
+        <div style={{display: 'flex', gap: '1rem', justifyContent: 'center'}}>
           <a href="/dashboard/upload" style={{display: 'inline-block', padding: '1rem 2rem', background: 'var(--gn-primary)', color: 'black', fontWeight: 'bold', borderRadius: '8px', textDecoration: 'none'}}>
-            Go to Upload Station
+            {isMissing || isDismissed ? "Go to Upload Station" : "Upload Different File"}
           </a>
-        )}
+          
+          {!isFriendly && currentComparisonId && (
+            <button 
+              onClick={handleDismiss} 
+              style={{padding: '1rem 2rem', background: 'transparent', color: '#888', border: '1px solid #333', fontWeight: 'bold', borderRadius: '8px', cursor: 'pointer', outline: 'none'}}
+            >
+              Dismiss Error
+            </button>
+          )}
+        </div>
       </div>
     );
   }

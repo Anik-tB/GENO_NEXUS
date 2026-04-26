@@ -45,7 +45,7 @@ export default function UploadPage() {
       const data = await res.json();
       if (data.success && data.files) {
         const uploaded = data.files.length;
-        const passed = data.files.filter((f: any) => f.status === "success").length;
+        const passed = data.files.filter((f: any) => f.status === "success" || f.status === "processing").length;
         const failed = data.files.filter((f: any) => f.status === "error").length;
         setDbStats({ uploaded, passed, failed });
       }
@@ -169,9 +169,13 @@ export default function UploadPage() {
     if (e.target.files?.length) Array.from(e.target.files).forEach((f) => processFile(f));
   };
 
-  // We opt to show the real database truth for stats
-  const successCount = files.filter((f) => f.status === "success").length;
-  const errorCount = files.filter((f) => f.status === "error").length;
+  // We combine the real database truth with local session errors/ongoing states
+  const localErrorCount = files.filter((f) => f.status === "error").length;
+  const localOngoingCount = files.filter((f) => f.status === "uploading" || f.status === "validating").length;
+
+  const displayUploaded = dbStats.uploaded + localOngoingCount;
+  const displayPassed = dbStats.passed;
+  const displayFailed = dbStats.failed + localErrorCount;
 
   return (
     <div className={styles.container}>
@@ -189,15 +193,15 @@ export default function UploadPage() {
         </div>
         <div className={styles.statsRow}>
           <div className={styles.statPill}>
-            <span className={styles.statNum}>{dbStats.uploaded}</span>
+            <span className={styles.statNum}>{displayUploaded}</span>
             <span className={styles.statLbl}>Uploaded</span>
           </div>
           <div className={styles.statPill}>
-            <span className={styles.statNum} style={{color:"var(--gn-success)"}}>{dbStats.passed}</span>
+            <span className={styles.statNum} style={{color:"var(--gn-success)"}}>{displayPassed}</span>
             <span className={styles.statLbl}>Passed</span>
           </div>
           <div className={styles.statPill}>
-            <span className={styles.statNum} style={{color: dbStats.failed > 0 ? "var(--gn-danger)" : "inherit"}}>{dbStats.failed}</span>
+            <span className={styles.statNum} style={{color: displayFailed > 0 ? "var(--gn-danger)" : "inherit"}}>{displayFailed}</span>
             <span className={styles.statLbl}>Failed</span>
           </div>
         </div>
