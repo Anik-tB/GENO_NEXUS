@@ -83,7 +83,9 @@ export default function VisualizationPage() {
         {/* ── Render Area ── */}
         <div className={styles.renderArea}>
           <div className={styles.renderOverlay}>
-            <span className={styles.overlayBadge}>● Live Hardware Rendering</span>
+            <span className={styles.overlayBadge}>
+              <span className={styles.blinkDot}>●</span> Live Hardware Rendering
+            </span>
           </div>
 
           {activeTab === "helix" ? (
