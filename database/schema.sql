@@ -165,3 +165,19 @@ CREATE TABLE IF NOT EXISTS dna_files (
 
 CREATE INDEX IF NOT EXISTS idx_dna_files_user_id
   ON dna_files(user_id, created_at DESC);
+
+CREATE TABLE IF NOT EXISTS comparison_results (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  query_file_id UUID NOT NULL REFERENCES dna_files(id) ON DELETE CASCADE,
+  reference_file_id UUID NOT NULL REFERENCES dna_files(id) ON DELETE CASCADE,
+  match_percentage NUMERIC(5,2),
+  mutations_found JSONB,
+  status TEXT NOT NULL DEFAULT 'processing',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_comparison_results_query
+  ON comparison_results(query_file_id);
+CREATE INDEX IF NOT EXISTS idx_comparison_results_ref
+  ON comparison_results(reference_file_id);
