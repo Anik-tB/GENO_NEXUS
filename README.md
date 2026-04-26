@@ -41,8 +41,7 @@ This repository serves as the unified frontend and primary API gateway for GenoN
 - **Authentication**: Hybrid secure authentication using Next.js Middleware, Firebase Auth (for SSO/OAuth), and direct PostgreSQL sessions.
 - **Database Layer**: PostgreSQL via the `pg` client wrapper, managed through raw optimized SQL schema (`database/schema.sql`).
 - **Validation**: Strict schema typing with Zod across all API endpoints.
-
-*(Note: Advanced ML processing and bioinformatics pipelines are intended to hook into Python/FastAPI microservices communicating with this Next.js interface).*
+- **Python Microservices**: Advanced processing (like NCBI genomic alignment) is isolated in a FastAPI service (`microservices/genomics_engine/`) communicating directly with Next.js APIs.
 
 ---
 
@@ -102,6 +101,24 @@ npm run dev
 ```
 
 Your platform will now be live on `http://localhost:3000`.
+
+### 4. Running the Python Analytics Microservice
+To enable DNA sequence alignment and NCBI genomic comparison features, you must run the background Python engine.
+
+1. Open a new terminal window.
+2. Navigate to the microservice directory:
+   ```bash
+   cd microservices/genomics_engine
+   ```
+3. Install the dependencies (requires Python 3.x installed on your machine):
+   ```bash
+   pip install -r requirements.txt
+   ```
+4. Start the FastAPI backend:
+   ```bash
+   python -m uvicorn main:app --reload --port 8000
+   ```
+The engine will now quietly listen on port 8000 and compute massive alignments seamlessly for your Next.js frontend!
 
 ---
 

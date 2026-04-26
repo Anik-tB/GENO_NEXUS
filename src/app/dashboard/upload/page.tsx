@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 import styles from "./page.module.css";
 
@@ -31,6 +32,7 @@ const STATUS_ICON: Record<UploadStatus, string> = {
 };
 
 export default function UploadPage() {
+  const router = useRouter();
   const [isDragging, setIsDragging] = useState(false);
   const [files, setFiles] = useState<FileEntry[]>([]);
   const [linkUrl, setLinkUrl] = useState("");
@@ -69,6 +71,7 @@ export default function UploadPage() {
       
       setFiles((prev) => prev.map((f) => (f.id === id ? { ...f, status: "success", progress: 100 } : f)));
       setLinkUrl("");
+      router.push("/dashboard/analysis");
     } catch (error) {
       console.error(error);
       setFiles((prev) => prev.map((f) => (f.id === id ? { ...f, status: "error" } : f)));
@@ -224,11 +227,11 @@ export default function UploadPage() {
           </div>
         </div>
 
-        {/* ── Link Remote Dataset Component ── */}
-        <div style={{ marginTop: "1rem", background: "var(--gn-bg, #090e17)", border: "1px dashed var(--gn-border)", borderRadius: "12px", padding: "1.5rem" }}>
-          <h3 style={{ fontSize: "1.1rem", marginBottom: "0.5rem", fontWeight: "600", color: "var(--gn-text)" }}>Import from URL</h3>
+        {/* ── Link Remote Dataset Component (Acts as Analysis Trigger) ── */}
+        <div style={{ marginTop: "1rem", background: "var(--gn-bg, #090e17)", border: "1px dashed var(--gn-primary)", borderRadius: "12px", padding: "1.5rem" }}>
+          <h3 style={{ fontSize: "1.1rem", marginBottom: "0.5rem", fontWeight: "600", color: "var(--gn-primary)" }}>Launch Sequence Alignment</h3>
           <p style={{ color: "var(--gn-muted)", fontSize: "0.9rem", marginBottom: "1rem" }}>
-            Paste a link to an NCBI sequence or remote dataset to bypass local upload.
+            Paste the NCBI reference link below. We will instantly compare it against the sequence you uploaded above!
           </p>
           <form onSubmit={handleLinkSubmit} style={{ display: "flex", gap: "0.5rem" }}>
             <input 
@@ -249,12 +252,12 @@ export default function UploadPage() {
                 color: "#111",
                 fontWeight: "600",
                 border: "none",
-                cursor: (isLinking || !linkUrl) ? "not-allowed" : "pointer",
-                opacity: (isLinking || !linkUrl) ? 0.6 : 1,
+                cursor: isLinking || !linkUrl ? "not-allowed" : "pointer",
+                opacity: isLinking || !linkUrl ? 0.5 : 1,
                 transition: "opacity 0.2s"
               }}
             >
-              {isLinking ? "Linking..." : "Link Dataset"}
+              {isLinking ? "Starting..." : "Start Analysis"}
             </button>
           </form>
         </div>
