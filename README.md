@@ -8,6 +8,7 @@ The platform is architected around 15 cutting-edge capabilities divided into fou
 
 ### Group A: Genomics & Core Analysis
 - **Multi-Format DNA Analyzer**: Process diverse genomic data using state-of-the-art deep learning architectures.
+- **Remote Dataset Linking**: Directly import Reference Sequences from NCBI or external databases via URL, bypassing local storage constraints.
 - **Variant Pathogenicity Predictor**: AI-driven classification of genetic variants and their disease implications.
 - **CRISPR Target Designer**: Precision AI tool for designing guide RNAs and predicting off-target effects.
 - **Non-Coding RNA Function Predictor**: Deep learning architecture for predicting ncRNA interactions and pathways.
