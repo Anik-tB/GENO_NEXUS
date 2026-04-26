@@ -34,11 +34,9 @@ const PANEL_ITEMS = [
   },
 ];
 
-const NUM_RUNGS = 14;
+const NUM_RUNGS = 18;
 // amplitude: how far left/right each node swings (px)
 const AMP = 52;
-// spacing between rungs as fraction of canvas height
-const RUNG_SPACING = 1 / (NUM_RUNGS + 1);
 // how many full sine cycles are visible at once
 const WAVE_CYCLES = 2;
 // speed: radians per millisecond
@@ -53,9 +51,11 @@ function drawHelix(
   const cx = W / 2;
   ctx.clearRect(0, 0, W, H);
 
+  const PADDING = 40;
+
   for (let i = 0; i < NUM_RUNGS; i++) {
-    // vertical position of this rung
-    const y = H * RUNG_SPACING * (i + 1);
+    // vertical position of this rung stretches from top padding to bottom padding
+    const y = PADDING + ((H - PADDING * 2) / (NUM_RUNGS - 1)) * i;
 
     // phase for this rung — distributes rungs evenly across the wave
     const phase = (i / NUM_RUNGS) * Math.PI * 2 * WAVE_CYCLES - t;
