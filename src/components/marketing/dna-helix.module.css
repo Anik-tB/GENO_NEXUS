@@ -29,6 +29,10 @@
   display: none;
 }
 
+.dashboardFrame .platformChrome {
+  top: 4rem;
+}
+
 .helixFrame::before {
   content: "";
   position: absolute;
@@ -303,6 +307,17 @@
   background: #10b981;
   box-shadow: 0 0 12px rgba(16, 185, 129, 0.6);
   animation: pulseGlow 2s infinite;
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
+    opacity: 1;
+    box-shadow: 0 0 12px rgba(16, 185, 129, 0.6);
+  }
+  50% {
+    opacity: 0.4;
+    box-shadow: 0 0 4px rgba(16, 185, 129, 0.2);
+  }
 }
 
 .panelGrid {
