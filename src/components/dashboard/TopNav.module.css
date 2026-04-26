@@ -200,3 +200,61 @@
 .dropdownItem:hover {
   background: var(--gn-surface-hover);
 }
+
+.searchResultsDropdown {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  left: 0;
+  width: 100%;
+  background: var(--gn-surface);
+  border: 1px solid var(--gn-border-light-strong);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-card);
+  padding: 0.5rem 0;
+  z-index: 100;
+  animation: fadeInDown 0.2s ease forwards;
+}
+
+.searchLoading, .noResults {
+  padding: 0.75rem 1rem;
+  color: var(--gn-text-secondary);
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.resultsList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.resultItem {
+  padding: 0.6rem 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.resultItem:hover {
+  background: var(--gn-surface-hover);
+}
+
+.resultTitle {
+  color: var(--gn-text-primary);
+  font-size: 0.9rem;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 180px;
+}
+
+.resultType {
+  font-size: 0.75rem;
+  color: var(--gn-text-muted);
+  background: var(--gn-surface-border);
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+}
