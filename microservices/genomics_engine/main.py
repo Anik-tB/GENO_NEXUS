@@ -3,8 +3,6 @@ from pydantic import BaseModel
 import requests
 import os
 import io
-from Bio import pairwise2
-from Bio.Seq import Seq
 
 app = FastAPI()
 
@@ -40,27 +38,24 @@ async def compare_sequences(req: CompareRequest):
             else:
                 query_seq = "".join([l.strip() for l in query_lines])
 
-        # 3. Biopython Alignment
+        # 3. Pure Python Alignment
         # For demonstration purposes and to prevent server OOM on massive genomes, 
-        # we will align the first 2000 base pairs.
+        # we will align the first 2000 base pairs. We use pure Python instead of Biopython
+        # to ensure compatibility across all environments without needing C++ Build Tools.
         ref_sub = ref_seq[:2000]
         query_sub = query_seq[:2000]
 
         if len(ref_sub) == 0 or len(query_sub) == 0:
             raise HTTPException(status_code=400, detail="Invalid sequence data")
 
-        alignments = pairwise2.align.globalxx(ref_sub, query_sub)
-        best_alignment = alignments[0]
-        
-        match_score = best_alignment.score
+        # Basic linear alignment
+        match_score = sum(1 for a, b in zip(ref_sub, query_sub) if a == b)
         seq_length = max(len(ref_sub), len(query_sub))
         match_percentage = (match_score / seq_length) * 100 if seq_length > 0 else 0
 
         # Naive mutation detection
         mutations = []
-        for i in range(len(best_alignment.seqA)):
-            ref_base = best_alignment.seqA[i]
-            query_base = best_alignment.seqB[i]
+        for i, (ref_base, query_base) in enumerate(zip(ref_sub, query_sub)):
             if ref_base != query_base:
                 mutations.append({
                     "position": i + 1,
