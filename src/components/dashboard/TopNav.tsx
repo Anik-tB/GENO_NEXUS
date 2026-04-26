@@ -66,8 +66,24 @@ export function TopNav({ userInitials, userName }: TopNavProps) {
     router.push('/login');
   };
 
-  // Use a mock datetime like the reference image
-  const timeString = "12:37 PM, Wed";
+  const [timeString, setTimeString] = useState("12:37 PM, Wed");
+
+  useEffect(() => {
+    const updateTime = () => {
+      const now = new Date();
+      const formattedTime = now.toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
+      });
+      const dayStr = now.toLocaleDateString('en-US', { weekday: 'short' });
+      setTimeString(`${formattedTime}, ${dayStr}`);
+    };
+
+    updateTime();
+    const interval = setInterval(updateTime, 10000);
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <header className={styles.header}>
