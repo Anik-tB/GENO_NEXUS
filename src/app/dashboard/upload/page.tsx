@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -37,6 +37,26 @@ export default function UploadPage() {
   const [files, setFiles] = useState<FileEntry[]>([]);
   const [linkUrl, setLinkUrl] = useState("");
   const [isLinking, setIsLinking] = useState(false);
+  const [dbStats, setDbStats] = useState({ uploaded: 0, passed: 0, failed: 0 });
+
+  const fetchStats = async () => {
+    try {
+      const res = await fetch("/api/files/list");
+      const data = await res.json();
+      if (data.success && data.files) {
+        const uploaded = data.files.length;
+        const passed = data.files.filter((f: any) => f.status === "success").length;
+        const failed = data.files.filter((f: any) => f.status === "error").length;
+        setDbStats({ uploaded, passed, failed });
+      }
+    } catch (err) {
+      console.error("Failed to fetch global stats:", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchStats();
+  }, []);
 
   const handleLinkSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -71,10 +91,12 @@ export default function UploadPage() {
       
       setFiles((prev) => prev.map((f) => (f.id === id ? { ...f, status: "success", progress: 100 } : f)));
       setLinkUrl("");
+      fetchStats();
       router.push("/dashboard/analysis");
     } catch (error) {
       console.error(error);
       setFiles((prev) => prev.map((f) => (f.id === id ? { ...f, status: "error" } : f)));
+      fetchStats();
     } finally {
       setIsLinking(false);
     }
@@ -118,16 +140,19 @@ export default function UploadPage() {
         // Simulate validation phase locally since backend saves file automatically
         setTimeout(() => {
           setFiles((prev) => prev.map((f) => (f.id === id ? { ...f, status: "success" } : f)));
+          fetchStats(); // Update global stats
         }, 500);
       } else {
         console.error("Upload backend failed:", xhr.responseText);
         setFiles((prev) => prev.map((f) => (f.id === id ? { ...f, status: "error" } : f)));
+        fetchStats();
       }
     };
 
     xhr.onerror = () => {
       console.error("Request failed during upload.");
       setFiles((prev) => prev.map((f) => (f.id === id ? { ...f, status: "error" } : f)));
+      fetchStats();
     };
 
     // Send the actual file payload
@@ -144,6 +169,7 @@ export default function UploadPage() {
     if (e.target.files?.length) Array.from(e.target.files).forEach((f) => processFile(f));
   };
 
+  // We opt to show the real database truth for stats
   const successCount = files.filter((f) => f.status === "success").length;
   const errorCount = files.filter((f) => f.status === "error").length;
 
@@ -163,15 +189,15 @@ export default function UploadPage() {
         </div>
         <div className={styles.statsRow}>
           <div className={styles.statPill}>
-            <span className={styles.statNum}>{files.length}</span>
+            <span className={styles.statNum}>{dbStats.uploaded}</span>
             <span className={styles.statLbl}>Uploaded</span>
           </div>
           <div className={styles.statPill}>
-            <span className={styles.statNum} style={{color:"var(--gn-success)"}}>{successCount}</span>
+            <span className={styles.statNum} style={{color:"var(--gn-success)"}}>{dbStats.passed}</span>
             <span className={styles.statLbl}>Passed</span>
           </div>
           <div className={styles.statPill}>
-            <span className={styles.statNum} style={{color: errorCount > 0 ? "var(--gn-danger)" : "inherit"}}>{errorCount}</span>
+            <span className={styles.statNum} style={{color: dbStats.failed > 0 ? "var(--gn-danger)" : "inherit"}}>{dbStats.failed}</span>
             <span className={styles.statLbl}>Failed</span>
           </div>
         </div>
