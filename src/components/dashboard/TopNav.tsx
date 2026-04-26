@@ -67,6 +67,49 @@ export function TopNav({ userInitials, userName }: TopNavProps) {
   };
 
   const [timeString, setTimeString] = useState("12:37 PM, Wed");
+  
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [showSearchDropdown, setShowSearchDropdown] = useState(false);
+  const searchRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
+        setIsProfileOpen(false);
+      }
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+        setShowSearchDropdown(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(() => {
+      if (searchQuery.trim() !== "") {
+        setIsSearching(true);
+        fetch(`/api/search?q=${encodeURIComponent(searchQuery)}`)
+          .then(res => res.json())
+          .then(data => {
+            setSearchResults(data.results || []);
+            setIsSearching(false);
+            setShowSearchDropdown(true);
+          })
+          .catch(err => {
+            console.error("Search error:", err);
+            setIsSearching(false);
+          });
+      } else {
+        setSearchResults([]);
+        setShowSearchDropdown(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchQuery]);
 
   useEffect(() => {
     const updateTime = () => {
@@ -109,7 +152,7 @@ export function TopNav({ userInitials, userName }: TopNavProps) {
           <span>{timeString}</span>
         </div>
 
-        <div className={styles.searchContainer}>
+        <div className={styles.searchContainer} ref={searchRef}>
           <div className={styles.searchIconWrapper}>
             <svg className={styles.searchIcon} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="11" cy="11" r="8"></circle>
@@ -120,7 +163,37 @@ export function TopNav({ userInitials, userName }: TopNavProps) {
             type="text" 
             placeholder="Search for any health metrics..." 
             className={styles.searchInput}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onFocus={() => {
+              if (searchQuery.trim() !== "") setShowSearchDropdown(true);
+            }}
           />
+          {showSearchDropdown && (
+            <div className={styles.searchResultsDropdown}>
+              {isSearching ? (
+                <div className={styles.searchLoading}>Searching...</div>
+              ) : searchResults.length > 0 ? (
+                <ul className={styles.resultsList}>
+                  {searchResults.map((result) => (
+                    <li 
+                      key={result.id} 
+                      className={styles.resultItem}
+                      onClick={() => {
+                        setShowSearchDropdown(false);
+                        // Future implementation for navigation
+                      }}
+                    >
+                      <span className={styles.resultTitle}>{result.title}</span>
+                      <span className={styles.resultType}>{result.type}</span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <div className={styles.noResults}>No results found</div>
+              )}
+            </div>
+          )}
         </div>
 
         <button className={styles.iconButton} aria-label="Toggle Theme" onClick={toggleTheme}>
