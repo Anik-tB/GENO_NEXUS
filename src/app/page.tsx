@@ -529,8 +529,11 @@ export default function HomePage() {
 
       <footer className={styles.footer}>
         <div className={`pageShell ${styles.footerGrid}`}>
-          <div>
-            <h3>GenoNexus</h3>
+          <div className={styles.footerBrandSection}>
+            <Link href="/" className={styles.footerBrand}>
+              <Image src="/dna-icon.svg" alt="GenoNexus Logo" width={34} height={34} className={styles.footerMark} />
+              <span>GenoNexus</span>
+            </Link>
             <p>
               Genomics intelligence for medication safety, clinical review, and governed data
               operations.
@@ -551,7 +554,16 @@ export default function HomePage() {
               <a href="#platform">Platform</a>
               <a href="#workflow">Workflow</a>
               <a href="#report">Report</a>
+              <a href="#faq">FAQ</a>
             </div>
+          </div>
+        </div>
+
+        <div className={`pageShell ${styles.footerBottom}`}>
+          <p>&copy; {new Date().getFullYear()} GenoNexus. All rights reserved.</p>
+          <div className={styles.footerLegalLinks}>
+            <Link href="#">Privacy Policy</Link>
+            <Link href="#">Terms of Service</Link>
           </div>
         </div>
       </footer>
