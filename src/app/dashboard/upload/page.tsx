@@ -33,6 +33,49 @@ const STATUS_ICON: Record<UploadStatus, string> = {
 export default function UploadPage() {
   const [isDragging, setIsDragging] = useState(false);
   const [files, setFiles] = useState<FileEntry[]>([]);
+  const [linkUrl, setLinkUrl] = useState("");
+  const [isLinking, setIsLinking] = useState(false);
+
+  const handleLinkSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!linkUrl.trim()) return;
+
+    setIsLinking(true);
+    const id = Date.now().toString() + Math.random().toString().slice(2, 8);
+    
+    let type = "FASTA"; // Assume FASTA for NCBI by default
+    if (linkUrl.toLowerCase().includes(".vcf")) type = "VCF";
+    if (linkUrl.toLowerCase().includes(".fastq")) type = "FASTQ";
+    if (linkUrl.toLowerCase().includes(".bam")) type = "BAM";
+    
+    const urlParts = linkUrl.split("/");
+    let fileName = urlParts[urlParts.length - 1].split("?")[0] || "linked_dataset";
+    if (linkUrl.includes("NC_")) {
+      const match = linkUrl.match(/NC_[A-Za-z0-9.]+/);
+      if (match) fileName = match[0] + ".fasta";
+    }
+
+    const newFile: FileEntry = { id, name: fileName, size: "Linked URL", type, status: "uploading", progress: 0 };
+    setFiles((prev) => [newFile, ...prev]);
+
+    try {
+      const res = await fetch("/api/files", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: linkUrl, fileName, fileType: type }),
+      });
+
+      if (!res.ok) throw new Error("Failed to link URL");
+      
+      setFiles((prev) => prev.map((f) => (f.id === id ? { ...f, status: "success", progress: 100 } : f)));
+      setLinkUrl("");
+    } catch (error) {
+      console.error(error);
+      setFiles((prev) => prev.map((f) => (f.id === id ? { ...f, status: "error" } : f)));
+    } finally {
+      setIsLinking(false);
+    }
+  };
 
   const processFile = async (file: File) => {
     const id = Date.now().toString() + Math.random().toString().slice(2, 8);
@@ -179,6 +222,41 @@ export default function UploadPage() {
               <input type="file" multiple accept=".fasta,.fastq,.vcf,.bam" className={styles.hiddenInput} onChange={handleFileInput} />
             </label>
           </div>
+        </div>
+
+        {/* ── Link Remote Dataset Component ── */}
+        <div style={{ marginTop: "1rem", background: "var(--gn-bg, #090e17)", border: "1px dashed var(--gn-border)", borderRadius: "12px", padding: "1.5rem" }}>
+          <h3 style={{ fontSize: "1.1rem", marginBottom: "0.5rem", fontWeight: "600", color: "var(--gn-text)" }}>Import from URL</h3>
+          <p style={{ color: "var(--gn-muted)", fontSize: "0.9rem", marginBottom: "1rem" }}>
+            Paste a link to an NCBI sequence or remote dataset to bypass local upload.
+          </p>
+          <form onSubmit={handleLinkSubmit} style={{ display: "flex", gap: "0.5rem" }}>
+            <input 
+              type="url" 
+              placeholder="e.g. https://www.ncbi.nlm.nih.gov/nuccore/NC_045512.2?report=fasta" 
+              value={linkUrl}
+              onChange={(e) => setLinkUrl(e.target.value)}
+              style={{ flex: 1, padding: "0.75rem 1rem", borderRadius: "8px", border: "1px solid var(--gn-border)", background: "#05080d", color: "var(--gn-text)", outline: "none" }}
+              required
+            />
+            <button 
+              type="submit" 
+              disabled={isLinking || !linkUrl}
+              style={{
+                padding: "0.75rem 1.5rem",
+                borderRadius: "8px",
+                background: "var(--gn-primary)",
+                color: "#111",
+                fontWeight: "600",
+                border: "none",
+                cursor: (isLinking || !linkUrl) ? "not-allowed" : "pointer",
+                opacity: (isLinking || !linkUrl) ? 0.6 : 1,
+                transition: "opacity 0.2s"
+              }}
+            >
+              {isLinking ? "Linking..." : "Link Dataset"}
+            </button>
+          </form>
         </div>
       </div>
 
