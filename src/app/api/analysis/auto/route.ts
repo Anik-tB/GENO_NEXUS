@@ -25,21 +25,31 @@ export async function POST(req: NextRequest) {
       ORDER BY created_at DESC LIMIT 1
     `, [user.id]);
 
-    // 2. Automatically find the latest remote NCBI link
+    // 2. Automatically find the latest reference (URL or local file)
     const refRes = await db.query(`
       SELECT id, storage_path FROM dna_files 
-      WHERE user_id = $1 AND storage_path LIKE 'http%' 
-      ORDER BY created_at DESC LIMIT 1
+      WHERE user_id = $1
+      ORDER BY created_at DESC LIMIT 2
     `, [user.id]);
 
+    // Ensure we have at least 2 distinct files: one query, one reference
     if (queryRes.rowCount === 0 || refRes.rowCount === 0) {
       return NextResponse.json({ error: "Missing either a local upload or a referenced NCBI link." }, { status: 400 });
     }
 
-    const queryFileId = queryRes.rows[0].id;
-    const refFileId = refRes.rows[0].id;
-    const queryDbPath = queryRes.rows[0].storage_path;
-    const refUrl = refRes.rows[0].storage_path;
+    // Pick the oldest of the two most-recent as reference to avoid self-comparison
+    const allFiles = refRes.rows;
+    const queryFile = queryRes.rows[0];
+    const refFile = allFiles.find((f: any) => f.id !== queryFile.id) ?? allFiles[allFiles.length - 1];
+
+    if (!refFile || refFile.id === queryFile.id) {
+      return NextResponse.json({ error: "Missing either a local upload or a referenced NCBI link." }, { status: 400 });
+    }
+
+    const queryFileId = queryFile.id;
+    const refFileId = refFile.id;
+    const queryDbPath = queryFile.storage_path;
+    const refPathOrUrl = refFile.storage_path;
 
     // 3. Check if we ALREADY compared these exact two files
     const existingCheck = await db.query(`
@@ -52,9 +62,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, comparisonId: existingCheck.rows[0].id });
     }
 
-    // 4. Create new comparison request
     const absoluteQueryPath = path.join(process.cwd(), "public", queryDbPath);
     const resultId = randomUUID();
+
+    let pythonReqBody: any = { query_path: absoluteQueryPath };
+    if (refPathOrUrl.startsWith("http")) {
+      pythonReqBody.reference_url = refPathOrUrl;
+    } else {
+      pythonReqBody.reference_path = path.join(process.cwd(), "public", refPathOrUrl);
+    }
 
     await db.query(`
       INSERT INTO comparison_results (id, query_file_id, reference_file_id, status)
@@ -65,10 +81,7 @@ export async function POST(req: NextRequest) {
     fetch("http://localhost:8000/compare", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        query_path: absoluteQueryPath,
-        reference_url: refUrl
-      })
+      body: JSON.stringify(pythonReqBody)
     })
     .then(async res => {
       if (!res.ok) throw new Error("FastAPI returned error");
@@ -78,9 +91,23 @@ export async function POST(req: NextRequest) {
       if (data.match_percentage !== undefined) {
         await db.query(`
           UPDATE comparison_results 
-          SET status = 'completed', match_percentage = $1, mutations_found = $2 
-          WHERE id = $3
-        `, [data.match_percentage, JSON.stringify(data.mutations_found), resultId]);
+          SET status = 'completed',
+              match_percentage = $1,
+              mutations_found = $2,
+              detected_organism = $3,
+              alignment_score = $4,
+              indels_found = $5,
+              analysis_metadata = $6
+          WHERE id = $7
+        `, [
+          data.match_percentage,
+          JSON.stringify(data.mutations_found),
+          data.detected_organism ?? null,
+          data.alignment_score ?? null,
+          JSON.stringify(data.indels_found ?? []),
+          JSON.stringify(data.analysis_metadata ?? {}),
+          resultId
+        ]);
       } else {
         await db.query(`UPDATE comparison_results SET status = 'failed' WHERE id = $1`, [resultId]);
       }

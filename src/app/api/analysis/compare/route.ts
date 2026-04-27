@@ -75,9 +75,23 @@ export async function POST(req: NextRequest) {
       if (data.match_percentage !== undefined) {
         await db.query(`
           UPDATE comparison_results 
-          SET status = 'completed', match_percentage = $1, mutations_found = $2 
-          WHERE id = $3
-        `, [data.match_percentage, JSON.stringify(data.mutations_found), resultId]);
+          SET status = 'completed',
+              match_percentage = $1,
+              mutations_found = $2,
+              detected_organism = $3,
+              alignment_score = $4,
+              indels_found = $5,
+              analysis_metadata = $6
+          WHERE id = $7
+        `, [
+          data.match_percentage,
+          JSON.stringify(data.mutations_found),
+          data.detected_organism ?? null,
+          data.alignment_score ?? null,
+          JSON.stringify(data.indels_found ?? []),
+          JSON.stringify(data.analysis_metadata ?? {}),
+          resultId
+        ]);
       } else {
         await db.query(`UPDATE comparison_results SET status = 'failed' WHERE id = $1`, [resultId]);
       }

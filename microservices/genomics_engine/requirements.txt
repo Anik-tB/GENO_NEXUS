@@ -1,3 +1,7 @@
 fastapi==0.103.2
 uvicorn==0.23.2
 requests==2.31.0
+biopython
+scikit-learn
+numpy
+psycopg2-binary

@@ -26,7 +26,9 @@ export async function GET(
 
     // Verify the user owns one of the files being compared to ensure security
     const result = await db.query(`
-      SELECT cr.id, cr.status, cr.match_percentage, cr.mutations_found, cr.created_at
+      SELECT cr.id, cr.status, cr.match_percentage, cr.mutations_found,
+             cr.detected_organism, cr.alignment_score, cr.indels_found,
+             cr.analysis_metadata, cr.created_at
       FROM comparison_results cr
       JOIN dna_files df ON cr.query_file_id = df.id
       WHERE cr.id = $1 AND df.user_id = $2
