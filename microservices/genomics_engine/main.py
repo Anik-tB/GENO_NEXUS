@@ -8,24 +8,39 @@ app = FastAPI()
 
 class CompareRequest(BaseModel):
     query_path: str
-    reference_url: str
+    reference_url: str | None = None
+    reference_path: str | None = None
 
 @app.post("/compare")
 async def compare_sequences(req: CompareRequest):
     try:
+        ref_seq = ""
+        
         # 1. Fetch Reference Sequence
-        ref_id = "NC_045512.2" 
-        if "NC_" in req.reference_url:
-            ref_id = req.reference_url.split("NC_")[1].split("?")[0]
-            ref_id = "NC_" + ref_id
-            
-        ncbi_api = f"https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=nuccore&id={ref_id}&rettype=fasta&retmode=text"
-        resp = requests.get(ncbi_api)
-        if resp.status_code != 200:
-            raise HTTPException(status_code=400, detail="Failed to fetch reference from NCBI")
-            
-        ref_fasta = resp.text.split("\n")[1:] 
-        ref_seq = "".join(ref_fasta).replace("\n", "").replace("\r", "")
+        if req.reference_url and "http" in req.reference_url:
+            ref_id = "NC_045512.2" 
+            if "NC_" in req.reference_url:
+                ref_id = req.reference_url.split("NC_")[1].split("?")[0]
+                ref_id = "NC_" + ref_id
+                
+            ncbi_api = f"https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=nuccore&id={ref_id}&rettype=fasta&retmode=text"
+            resp = requests.get(ncbi_api)
+            if resp.status_code != 200:
+                raise HTTPException(status_code=400, detail="Failed to fetch reference from NCBI")
+                
+            ref_fasta = resp.text.split("\n")[1:] 
+            ref_seq = "".join(ref_fasta).replace("\n", "").replace("\r", "")
+        elif req.reference_path:
+            if not os.path.exists(req.reference_path):
+                raise HTTPException(status_code=404, detail="Reference file not found")
+            with open(req.reference_path, "r") as f:
+                ref_lines = f.readlines()
+                if len(ref_lines) > 0 and ref_lines[0].startswith(">"):
+                    ref_seq = "".join([l.strip() for l in ref_lines[1:]])
+                else:
+                    ref_seq = "".join([l.strip() for l in ref_lines])
+        else:
+            raise HTTPException(status_code=400, detail="Either reference_url or reference_path must be provided")
 
         # 2. Read Local Query Sequence
         if not os.path.exists(req.query_path):

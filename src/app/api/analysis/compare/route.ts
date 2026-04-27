@@ -38,10 +38,19 @@ export async function POST(req: NextRequest) {
     }
 
     const queryDbPath = queryFileRes.rows[0].storage_path;
-    const refUrl = refFileRes.rows[0].storage_path;
+    const refPathOrUrl = refFileRes.rows[0].storage_path;
 
-    // We assume the query file is local (in public/uploads/...) and ref is a remote URL as per user instructions
     const absoluteQueryPath = path.join(process.cwd(), "public", queryDbPath);
+    
+    let pythonReqBody: any = {
+      query_path: absoluteQueryPath
+    };
+
+    if (refPathOrUrl.startsWith("http")) {
+      pythonReqBody.reference_url = refPathOrUrl;
+    } else {
+      pythonReqBody.reference_path = path.join(process.cwd(), "public", refPathOrUrl);
+    }
 
     // Create a processing record
     const resultId = randomUUID();
@@ -56,10 +65,7 @@ export async function POST(req: NextRequest) {
     fetch("http://localhost:8000/compare", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        query_path: absoluteQueryPath,
-        reference_url: refUrl
-      })
+      body: JSON.stringify(pythonReqBody)
     })
     .then(async res => {
       if (!res.ok) throw new Error("FastAPI returned error");
