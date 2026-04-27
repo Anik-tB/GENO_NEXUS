@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import styles from "./page.module.css";
 
 const CATEGORY_ICONS: Record<string, string> = {
@@ -23,6 +24,9 @@ export default function AnalysisPage() {
   const [isDismissed, setIsDismissed] = useState(false);
   const [history, setHistory] = useState<any[]>([]);
   const [showHistoryView, setShowHistoryView] = useState(false);
+  const searchParams = useSearchParams();
+  const explicitQueryId = searchParams.get("queryId");
+  const explicitRefId = searchParams.get("refId");
 
   const fetchHistory = async () => {
     try {
@@ -130,11 +134,22 @@ export default function AnalysisPage() {
     // Automatically trigger the Python pipeline silently
     const triggerAutoAnalysis = async () => {
       try {
-        const res = await fetch("/api/analysis/auto", { method: "POST" });
-        const data = await res.json();
+        let data;
+        
+        if (explicitQueryId && explicitRefId) {
+          const res = await fetch("/api/analysis/compare", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ queryFileId: explicitQueryId, referenceFileId: explicitRefId })
+          });
+          data = await res.json();
+        } else {
+          const res = await fetch("/api/analysis/auto", { method: "POST" });
+          data = await res.json();
+        }
         
         if (!data.success) {
-          throw new Error(data.error || "Failed to trigger automated analysis workflow. Did you upload files?");
+          throw new Error(data.error || "Failed to trigger analysis workflow. Did you upload files?");
         }
         
         setCurrentComparisonId(data.comparisonId);

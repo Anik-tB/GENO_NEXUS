@@ -36,6 +36,8 @@ export default function UploadPage() {
   const [isDragging, setIsDragging] = useState(false);
   const [files, setFiles] = useState<FileEntry[]>([]);
   const [linkUrl, setLinkUrl] = useState("");
+  const [refType, setRefType] = useState<"link" | "file">("link");
+  const [refFile, setRefFile] = useState<File | null>(null);
   const [isLinking, setIsLinking] = useState(false);
   const [dbStats, setDbStats] = useState({ uploaded: 0, passed: 0, failed: 0 });
 
@@ -62,40 +64,65 @@ export default function UploadPage() {
     e.preventDefault();
     if (!linkUrl.trim()) return;
 
-    setIsLinking(true);
-    const id = Date.now().toString() + Math.random().toString().slice(2, 8);
-    
-    let type = "FASTA"; // Assume FASTA for NCBI by default
-    if (linkUrl.toLowerCase().includes(".vcf")) type = "VCF";
-    if (linkUrl.toLowerCase().includes(".fastq")) type = "FASTQ";
-    if (linkUrl.toLowerCase().includes(".bam")) type = "BAM";
-    
-    const urlParts = linkUrl.split("/");
-    let fileName = urlParts[urlParts.length - 1].split("?")[0] || "linked_dataset";
-    if (linkUrl.includes("NC_")) {
-      const match = linkUrl.match(/NC_[A-Za-z0-9.]+/);
-      if (match) fileName = match[0] + ".fasta";
-    }
-
-    const newFile: FileEntry = { id, name: fileName, size: "Linked URL", type, status: "uploading", progress: 0 };
-    setFiles((prev) => [newFile, ...prev]);
-
     try {
-      const res = await fetch("/api/files", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: linkUrl, fileName, fileType: type }),
-      });
+      let referenceFileId = "";
 
-      if (!res.ok) throw new Error("Failed to link URL");
+      if (refType === "link") {
+        if (!linkUrl.trim()) return;
+        setIsLinking(true);
+        
+        let type = "FASTA";
+        if (linkUrl.toLowerCase().includes(".vcf")) type = "VCF";
+        if (linkUrl.toLowerCase().includes(".fastq")) type = "FASTQ";
+        if (linkUrl.toLowerCase().includes(".bam")) type = "BAM";
+        
+        const urlParts = linkUrl.split("/");
+        let fileName = urlParts[urlParts.length - 1].split("?")[0] || "linked_dataset";
+        if (linkUrl.includes("NC_")) {
+          const match = linkUrl.match(/NC_[A-Za-z0-9.]+/);
+          if (match) fileName = match[0] + ".fasta";
+        }
+
+        const res = await fetch("/api/files", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ url: linkUrl, fileName, fileType: type }),
+        });
+
+        if (!res.ok) throw new Error("Failed to link URL");
+        const data = await res.json();
+        referenceFileId = data.id;
+      } else {
+        if (!refFile) return;
+        setIsLinking(true);
+        
+        const formData = new FormData();
+        formData.append("file", refFile);
+        const type = refFile.name.split(".").pop()?.toUpperCase() || "FASTA";
+        formData.append("fileType", type);
+
+        const res = await fetch("/api/files", {
+          method: "POST",
+          body: formData,
+        });
+
+        if (!res.ok) throw new Error("Failed to upload reference file");
+        const data = await res.json();
+        referenceFileId = data.id;
+      }
+
+      // Automatically find the latest query file to compare against
+      const statsRes = await fetch("/api/files/list");
+      const statsData = await statsRes.json();
+      const latestQuery = statsData.files?.find((f: any) => f.id !== referenceFileId && !f.storage_path.startsWith("http"));
       
-      setFiles((prev) => prev.map((f) => (f.id === id ? { ...f, status: "success", progress: 100 } : f)));
-      setLinkUrl("");
-      fetchStats();
-      router.push("/dashboard/analysis");
+      if (latestQuery) {
+        router.push(`/dashboard/analysis?queryId=${latestQuery.id}&refId=${referenceFileId}`);
+      } else {
+        router.push("/dashboard/analysis");
+      }
     } catch (error) {
       console.error(error);
-      setFiles((prev) => prev.map((f) => (f.id === id ? { ...f, status: "error" } : f)));
       fetchStats();
     } finally {
       setIsLinking(false);
@@ -258,36 +285,92 @@ export default function UploadPage() {
         </div>
 
         {/* ── Link Remote Dataset Component (Acts as Analysis Trigger) ── */}
-        <div style={{ marginTop: "1rem", background: "var(--gn-bg, #090e17)", border: "1px dashed var(--gn-primary)", borderRadius: "12px", padding: "1.5rem" }}>
-          <h3 style={{ fontSize: "1.1rem", marginBottom: "0.5rem", fontWeight: "600", color: "var(--gn-primary)" }}>Launch Sequence Alignment</h3>
-          <p style={{ color: "var(--gn-text-secondary)", fontSize: "0.95rem", marginBottom: "1rem", fontWeight: 500 }}>
-            Paste the NCBI reference link below. We will instantly compare it against the sequence you uploaded above!
+        <div style={{ marginTop: "1.5rem", background: "#090e17", border: "1px solid #1e293b", borderRadius: "16px", padding: "1.5rem", boxShadow: "0 10px 25px -5px rgba(0,0,0,0.3)" }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+            <h3 style={{ fontSize: "1.1rem", fontWeight: "600", color: "var(--gn-primary)", display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <span style={{ background: 'rgba(16, 185, 129, 0.1)', padding: '6px', borderRadius: '8px' }}>🧬</span>
+              Launch Sequence Alignment
+            </h3>
+            <div style={{ display: 'flex', background: '#05080d', padding: '4px', borderRadius: '10px', border: '1px solid #1e293b' }}>
+              <button 
+                onClick={() => setRefType("link")}
+                style={{ 
+                  padding: '6px 12px', borderRadius: '8px', fontSize: '0.85rem', fontWeight: '600', transition: 'all 0.2s',
+                  background: refType === "link" ? "var(--gn-primary)" : "transparent",
+                  color: refType === "link" ? "#000" : "var(--gn-text-muted)",
+                  border: 'none', cursor: 'pointer'
+                }}
+              >NCBI Link</button>
+              <button 
+                onClick={() => setRefType("file")}
+                style={{ 
+                  padding: '6px 12px', borderRadius: '8px', fontSize: '0.85rem', fontWeight: '600', transition: 'all 0.2s',
+                  background: refType === "file" ? "var(--gn-primary)" : "transparent",
+                  color: refType === "file" ? "#000" : "var(--gn-text-muted)",
+                  border: 'none', cursor: 'pointer'
+                }}
+              >Local File</button>
+            </div>
+          </div>
+
+          <p style={{ color: "var(--gn-text-secondary)", fontSize: "0.9rem", marginBottom: "1.25rem", lineHeight: 1.5 }}>
+            {refType === "link" 
+              ? "Paste the NCBI reference link below. We will instantly compare it against the sequence you uploaded above!"
+              : "Upload a local reference file (FASTA/FASTQ) to compare against your genomic data."}
           </p>
-          <form onSubmit={handleLinkSubmit} style={{ display: "flex", gap: "0.5rem" }}>
-            <input 
-              type="url" 
-              placeholder="e.g. https://www.ncbi.nlm.nih.gov/nuccore/NC_045512.2?report=fasta" 
-              value={linkUrl}
-              onChange={(e) => setLinkUrl(e.target.value)}
-              style={{ flex: 1, padding: "0.85rem 1rem", borderRadius: "8px", border: "1px solid var(--gn-border)", background: "#05080d", color: "var(--gn-white)", outline: "none", fontSize: "0.95rem" }}
-              required
-            />
+
+          <form onSubmit={handleLinkSubmit} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+            {refType === "link" ? (
+              <input 
+                type="url" 
+                placeholder="e.g. https://www.ncbi.nlm.nih.gov/nuccore/NC_045512.2?report=fasta" 
+                value={linkUrl}
+                onChange={(e) => setLinkUrl(e.target.value)}
+                style={{ width: "100%", padding: "0.85rem 1.25rem", borderRadius: "10px", border: "1px solid #1e293b", background: "#05080d", color: "var(--gn-white)", outline: "none", fontSize: "0.95rem", transition: 'border-color 0.2s' }}
+                required
+              />
+            ) : (
+              <div 
+                style={{ 
+                  width: "100%", padding: "1.5rem", borderRadius: "12px", border: "2px dashed #1e293b", background: "#05080d", 
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.75rem', cursor: 'pointer',
+                  position: 'relative', overflow: 'hidden'
+                }}
+                onClick={() => document.getElementById('ref-file-input')?.click()}
+              >
+                <span style={{ fontSize: '1.5rem' }}>📄</span>
+                <span style={{ color: 'var(--gn-text-secondary)', fontSize: '0.9rem' }}>
+                  {refFile ? refFile.name : "Select or drag reference file"}
+                </span>
+                <input 
+                  id="ref-file-input"
+                  type="file" 
+                  accept=".fasta,.fastq,.vcf,.bam"
+                  onChange={(e) => setRefFile(e.target.files?.[0] || null)}
+                  style={{ display: 'none' }}
+                />
+              </div>
+            )}
+            
             <button 
               type="submit" 
-              disabled={isLinking || !linkUrl}
+              disabled={isLinking || (refType === "link" ? !linkUrl : !refFile)}
               style={{
-                padding: "0.75rem 1.5rem",
-                borderRadius: "8px",
+                width: "100%",
+                padding: "0.9rem",
+                borderRadius: "10px",
                 background: "var(--gn-primary)",
                 color: "#111",
-                fontWeight: "600",
+                fontWeight: "700",
+                fontSize: "0.95rem",
                 border: "none",
-                cursor: isLinking || !linkUrl ? "not-allowed" : "pointer",
-                opacity: isLinking || !linkUrl ? 0.5 : 1,
-                transition: "opacity 0.2s"
+                cursor: isLinking || (refType === "link" ? !linkUrl : !refFile) ? "not-allowed" : "pointer",
+                opacity: isLinking || (refType === "link" ? !linkUrl : !refFile) ? 0.5 : 1,
+                transition: "all 0.25s transform active",
+                boxShadow: "0 4px 14px 0 rgba(16, 185, 129, 0.39)"
               }}
             >
-              {isLinking ? "Starting..." : "Start Analysis"}
+              {isLinking ? "Initializing Analysis Engines..." : "Launch Comparative Pipeline"}
             </button>
           </form>
         </div>
