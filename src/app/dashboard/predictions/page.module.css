@@ -162,6 +162,7 @@
   font-weight: 700;
   fill: var(--gn-white);
   font-family: var(--font-body);
+  dominant-baseline: central;
 }
 
 .ringLabel {
@@ -170,6 +171,7 @@
   font-family: var(--font-body);
   text-transform: uppercase;
   letter-spacing: 0.08em;
+  dominant-baseline: central;
 }
 
 .insightMeta { display: flex; flex-wrap: wrap; gap: 0.5rem; }
