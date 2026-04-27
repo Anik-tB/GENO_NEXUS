@@ -22,6 +22,7 @@ export default function AnalysisPage() {
   const [currentComparisonId, setCurrentComparisonId] = useState<string | null>(null);
   const [isDismissed, setIsDismissed] = useState(false);
   const [history, setHistory] = useState<any[]>([]);
+  const [showHistoryView, setShowHistoryView] = useState(false);
 
   const fetchHistory = async () => {
     try {
@@ -108,6 +109,7 @@ export default function AnalysisPage() {
     setLoading(true);
     setError("");
     setIsDismissed(false);
+    setShowHistoryView(false);
     setCurrentComparisonId(id);
     try {
       const sRes = await fetch(`/api/analysis/compare/${id}`);
@@ -271,31 +273,89 @@ export default function AnalysisPage() {
       {/* ── Header ── */}
       <header className={styles.header}>
         <div className={styles.headerContent}>
-          <div className={styles.eyebrow}>🔬 Variant Analysis Module</div>
+          <div className={styles.eyebrow}>
+            <span>🔬 Variant Analysis Module</span>
+          </div>
           <h1 className={styles.title}>Mutation Analysis</h1>
           <p className={styles.subtitle}>Review identified variants, severity classifications, and evidence-based clinical impacts.</p>
+          <button 
+            onClick={() => { setShowHistoryView(!showHistoryView); if (!showHistoryView) fetchHistory(); }}
+            style={{ 
+               background: 'transparent', border: '1px solid var(--gn-primary)', 
+               color: 'var(--gn-primary)', padding: '0.5rem 1rem', borderRadius: '6px', 
+               cursor: 'pointer', fontSize: '0.85rem', marginTop: '1rem', fontWeight: 600,
+               width: 'fit-content', transition: 'all 0.2s', outline: 'none'
+            }}
+            onMouseOver={(e) => { e.currentTarget.style.background = 'rgba(16, 185, 129, 0.1)' }}
+            onMouseOut={(e) => { e.currentTarget.style.background = 'transparent' }}
+          >
+            {showHistoryView ? "← Return to Active Analysis" : "View Past Analyses"}
+          </button>
         </div>
-        <div className={styles.kpiStrip}>
-          <div className={styles.kpiBubble}>
-            <span className={styles.kpiNum}>{mutations.length}</span>
-            <span className={styles.kpiLbl}>Total Variants</span>
+        {!showHistoryView && (
+          <div className={styles.kpiStrip}>
+            <div className={styles.kpiBubble}>
+              <span className={styles.kpiNum}>{mutations.length}</span>
+              <span className={styles.kpiLbl}>Total Variants</span>
+            </div>
+            <div className={`${styles.kpiBubble} ${styles.kpiDanger}`}>
+              <span className={styles.kpiNum}>{highCount}</span>
+              <span className={styles.kpiLbl}>High Priority</span>
+            </div>
+            <div className={`${styles.kpiBubble} ${styles.kpiWarning}`}>
+              <span className={styles.kpiNum}>{medCount}</span>
+              <span className={styles.kpiLbl}>Medium</span>
+            </div>
+            <div className={`${styles.kpiBubble} ${styles.kpiSuccess}`}>
+              <span className={styles.kpiNum}>{lowCount}</span>
+              <span className={styles.kpiLbl}>Low Risk</span>
+            </div>
           </div>
-          <div className={`${styles.kpiBubble} ${styles.kpiDanger}`}>
-            <span className={styles.kpiNum}>{highCount}</span>
-            <span className={styles.kpiLbl}>High Priority</span>
-          </div>
-          <div className={`${styles.kpiBubble} ${styles.kpiWarning}`}>
-            <span className={styles.kpiNum}>{medCount}</span>
-            <span className={styles.kpiLbl}>Medium</span>
-          </div>
-          <div className={`${styles.kpiBubble} ${styles.kpiSuccess}`}>
-            <span className={styles.kpiNum}>{lowCount}</span>
-            <span className={styles.kpiLbl}>Low Risk</span>
-          </div>
-        </div>
+        )}
       </header>
 
-      <div className={styles.grid}>
+      {showHistoryView ? (
+        <div style={{marginTop: '2rem', textAlign: 'left', maxWidth: '800px', margin: '2rem auto 4rem'}}>
+          <h3 style={{color: 'var(--gn-text-secondary)', marginBottom: '1rem', borderBottom: '1px solid #333', paddingBottom: '0.5rem', fontWeight: 600}}>Previous Analysis Runs</h3>
+          <div style={{display: 'flex', flexDirection: 'column', gap: '0.75rem'}}>
+            {history.length === 0 ? (
+               <p style={{color: 'var(--gn-text-muted)'}}>No past experiments found.</p>
+            ) : history.map((h: any) => (
+              <div key={h.id} 
+                onClick={() => h.status === 'completed' && loadHistoricalAnalysis(h.id)}
+                style={{
+                  display: 'flex', 
+                  justifyContent: 'space-between', 
+                  padding: '1.25rem', 
+                  background: 'var(--gn-bg-glass)', 
+                  border: '1px solid var(--gn-border-light-strong)', 
+                  borderRadius: '8px', 
+                  cursor: h.status === 'completed' ? 'pointer' : 'default',
+                  opacity: h.status === 'completed' ? 1 : 0.6,
+                  transition: 'border-color 0.2s',
+                }}
+                onMouseOver={(e) => h.status === 'completed' && (e.currentTarget.style.borderColor = 'var(--gn-primary)')}
+                onMouseOut={(e) => h.status === 'completed' && (e.currentTarget.style.borderColor = 'var(--gn-border-light-strong)')}
+              >
+                <div style={{display: 'flex', flexDirection: 'column', gap: '0.3rem'}}>
+                  <strong style={{color: 'var(--gn-white)', fontSize: '1.05rem'}}>{h.query_name} <span style={{color: 'var(--gn-text-muted)', margin: '0 0.5rem'}}>vs</span> <span style={{fontWeight: 'normal', color: 'var(--gn-blue)'}}>{h.ref_name}</span></strong>
+                  <span style={{fontSize: '0.85rem', color: 'var(--gn-text-muted)'}}>{new Date(h.created_at).toLocaleString()}</span>
+                </div>
+                <div style={{display: 'flex', alignItems: 'center'}}>
+                  <span style={{
+                    fontSize: '0.75rem', fontWeight: '800', letterSpacing: '0.05em', textTransform: 'uppercase', padding: '0.3rem 0.6rem', borderRadius: '4px',
+                    background: h.status === 'completed' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(244, 63, 94, 0.1)',
+                    color: h.status === 'completed' ? 'var(--gn-success)' : 'var(--gn-danger)'
+                  }}>
+                    {h.status}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : (
+        <div className={styles.grid}>
         {/* ── Variant Table ── */}
         <section className={styles.tableSection}>
           <div className={styles.cardHeader}>
@@ -429,6 +489,7 @@ export default function AnalysisPage() {
           </div>
         )}
       </div>
+      )}
     </div>
   );
 }
