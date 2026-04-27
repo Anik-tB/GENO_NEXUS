@@ -52,10 +52,11 @@
 
 /* Theme swatches */
 .themePreview { display: flex; gap: 0.75rem; }
-.themeSwatch { flex: 1; padding: 0.6rem; border-radius: 8px; font-size: 0.75rem; font-weight: 700; text-align: center; border: 1px solid var(--gn-border-light); transition: all 0.18s ease; cursor: pointer; }
+.themeSwatch { flex: 1; padding: 0.6rem; border-radius: 8px; font-size: 0.75rem; font-weight: 700; text-align: center; border: 2px solid var(--gn-border-light); transition: all 0.18s ease; cursor: pointer; outline: none; }
 .swatchDark  { background: #09090b; color: var(--gn-primary); }
 .swatchLight { background: #f8fafc; color: #0f172a; }
-.swatchDark:hover, .swatchLight:hover { transform: translateY(-2px); border-color: var(--gn-primary); }
+.swatchDark:hover, .swatchLight:hover { transform: translateY(-2px); border-color: var(--gn-text-muted); }
+.swatchActive { border-color: var(--gn-primary) !important; box-shadow: 0 0 10px var(--gn-primary-glow); }
 
 /* API Keys */
 .keyList { display: flex; flex-direction: column; gap: 0.6rem; }

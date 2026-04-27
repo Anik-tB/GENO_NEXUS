@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import styles from "./page.module.css";
 
 const API_KEYS = [
@@ -13,6 +13,29 @@ export default function SettingsPage() {
   const [autoAnalysis, setAutoAnalysis] = useState(true);
   const [dataSharing, setDataSharing]  = useState(false);
   const [emailAlerts, setEmailAlerts]  = useState(true);
+
+  const [theme, setTheme] = useState("dark");
+  
+  useEffect(() => {
+    setTheme(localStorage.getItem("theme") || "dark");
+
+    const handleThemeChange = () => {
+      setTheme(localStorage.getItem("theme") || "dark");
+    };
+    window.addEventListener("themeChange", handleThemeChange);
+    return () => window.removeEventListener("themeChange", handleThemeChange);
+  }, []);
+
+  const changeTheme = (newTheme: string) => {
+    setTheme(newTheme);
+    localStorage.setItem("theme", newTheme);
+    if (newTheme === "light") {
+      document.documentElement.setAttribute("data-theme", "light");
+    } else {
+      document.documentElement.removeAttribute("data-theme");
+    }
+    window.dispatchEvent(new Event("themeChange"));
+  };
 
   return (
     <div className={styles.container}>
@@ -80,8 +103,18 @@ export default function SettingsPage() {
               <p>Click the ☀️/🌙 icon in the top navigation to switch between <strong>Emerald Dark</strong> and <strong>Professional Light</strong> modes.</p>
             </div>
             <div className={styles.themePreview}>
-              <div className={styles.themeSwatch + " " + styles.swatchDark}>Dark</div>
-              <div className={styles.themeSwatch + " " + styles.swatchLight}>Light</div>
+              <button 
+                className={`${styles.themeSwatch} ${styles.swatchDark} ${theme === 'dark' ? styles.swatchActive : ''}`}
+                onClick={() => changeTheme('dark')}
+              >
+                Dark
+              </button>
+              <button 
+                className={`${styles.themeSwatch} ${styles.swatchLight} ${theme === 'light' ? styles.swatchActive : ''}`}
+                onClick={() => changeTheme('light')}
+              >
+                Light
+              </button>
             </div>
           </section>
 

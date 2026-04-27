@@ -43,6 +43,13 @@ export function TopNav({ userInitials, userName, userEmail }: TopNavProps) {
     } else {
       document.documentElement.removeAttribute("data-theme");
     }
+
+    const handleThemeEvent = () => {
+       const updated = localStorage.getItem("theme") || "dark";
+       setTheme(updated);
+    };
+    window.addEventListener("themeChange", handleThemeEvent);
+    return () => window.removeEventListener("themeChange", handleThemeEvent);
   }, []);
 
   const toggleTheme = () => {
@@ -54,6 +61,7 @@ export function TopNav({ userInitials, userName, userEmail }: TopNavProps) {
     } else {
       document.documentElement.removeAttribute("data-theme");
     }
+    window.dispatchEvent(new Event("themeChange"));
   };
 
   const handleNavigation = (path: string) => {
