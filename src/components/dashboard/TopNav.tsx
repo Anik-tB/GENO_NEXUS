@@ -9,9 +9,10 @@ import Image from "next/image";
 interface TopNavProps {
   userInitials: string;
   userName: string;
+  userEmail: string;
 }
 
-export function TopNav({ userInitials, userName }: TopNavProps) {
+export function TopNav({ userInitials, userName, userEmail }: TopNavProps) {
   const router = useRouter();
   const [theme, setTheme] = useState("dark");
   const [mounted, setMounted] = useState(false);
@@ -327,7 +328,7 @@ export function TopNav({ userInitials, userName }: TopNavProps) {
             <div className={styles.profileDropdown}>
               <div className={styles.profileHeader}>
                 <p className={styles.profileName}>{userName}</p>
-                <p className={styles.profileEmail}>user@genonexus.com</p>
+                <p className={styles.profileEmail}>{userEmail}</p>
               </div>
               <div className={styles.dropdownDivider} />
               

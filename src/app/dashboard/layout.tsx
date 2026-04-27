@@ -39,7 +39,7 @@ export default async function DashboardLayout({
     <div className={styles.dashboardShell}>
       <Sidebar />
       <div className={styles.mainWrapper}>
-        <TopNav userInitials={userInitials} userName={fullName || user.firstName} />
+        <TopNav userInitials={userInitials} userName={fullName || user.firstName} userEmail={user.email} />
         <main className={styles.contentArea}>
           {children}
         </main>
