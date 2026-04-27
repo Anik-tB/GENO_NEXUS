@@ -221,7 +221,7 @@ export default function AnalysisPage() {
         </div>
 
         {history.length > 0 && (
-          <div style={{marginTop: '4rem', textAlign: 'left', maxWidth: '800px', margin: '4rem auto 0'}}>
+          <div style={{marginTop: '4rem', textAlign: 'left', maxWidth: '1000px', margin: '4rem auto 0'}}>
             <h3 style={{color: 'var(--gn-text-secondary)', marginBottom: '1rem', borderBottom: '1px solid #333', paddingBottom: '0.5rem', fontWeight: 600}}>Previous Analysis Runs</h3>
             <div style={{display: 'flex', flexDirection: 'column', gap: '0.75rem'}}>
               {history.map((h: any) => (
@@ -315,7 +315,7 @@ export default function AnalysisPage() {
       </header>
 
       {showHistoryView ? (
-        <div style={{marginTop: '2rem', textAlign: 'left', maxWidth: '800px', margin: '2rem auto 4rem'}}>
+        <div style={{marginTop: '2rem', textAlign: 'left', maxWidth: '100%', margin: '2rem 0 4rem 0'}}>
           <h3 style={{color: 'var(--gn-text-secondary)', marginBottom: '1rem', borderBottom: '1px solid #333', paddingBottom: '0.5rem', fontWeight: 600}}>Previous Analysis Runs</h3>
           <div style={{display: 'flex', flexDirection: 'column', gap: '0.75rem'}}>
             {history.length === 0 ? (
