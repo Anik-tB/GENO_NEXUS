@@ -9,6 +9,9 @@ const CATEGORY_ICONS: Record<string, string> = {
   Oncology: "🔬",
   Neurology: "🧠",
   Hematology: "🩸",
+  "Drug Resistance": "⚠️",
+  "Functional Domain": "🧬",
+  Genomic: "🔗",
 };
 
 const SEVERITY_LABELS: Record<string, string> = { high: "HIGH", medium: "MED", low: "LOW" };
@@ -17,13 +20,16 @@ export default function AnalysisPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [mutations, setMutations] = useState<any[]>([]);
+  const [indels, setIndels] = useState<any[]>([]);
   const [heatmapData, setHeatmapData] = useState<string[]>(Array(64).fill("none"));
   const [selectedGene, setSelectedGene] = useState<any>(null);
   const [filter, setFilter] = useState("all");
+  const [variantTab, setVariantTab] = useState<"snps" | "indels">("snps");
   const [currentComparisonId, setCurrentComparisonId] = useState<string | null>(null);
   const [isDismissed, setIsDismissed] = useState(false);
   const [history, setHistory] = useState<any[]>([]);
   const [showHistoryView, setShowHistoryView] = useState(false);
+  const [analysisInfo, setAnalysisInfo] = useState<any>(null);
   const searchParams = useSearchParams();
   const explicitQueryId = searchParams.get("queryId");
   const explicitRefId = searchParams.get("refId");
@@ -41,72 +47,87 @@ export default function AnalysisPage() {
   }, [error]);
 
   const processAnalysisResult = (sData: any) => {
-    // Transform raw Python base substitutions into professional UI-compatible Variants
-    const rawMutations = sData.result.mutations_found || [];
-    
-    // 1. Dynamic Chromosome Heatmap Calculation
-    const newHeatmap = Array(64).fill(0);
-    const maxPos = rawMutations.length > 0 ? Math.max(...rawMutations.map((m: any) => m.position)) : 2000;
-    const scale = maxPos > 0 ? maxPos : 2000;
-    
-    rawMutations.forEach((m: any) => {
-       const bucket = Math.min(63, Math.floor((m.position / scale) * 63));
-       if (bucket >= 0 && bucket < 64) newHeatmap[bucket] += 3; // Strong weight for real data
+    const rawMutations: any[] = sData.result.mutations_found || [];
+    const rawIndels: any[] = sData.result.indels_found || [];
+
+    // Organism & metadata banner
+    setAnalysisInfo({
+      organism:       sData.result.detected_organism ?? "Unknown",
+      alignmentScore: sData.result.alignment_score ?? null,
+      queryLength:    sData.result.query_length ?? null,
+      refLength:      sData.result.reference_length ?? null,
+      model:          sData.result.analysis_metadata?.model ?? "RandomForest-v1",
+      algorithm:      sData.result.analysis_metadata?.algorithm ?? "Needleman-Wunsch",
+      geneMap:        sData.result.analysis_metadata?.gene_map_used ?? [],
     });
-    
+
+    // Chromosome heatmap — weighted by AI severity
+    const allVariants = [...rawMutations, ...rawIndels];
+    const newHeatmap = Array(64).fill(0);
+    const maxPos = allVariants.length > 0 ? Math.max(...allVariants.map((m: any) => m.position)) : 1;
+    const scale = maxPos > 0 ? maxPos : 1;
+    allVariants.forEach((m: any) => {
+      const bucket = Math.min(63, Math.floor((m.position / scale) * 63));
+      if (bucket >= 0 && bucket < 64) {
+        newHeatmap[bucket] += m.severity === "high" ? 6 : m.severity === "medium" ? 3 : 1;
+      }
+    });
     setHeatmapData(newHeatmap.map(count => {
-       const noise = Math.random() * 1.5; // Natural biological variance trace
-       const finalScore = count + noise;
-       if (finalScore >= 5) return "high";
-       if (finalScore >= 3) return "medium";
-       if (finalScore >= 1) return "low";
-       return "none";
+      if (count >= 6) return "high";
+      if (count >= 3) return "medium";
+      if (count >= 1) return "low";
+      return "none";
     }));
 
-    // 2. Bioinformatics Nomenclature & Heuristics
+    // Format SNPs — severity, category, impact come from AI engine directly
     const formatted = rawMutations.map((m: any, idx: number) => {
-      const isPurine = (b: string) => b === 'A' || b === 'G';
-      const isPyrimidine = (b: string) => b === 'C' || b === 'T';
-      
-      const isTransition = (isPurine(m.reference) && isPurine(m.query)) || (isPyrimidine(m.reference) && isPyrimidine(m.query));
-      const mutType = isTransition ? "Transition" : "Transversion";
-      
-      let severity = "low";
-      let category = "Oncology";
-      let impact = `Single nucleotide polymorphism (SNP) at position ${m.position}. Likely benign ${mutType.toLowerCase()}. No immediate action required.`;
-      
-      if (mutType === "Transversion") { 
-        severity = "medium"; 
-        category = "Pharmacogenomic"; 
-        impact = "Transversion detected. Increased likelihood of altering protein quaternary structure. Modulated drug affinity possible."; 
-      }
-      
-      if (m.reference === 'C' && m.query === 'T') { 
-        severity = "high"; category = "Neurology"; 
-        impact = "C>T transition. Highly penetrant variant associated with rapid neural deterioration. Clinical correlation strongly advised."; 
-      }
-      if (m.reference === 'A' && m.query === 'T') { 
-        severity = "high"; category = "Oncology"; 
-        impact = "A>T transversion. High pathogenic probability disrupting tumor suppressor binding domain."; 
-      }
-      
-      const chrNum = (m.position % 22) + 1;
-      const hgvs = `Chr${chrNum}:g.${m.position}${m.reference}>${m.query}`;
+      const severity = m.severity ?? "low";
+      const region = m.functional_region ?? "Intergenic";
+      const confidence = m.ai_confidence ?? 0;
+      const isDrSite = m.drug_resistance_site ?? false;
 
+      let category = "Genomic";
+      if (isDrSite) category = "Drug Resistance";
+      else if (region !== "Intergenic") category = "Functional Domain";
+
+      const impact = isDrSite
+        ? `⚠️ Known drug-resistance site at position ${m.position} (${region}). Clinical correlation required.`
+        : m.in_functional_domain
+          ? `Variant in ${region} gene region. ${m.type} at codon position ${m.codon_position}. AI confidence: ${(confidence * 100).toFixed(0)}%.`
+          : `${m.type} in intergenic region at position ${m.position}. Likely low functional impact. AI confidence: ${(confidence * 100).toFixed(0)}%.`;
+
+      const hgvs = `${region}:g.${m.position}${m.reference}>${m.query}`;
       return {
         id: `mut_${idx}`,
         gene: hgvs,
-        type: mutType,
+        type: m.type ?? "SNP",
         variant: `${m.reference} → ${m.query}`,
         severity,
         impact,
         category,
-        raw: m
-      }
+        ai_confidence: confidence,
+        functional_region: region,
+        drug_resistance_site: isDrSite,
+        raw: m,
+      };
     });
-
     setMutations(formatted);
+
+    // Format Indels
+    const formattedIndels = rawIndels.map((m: any, idx: number) => ({
+      id: `indel_${idx}`,
+      position: m.position,
+      type: m.type === "insertion" ? "Insertion" : "Deletion",
+      base: m.query_base ?? m.reference_base ?? "–",
+      severity: m.severity ?? "low",
+      functional_region: m.functional_region ?? "Intergenic",
+      ai_confidence: m.ai_confidence ?? 0,
+      drug_resistance_site: m.drug_resistance_site ?? false,
+    }));
+    setIndels(formattedIndels);
+
     if (formatted.length > 0) setSelectedGene(formatted[0]);
+    else if (formattedIndels.length > 0) setVariantTab("indels");
   };
 
   const loadHistoricalAnalysis = async (id: string) => {
@@ -278,10 +299,13 @@ export default function AnalysisPage() {
     );
   }
 
-  const filtered = filter === "all" ? mutations : mutations.filter((m) => m.severity === filter);
+  const filtered = variantTab === "indels"
+    ? (filter === "all" ? indels : indels.filter((m) => m.severity === filter))
+    : (filter === "all" ? mutations : mutations.filter((m) => m.severity === filter));
   const highCount = mutations.filter((m) => m.severity === "high").length;
   const medCount  = mutations.filter((m) => m.severity === "medium").length;
   const lowCount  = mutations.filter((m) => m.severity === "low").length;
+  const drCount   = mutations.filter((m) => m.drug_resistance_site).length;
 
   return (
     <div className={styles.container}>
@@ -293,6 +317,39 @@ export default function AnalysisPage() {
           </div>
           <h1 className={styles.title}>Mutation Analysis</h1>
           <p className={styles.subtitle}>Review identified variants, severity classifications, and evidence-based clinical impacts.</p>
+          {analysisInfo && (
+            <div style={{
+              marginTop: '1rem', padding: '0.75rem 1.25rem',
+              background: 'rgba(16,185,129,0.07)', border: '1px solid rgba(16,185,129,0.2)',
+              borderRadius: '10px', display: 'flex', flexWrap: 'wrap', gap: '1rem', alignItems: 'center'
+            }}>
+              <span style={{color: 'var(--gn-primary)', fontWeight: 700, fontSize: '0.9rem'}}>
+                🧬 {analysisInfo.organism || "Unknown Organism"}
+              </span>
+              <span style={{color: 'var(--gn-text-muted)', fontSize: '0.8rem'}}>•</span>
+              <span style={{color: 'var(--gn-text-secondary)', fontSize: '0.82rem'}}>
+                {analysisInfo.algorithm} alignment
+              </span>
+              <span style={{color: 'var(--gn-text-muted)', fontSize: '0.8rem'}}>•</span>
+              <span style={{color: 'var(--gn-text-secondary)', fontSize: '0.82rem'}}>
+                AI: {analysisInfo.model}
+              </span>
+              {analysisInfo.geneMap?.length > 0 && (
+                <>
+                  <span style={{color: 'var(--gn-text-muted)', fontSize: '0.8rem'}}>•</span>
+                  <span style={{color: 'var(--gn-text-secondary)', fontSize: '0.82rem'}}>
+                    Gene map: {analysisInfo.geneMap.join(", ")}
+                  </span>
+                </>
+              )}
+              {drCount > 0 && (
+                <span style={{
+                  background: 'rgba(239,68,68,0.15)', color: '#f87171',
+                  padding: '2px 8px', borderRadius: '4px', fontSize: '0.78rem', fontWeight: 700
+                }}>⚠️ {drCount} Drug Resistance Site{drCount > 1 ? 's' : ''}</span>
+              )}
+            </div>
+          )}
           <button 
             onClick={() => { setShowHistoryView(!showHistoryView); if (!showHistoryView) fetchHistory(); }}
             style={{ 
@@ -311,7 +368,11 @@ export default function AnalysisPage() {
           <div className={styles.kpiStrip}>
             <div className={styles.kpiBubble}>
               <span className={styles.kpiNum}>{mutations.length}</span>
-              <span className={styles.kpiLbl}>Total Variants</span>
+              <span className={styles.kpiLbl}>SNPs</span>
+            </div>
+            <div className={styles.kpiBubble}>
+              <span className={styles.kpiNum}>{indels.length}</span>
+              <span className={styles.kpiLbl}>Indels</span>
             </div>
             <div className={`${styles.kpiBubble} ${styles.kpiDanger}`}>
               <span className={styles.kpiNum}>{highCount}</span>
@@ -324,6 +385,10 @@ export default function AnalysisPage() {
             <div className={`${styles.kpiBubble} ${styles.kpiSuccess}`}>
               <span className={styles.kpiNum}>{lowCount}</span>
               <span className={styles.kpiLbl}>Low Risk</span>
+            </div>
+            <div className={`${styles.kpiBubble}`} style={{borderColor: '#f59e0b', background: 'rgba(245,158,11,0.05)'}}>
+              <span className={styles.kpiNum} style={{color: '#f59e0b'}}>{drCount}</span>
+              <span className={styles.kpiLbl}>Drug Resist.</span>
             </div>
           </div>
         )}
@@ -374,7 +439,25 @@ export default function AnalysisPage() {
         {/* ── Variant Table ── */}
         <section className={styles.tableSection}>
           <div className={styles.cardHeader}>
-            <h2 className={styles.cardTitle}>Identified Variants</h2>
+            <div style={{display:'flex', gap:'0.75rem', alignItems:'center'}}>
+              <h2 className={styles.cardTitle}>Identified Variants</h2>
+              <div style={{display:'flex', background:'#05080d', padding:'3px', borderRadius:'8px', border:'1px solid #1e293b'}}>
+                <button
+                  onClick={() => setVariantTab("snps")}
+                  style={{padding:'4px 12px', borderRadius:'6px', fontSize:'0.8rem', fontWeight:600, border:'none', cursor:'pointer', transition:'all 0.2s',
+                    background: variantTab === "snps" ? 'var(--gn-primary)' : 'transparent',
+                    color: variantTab === "snps" ? '#000' : 'var(--gn-text-muted)'
+                  }}
+                >SNPs ({mutations.length})</button>
+                <button
+                  onClick={() => setVariantTab("indels")}
+                  style={{padding:'4px 12px', borderRadius:'6px', fontSize:'0.8rem', fontWeight:600, border:'none', cursor:'pointer', transition:'all 0.2s',
+                    background: variantTab === "indels" ? '#f59e0b' : 'transparent',
+                    color: variantTab === "indels" ? '#000' : 'var(--gn-text-muted)'
+                  }}
+                >Indels ({indels.length})</button>
+              </div>
+            </div>
             <div className={styles.filterPills}>
               {["all", "high", "medium", "low"].map((s) => (
                 <button
@@ -389,36 +472,45 @@ export default function AnalysisPage() {
           </div>
 
           <div className={styles.tableWrapper}>
+            {variantTab === "snps" ? (
             <table className={styles.table}>
               <thead>
                 <tr>
                   <th>#</th>
-                  <th>Gene</th>
+                  <th>Locus</th>
                   <th>Type</th>
                   <th>Variant</th>
-                  <th>Category</th>
+                  <th>Region</th>
+                  <th>AI Confidence</th>
                   <th>Severity</th>
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((mut, idx) => (
+                {(filter === "all" ? mutations : mutations.filter(m => m.severity === filter)).map((mut, idx) => (
                   <tr
                     key={mut.id}
                     className={`${styles.tableRow} ${selectedGene?.id === mut.id ? styles.rowActive : ""}`}
                     onClick={() => setSelectedGene(mut)}
+                    style={mut.drug_resistance_site ? {borderLeft: '3px solid #f87171'} : {}}
                   >
                     <td className={styles.tdNum}>{idx + 1}</td>
                     <td>
-                      <span className={styles.geneLabel} title="Distinct sequence of nucleotides forming part of a chromosome">
-                        {mut.gene}
-                      </span>
+                      <span className={styles.geneLabel}>{mut.gene}</span>
                     </td>
                     <td>{mut.type}</td>
                     <td><code className={styles.code} style={{color: '#f87171'}}>{mut.variant}</code></td>
                     <td>
                       <span className={styles.categoryPill}>
-                        {CATEGORY_ICONS[mut.category]} {mut.category}
+                        {CATEGORY_ICONS[mut.category] ?? '🔗'} {mut.functional_region}
                       </span>
+                    </td>
+                    <td>
+                      <div style={{display:'flex', alignItems:'center', gap:'0.4rem'}}>
+                        <div style={{width:40, height:5, background:'#1e293b', borderRadius:3, overflow:'hidden'}}>
+                          <div style={{width:`${Math.round(mut.ai_confidence*100)}%`, height:'100%', background: mut.ai_confidence > 0.7 ? 'var(--gn-primary)' : '#f59e0b', borderRadius:3}} />
+                        </div>
+                        <span style={{fontSize:'0.75rem', color:'var(--gn-text-muted)'}}>{Math.round(mut.ai_confidence*100)}%</span>
+                      </div>
                     </td>
                     <td>
                       <span className={`${styles.severityBadge} ${styles[`badge_${mut.severity}`]}`}>
@@ -429,6 +521,41 @@ export default function AnalysisPage() {
                 ))}
               </tbody>
             </table>
+            ) : (
+            <table className={styles.table}>
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Position</th>
+                  <th>Type</th>
+                  <th>Base</th>
+                  <th>Region</th>
+                  <th>AI Confidence</th>
+                  <th>Severity</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(filter === "all" ? indels : indels.filter(m => m.severity === filter)).map((indel, idx) => (
+                  <tr key={indel.id} className={styles.tableRow} style={indel.drug_resistance_site ? {borderLeft: '3px solid #f87171'} : {}}>
+                    <td className={styles.tdNum}>{idx + 1}</td>
+                    <td><span className={styles.geneLabel}>pos.{indel.position}</span></td>
+                    <td><code className={styles.code} style={{color: indel.type === 'Insertion' ? '#34d399' : '#f87171'}}>{indel.type}</code></td>
+                    <td><code className={styles.code}>{indel.base}</code></td>
+                    <td><span className={styles.categoryPill}>🧬 {indel.functional_region}</span></td>
+                    <td>
+                      <div style={{display:'flex', alignItems:'center', gap:'0.4rem'}}>
+                        <div style={{width:40, height:5, background:'#1e293b', borderRadius:3, overflow:'hidden'}}>
+                          <div style={{width:`${Math.round(indel.ai_confidence*100)}%`, height:'100%', background: indel.ai_confidence > 0.7 ? 'var(--gn-primary)' : '#f59e0b', borderRadius:3}} />
+                        </div>
+                        <span style={{fontSize:'0.75rem', color:'var(--gn-text-muted)'}}>{Math.round(indel.ai_confidence*100)}%</span>
+                      </div>
+                    </td>
+                    <td><span className={`${styles.severityBadge} ${styles[`badge_${indel.severity}`]}`}>{SEVERITY_LABELS[indel.severity]}</span></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            )}
           </div>
           {filtered.length === 0 && (
             <div className={styles.noResults}>No variations detected within this biological filter set.</div>
