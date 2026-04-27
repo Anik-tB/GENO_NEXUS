@@ -18,6 +18,11 @@ export function TopNav({ userInitials, userName }: TopNavProps) {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
 
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [isNotifOpen, setIsNotifOpen] = useState(false);
+  const notifRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
@@ -82,10 +87,62 @@ export function TopNav({ userInitials, userName }: TopNavProps) {
       if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
         setShowSearchDropdown(false);
       }
+      if (notifRef.current && !notifRef.current.contains(event.target as Node)) {
+        setIsNotifOpen(false);
+      }
     }
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  const fetchNotifications = async () => {
+    try {
+      const res = await fetch('/api/notifications');
+      const data = await res.json();
+      if (data.notifications) {
+        setNotifications(data.notifications);
+        setUnreadCount(data.notifications.filter((n: any) => !n.is_read).length);
+      }
+    } catch (err) {
+      console.error("Failed to fetch notifications:", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchNotifications();
+    const interval = setInterval(fetchNotifications, 60000); // Poll every minute
+    return () => clearInterval(interval);
+  }, []);
+
+  const markAllAsRead = async () => {
+    try {
+      const res = await fetch('/api/notifications/read-all', { method: 'PATCH' });
+      if (res.ok) {
+        setNotifications(notifications.map(n => ({ ...n, is_read: true })));
+        setUnreadCount(0);
+      }
+    } catch (err) {
+      console.error("Failed to mark all as read:", err);
+    }
+  };
+
+  const markAsRead = async (id: string) => {
+    try {
+      const res = await fetch(`/api/notifications/${id}/read`, { method: 'PATCH' });
+      if (res.ok) {
+        setNotifications(notifications.map(n => n.id === id ? { ...n, is_read: true } : n));
+        setUnreadCount(prev => Math.max(0, prev - 1));
+      }
+    } catch (err) {
+      console.error("Failed to mark as read:", err);
+    }
+  };
+
+  const formatTime = (dateStr: string) => {
+    const date = new Date(dateStr);
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ', ' + 
+           date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+  };
 
   useEffect(() => {
     const delayDebounceFn = setTimeout(() => {
@@ -207,12 +264,52 @@ export function TopNav({ userInitials, userName }: TopNavProps) {
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
           )}
         </button>
-        <button className={styles.iconButton} aria-label="Notifications">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
-            <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
-          </svg>
-        </button>
+        <div className={styles.notificationContainer} ref={notifRef}>
+          <button 
+            className={styles.iconButton} 
+            aria-label="Notifications"
+            onClick={() => setIsNotifOpen(!isNotifOpen)}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+              <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+            </svg>
+            {unreadCount > 0 && <span className={styles.badge}>{unreadCount}</span>}
+          </button>
+
+          {isNotifOpen && (
+            <div className={styles.notificationDropdown}>
+              <div className={styles.notificationHeader}>
+                <h3>Notifications</h3>
+                {unreadCount > 0 && (
+                  <button className={styles.markAllBtn} onClick={markAllAsRead}>
+                    Mark all as read
+                  </button>
+                )}
+              </div>
+              <div className={styles.notificationList}>
+                {notifications.length > 0 ? (
+                  notifications.map((notif) => (
+                    <div 
+                      key={notif.id} 
+                      className={`${styles.notificationItem} ${!notif.is_read ? styles.unread : ''}`}
+                      onClick={() => !notif.is_read && markAsRead(notif.id)}
+                    >
+                      {!notif.is_read && <div className={styles.unreadDot} />}
+                      <span className={styles.notifTitle}>{notif.title}</span>
+                      <span className={styles.notifMessage}>{notif.message}</span>
+                      <span className={styles.notifTime}>{formatTime(notif.created_at)}</span>
+                    </div>
+                  ))
+                ) : (
+                  <div className={styles.emptyNotifications}>
+                    <p>No notifications yet</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
 
         <div className={styles.profileContainer} ref={profileRef}>
           <button 
