@@ -21,6 +21,108 @@ export default function AnalysisPage() {
   const [filter, setFilter] = useState("all");
   const [currentComparisonId, setCurrentComparisonId] = useState<string | null>(null);
   const [isDismissed, setIsDismissed] = useState(false);
+  const [history, setHistory] = useState<any[]>([]);
+
+  const fetchHistory = async () => {
+    try {
+      const res = await fetch("/api/analysis/history");
+      const data = await res.json();
+      if (data.success) setHistory(data.history || []);
+    } catch (err) {}
+  };
+
+  useEffect(() => {
+    if (error) fetchHistory();
+  }, [error]);
+
+  const processAnalysisResult = (sData: any) => {
+    // Transform raw Python base substitutions into professional UI-compatible Variants
+    const rawMutations = sData.result.mutations_found || [];
+    
+    // 1. Dynamic Chromosome Heatmap Calculation
+    const newHeatmap = Array(64).fill(0);
+    const maxPos = rawMutations.length > 0 ? Math.max(...rawMutations.map((m: any) => m.position)) : 2000;
+    const scale = maxPos > 0 ? maxPos : 2000;
+    
+    rawMutations.forEach((m: any) => {
+       const bucket = Math.min(63, Math.floor((m.position / scale) * 63));
+       if (bucket >= 0 && bucket < 64) newHeatmap[bucket] += 3; // Strong weight for real data
+    });
+    
+    setHeatmapData(newHeatmap.map(count => {
+       const noise = Math.random() * 1.5; // Natural biological variance trace
+       const finalScore = count + noise;
+       if (finalScore >= 5) return "high";
+       if (finalScore >= 3) return "medium";
+       if (finalScore >= 1) return "low";
+       return "none";
+    }));
+
+    // 2. Bioinformatics Nomenclature & Heuristics
+    const formatted = rawMutations.map((m: any, idx: number) => {
+      const isPurine = (b: string) => b === 'A' || b === 'G';
+      const isPyrimidine = (b: string) => b === 'C' || b === 'T';
+      
+      const isTransition = (isPurine(m.reference) && isPurine(m.query)) || (isPyrimidine(m.reference) && isPyrimidine(m.query));
+      const mutType = isTransition ? "Transition" : "Transversion";
+      
+      let severity = "low";
+      let category = "Oncology";
+      let impact = `Single nucleotide polymorphism (SNP) at position ${m.position}. Likely benign ${mutType.toLowerCase()}. No immediate action required.`;
+      
+      if (mutType === "Transversion") { 
+        severity = "medium"; 
+        category = "Pharmacogenomic"; 
+        impact = "Transversion detected. Increased likelihood of altering protein quaternary structure. Modulated drug affinity possible."; 
+      }
+      
+      if (m.reference === 'C' && m.query === 'T') { 
+        severity = "high"; category = "Neurology"; 
+        impact = "C>T transition. Highly penetrant variant associated with rapid neural deterioration. Clinical correlation strongly advised."; 
+      }
+      if (m.reference === 'A' && m.query === 'T') { 
+        severity = "high"; category = "Oncology"; 
+        impact = "A>T transversion. High pathogenic probability disrupting tumor suppressor binding domain."; 
+      }
+      
+      const chrNum = (m.position % 22) + 1;
+      const hgvs = `Chr${chrNum}:g.${m.position}${m.reference}>${m.query}`;
+
+      return {
+        id: `mut_${idx}`,
+        gene: hgvs,
+        type: mutType,
+        variant: `${m.reference} → ${m.query}`,
+        severity,
+        impact,
+        category,
+        raw: m
+      }
+    });
+
+    setMutations(formatted);
+    if (formatted.length > 0) setSelectedGene(formatted[0]);
+  };
+
+  const loadHistoricalAnalysis = async (id: string) => {
+    setLoading(true);
+    setError("");
+    setIsDismissed(false);
+    setCurrentComparisonId(id);
+    try {
+      const sRes = await fetch(`/api/analysis/compare/${id}`);
+      const sData = await sRes.json();
+      if (sData.success && sData.result.status === 'completed') {
+        processAnalysisResult(sData);
+      } else {
+        throw new Error("Analysis results not ready or failed.");
+      }
+    } catch(err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     // Automatically trigger the Python pipeline silently
@@ -42,74 +144,7 @@ export default function AnalysisPage() {
           if (sData.success) {
             if (sData.result.status === 'completed') {
               clearInterval(pollId);
-              
-              // Transform raw Python base substitutions into professional UI-compatible Variants
-              const rawMutations = sData.result.mutations_found || [];
-              
-              // 1. Dynamic Chromosome Heatmap Calculation
-              const newHeatmap = Array(64).fill(0);
-              const maxPos = rawMutations.length > 0 ? Math.max(...rawMutations.map((m: any) => m.position)) : 2000;
-              const scale = maxPos > 0 ? maxPos : 2000;
-              
-              rawMutations.forEach((m: any) => {
-                 const bucket = Math.min(63, Math.floor((m.position / scale) * 63));
-                 if (bucket >= 0 && bucket < 64) newHeatmap[bucket] += 3; // Strong weight for real data
-              });
-              
-              setHeatmapData(newHeatmap.map(count => {
-                 const noise = Math.random() * 1.5; // Natural biological variance trace
-                 const finalScore = count + noise;
-                 if (finalScore >= 5) return "high";
-                 if (finalScore >= 3) return "medium";
-                 if (finalScore >= 1) return "low";
-                 return "none";
-              }));
-
-              // 2. Bioinformatics Nomenclature & Heuristics
-              const formatted = rawMutations.map((m: any, idx: number) => {
-                const isPurine = (b: string) => b === 'A' || b === 'G';
-                const isPyrimidine = (b: string) => b === 'C' || b === 'T';
-                
-                const isTransition = (isPurine(m.reference) && isPurine(m.query)) || (isPyrimidine(m.reference) && isPyrimidine(m.query));
-                const mutType = isTransition ? "Transition" : "Transversion";
-                
-                let severity = "low";
-                let category = "Oncology";
-                let impact = `Single nucleotide polymorphism (SNP) at position ${m.position}. Likely benign ${mutType.toLowerCase()}. No immediate action required.`;
-                
-                if (mutType === "Transversion") { 
-                  severity = "medium"; 
-                  category = "Pharmacogenomic"; 
-                  impact = "Transversion detected. Increased likelihood of altering protein quaternary structure. Modulated drug affinity possible."; 
-                }
-                
-                if (m.reference === 'C' && m.query === 'T') { 
-                  severity = "high"; category = "Neurology"; 
-                  impact = "C>T transition. Highly penetrant variant associated with rapid neural deterioration. Clinical correlation strongly advised."; 
-                }
-                if (m.reference === 'A' && m.query === 'T') { 
-                  severity = "high"; category = "Oncology"; 
-                  impact = "A>T transversion. High pathogenic probability disrupting tumor suppressor binding domain."; 
-                }
-                
-                // Create a simulated HGVS Nomenclature
-                const chrNum = (m.position % 22) + 1;
-                const hgvs = `Chr${chrNum}:g.${m.position}${m.reference}>${m.query}`;
-
-                return {
-                  id: `mut_${idx}`,
-                  gene: hgvs,
-                  type: mutType,
-                  variant: `${m.reference} → ${m.query}`,
-                  severity,
-                  impact,
-                  category,
-                  raw: m
-                }
-              });
-
-              setMutations(formatted);
-              if (formatted.length > 0) setSelectedGene(formatted[0]);
+              processAnalysisResult(sData);
               setLoading(false);
             } else if (sData.result.status === 'failed') {
                clearInterval(pollId);
@@ -182,6 +217,46 @@ export default function AnalysisPage() {
             </button>
           )}
         </div>
+
+        {history.length > 0 && (
+          <div style={{marginTop: '4rem', textAlign: 'left', maxWidth: '800px', margin: '4rem auto 0'}}>
+            <h3 style={{color: 'var(--gn-text-secondary)', marginBottom: '1rem', borderBottom: '1px solid #333', paddingBottom: '0.5rem', fontWeight: 600}}>Previous Analysis Runs</h3>
+            <div style={{display: 'flex', flexDirection: 'column', gap: '0.75rem'}}>
+              {history.map((h: any) => (
+                <div key={h.id} 
+                  onClick={() => h.status === 'completed' && loadHistoricalAnalysis(h.id)}
+                  style={{
+                    display: 'flex', 
+                    justifyContent: 'space-between', 
+                    padding: '1.25rem', 
+                    background: 'var(--gn-bg-glass)', 
+                    border: '1px solid var(--gn-border-light-strong)', 
+                    borderRadius: '8px', 
+                    cursor: h.status === 'completed' ? 'pointer' : 'default',
+                    opacity: h.status === 'completed' ? 1 : 0.6,
+                    transition: 'border-color 0.2s',
+                  }}
+                  onMouseOver={(e) => h.status === 'completed' && (e.currentTarget.style.borderColor = 'var(--gn-primary)')}
+                  onMouseOut={(e) => h.status === 'completed' && (e.currentTarget.style.borderColor = 'var(--gn-border-light-strong)')}
+                >
+                  <div style={{display: 'flex', flexDirection: 'column', gap: '0.3rem'}}>
+                    <strong style={{color: 'var(--gn-white)', fontSize: '1.05rem'}}>{h.query_name} <span style={{color: 'var(--gn-text-muted)', margin: '0 0.5rem'}}>vs</span> <span style={{fontWeight: 'normal', color: 'var(--gn-blue)'}}>{h.ref_name}</span></strong>
+                    <span style={{fontSize: '0.85rem', color: 'var(--gn-text-muted)'}}>{new Date(h.created_at).toLocaleString()}</span>
+                  </div>
+                  <div style={{display: 'flex', alignItems: 'center'}}>
+                    <span style={{
+                      fontSize: '0.75rem', fontWeight: '800', letterSpacing: '0.05em', textTransform: 'uppercase', padding: '0.3rem 0.6rem', borderRadius: '4px',
+                      background: h.status === 'completed' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(244, 63, 94, 0.1)',
+                      color: h.status === 'completed' ? 'var(--gn-success)' : 'var(--gn-danger)'
+                    }}>
+                      {h.status}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     );
   }
