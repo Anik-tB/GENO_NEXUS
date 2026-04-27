@@ -258,3 +258,127 @@
   padding: 0.1rem 0.4rem;
   border-radius: 4px;
 }
+
+.notificationContainer {
+  position: relative;
+}
+
+.badge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 16px;
+  height: 16px;
+  background: var(--gn-danger);
+  color: white;
+  border-radius: 50%;
+  font-size: 0.65rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--gn-bg);
+}
+
+.notificationDropdown {
+  position: absolute;
+  top: calc(100% + 1rem);
+  right: 0;
+  width: 320px;
+  background: var(--gn-surface);
+  border: 1px solid var(--gn-border-light-strong);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+  z-index: 100;
+  animation: fadeInDown 0.2s ease forwards;
+}
+
+.notificationHeader {
+  padding: 1rem;
+  border-bottom: 1px solid var(--gn-border-light-strong);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.notificationHeader h3 {
+  margin: 0;
+  font-size: 1rem;
+  color: var(--gn-text-primary);
+}
+
+.markAllBtn {
+  background: none;
+  border: none;
+  color: var(--gn-primary);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+}
+
+.markAllBtn:hover {
+  background: var(--gn-primary-glow);
+}
+
+.notificationList {
+  max-height: 380px;
+  overflow-y: auto;
+}
+
+.notificationItem {
+  padding: 1rem;
+  border-bottom: 1px solid var(--gn-border-light-strong);
+  cursor: pointer;
+  transition: background 0.2s ease;
+  position: relative;
+}
+
+.notificationItem:hover {
+  background: var(--gn-surface-hover);
+}
+
+.unread {
+  background: rgba(16, 185, 129, 0.05);
+}
+
+.unreadDot {
+  position: absolute;
+  top: 1.25rem;
+  right: 1rem;
+  width: 8px;
+  height: 8px;
+  background: var(--gn-primary);
+  border-radius: 50%;
+}
+
+.notifTitle {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--gn-text-primary);
+  margin-bottom: 0.25rem;
+}
+
+.notifMessage {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--gn-text-secondary);
+  line-height: 1.4;
+  margin-bottom: 0.5rem;
+}
+
+.notifTime {
+  font-size: 0.7rem;
+  color: var(--gn-text-muted);
+}
+
+.emptyNotifications {
+  padding: 3rem 1rem;
+  text-align: center;
+  color: var(--gn-text-muted);
+  font-size: 0.9rem;
+}
+
