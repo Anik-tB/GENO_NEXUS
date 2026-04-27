@@ -106,12 +106,13 @@ export default function PredictionsPage() {
                 stroke={riskColor}
                 strokeWidth="8"
                 strokeLinecap="round"
+                transform="rotate(-90 50 50)"
                 strokeDasharray={`${(selected.risk / 100) * circumference} ${circumference}`}
-                strokeDashoffset={circumference / 4}
+                strokeDashoffset="0"
                 style={{ transition: "stroke-dasharray 0.6s ease" }}
               />
-              <text x="50" y="46" textAnchor="middle" className={styles.ringPercent}>{selected.risk}%</text>
-              <text x="50" y="60" textAnchor="middle" className={styles.ringLabel}>Risk</text>
+              <text x="50" y="45" textAnchor="middle" dominantBaseline="middle" className={styles.ringPercent}>{selected.risk}%</text>
+              <text x="50" y="66" textAnchor="middle" dominantBaseline="middle" className={styles.ringLabel}>Risk</text>
             </svg>
           </div>
 
