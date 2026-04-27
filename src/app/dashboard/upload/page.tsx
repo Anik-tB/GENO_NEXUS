@@ -260,7 +260,7 @@ export default function UploadPage() {
         {/* ── Link Remote Dataset Component (Acts as Analysis Trigger) ── */}
         <div style={{ marginTop: "1rem", background: "var(--gn-bg, #090e17)", border: "1px dashed var(--gn-primary)", borderRadius: "12px", padding: "1.5rem" }}>
           <h3 style={{ fontSize: "1.1rem", marginBottom: "0.5rem", fontWeight: "600", color: "var(--gn-primary)" }}>Launch Sequence Alignment</h3>
-          <p style={{ color: "var(--gn-muted)", fontSize: "0.9rem", marginBottom: "1rem" }}>
+          <p style={{ color: "var(--gn-text-secondary)", fontSize: "0.95rem", marginBottom: "1rem", fontWeight: 500 }}>
             Paste the NCBI reference link below. We will instantly compare it against the sequence you uploaded above!
           </p>
           <form onSubmit={handleLinkSubmit} style={{ display: "flex", gap: "0.5rem" }}>
@@ -269,7 +269,7 @@ export default function UploadPage() {
               placeholder="e.g. https://www.ncbi.nlm.nih.gov/nuccore/NC_045512.2?report=fasta" 
               value={linkUrl}
               onChange={(e) => setLinkUrl(e.target.value)}
-              style={{ flex: 1, padding: "0.75rem 1rem", borderRadius: "8px", border: "1px solid var(--gn-border)", background: "#05080d", color: "var(--gn-text)", outline: "none" }}
+              style={{ flex: 1, padding: "0.85rem 1rem", borderRadius: "8px", border: "1px solid var(--gn-border)", background: "#05080d", color: "var(--gn-white)", outline: "none", fontSize: "0.95rem" }}
               required
             />
             <button 

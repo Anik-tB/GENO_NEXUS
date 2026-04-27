@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import styles from "./page.module.css";
 
@@ -126,6 +127,28 @@ const ACTIVITY_ICONS: Record<string, string> = {
 // ─── Page ───────────────────────────────────────────────────────────────────────
 
 export default function DashboardPage() {
+  const [timeframe, setTimeframe] = useState("30");
+
+  const graphData: Record<string, { path: string; points: [number, number][]; labels: string[] }> = {
+    "7": {
+      path: "M0,100 C60,110 90,60 120,50 C180,30 220,70 260,60 C300,50 350,20 400,15",
+      points: [[0,100], [120,50], [260,60], [400,15]],
+      labels: ["Day 1", "Day 3", "Day 5", "Day 7"]
+    },
+    "30": {
+      path: "M0,130 C40,130 70,90 120,70 C170,50 200,30 260,40 C320,50 360,20 400,10",
+      points: [[0,130], [120,70], [260,40], [400,10]],
+      labels: ["Week 1", "Week 2", "Week 3", "Week 4"]
+    },
+    "90": {
+      path: "M0,30 C50,20 80,60 120,70 C160,80 200,40 260,50 C320,60 360,90 400,120",
+      points: [[0,30], [120,70], [260,50], [400,120]],
+      labels: ["Month 1", "Month 2", "Month 3", "Today"]
+    }
+  };
+
+  const currentGraph = graphData[timeframe];
+
   const now = new Date().toLocaleString("en-US", {
     weekday: "long", year: "numeric", month: "long", day: "numeric",
     hour: "2-digit", minute: "2-digit",
@@ -233,10 +256,10 @@ export default function DashboardPage() {
               <h2 className={styles.cardTitle}>Cohort Health Trend</h2>
               <p className={styles.cardSubtitle}>Mutation risk score over time</p>
             </div>
-            <select className={styles.dropdown}>
-              <option>Last 30 Days</option>
-              <option>Last 7 Days</option>
-              <option>Last 90 Days</option>
+            <select className={styles.dropdown} value={timeframe} onChange={(e) => setTimeframe(e.target.value)}>
+              <option value="7">Last 7 Days</option>
+              <option value="30">Last 30 Days</option>
+              <option value="90">Last 90 Days</option>
             </select>
           </div>
           <div className={styles.graphContainer}>
@@ -255,19 +278,17 @@ export default function DashboardPage() {
                 {[0, 40, 80, 120, 160].map((y) => (
                   <line key={y} x1="0" y1={y} x2="400" y2={y} stroke="rgba(255,255,255,0.04)" strokeWidth="1" />
                 ))}
-                <path d="M0,130 C40,130 70,90 120,70 C170,50 200,30 260,40 C320,50 360,20 400,10"
-                  fill="url(#chartGlow)" stroke="none" />
-                <path d="M0,130 C40,130 70,90 120,70 C170,50 200,30 260,40 C320,50 360,20 400,10"
-                  fill="none" stroke="#10b981" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                <path d={currentGraph.path} fill="url(#chartGlow)" stroke="none" />
+                <path d={currentGraph.path} fill="none" stroke="#10b981" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
                 {/* Data points */}
-                {[[0,130],[120,70],[260,40],[400,10]].map(([cx,cy],k) => (
+                {currentGraph.points.map(([cx,cy],k) => (
                   <circle key={k} cx={cx} cy={cy} r="4" fill="#09090b" stroke="#10b981" strokeWidth="2" />
                 ))}
               </svg>
             </div>
           </div>
           <div className={styles.graphLabels}>
-            <span>Week 1</span><span>Week 2</span><span>Week 3</span><span>Week 4</span>
+            {currentGraph.labels.map(label => <span key={label}>{label}</span>)}
           </div>
         </section>
 
