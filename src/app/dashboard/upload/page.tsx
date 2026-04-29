@@ -323,7 +323,7 @@ export default function UploadPage() {
             {refType === "link" ? (
               <input 
                 type="url" 
-                placeholder="e.g. https://www.ncbi.nlm.nih.gov/nuccore/NC_045512.2?report=fasta" 
+                placeholder="e.g. NC_045512.2 (COVID) or NC_001802.1 (HIV-1)" 
                 value={linkUrl}
                 onChange={(e) => setLinkUrl(e.target.value)}
                 style={{ width: "100%", padding: "0.85rem 1.25rem", borderRadius: "10px", border: "1px solid #1e293b", background: "#05080d", color: "var(--gn-white)", outline: "none", fontSize: "0.95rem", transition: 'border-color 0.2s' }}

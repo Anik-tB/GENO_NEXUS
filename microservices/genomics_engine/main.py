@@ -278,10 +278,10 @@ async def compare_sequences(req: CompareRequest):
             raise HTTPException(status_code=400, detail="One or both sequences are empty")
 
         # ── 2. Detect organism ─────────────────────────────────────────────
-        # Prefer ref header, fall back to query header
-        detected_organism = _detect_organism(ref_header)
+        # Prefer query header, fall back to ref header
+        detected_organism = _detect_organism(query_header)
         if detected_organism == "Unknown":
-            detected_organism = _detect_organism(query_header)
+            detected_organism = _detect_organism(ref_header)
 
         # ── 3. Get gene map ────────────────────────────────────────────────
         gene_map_raw = _get_reference_info(detected_organism)["gene_map"]
