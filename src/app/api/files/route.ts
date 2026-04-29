@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
     // Default: FormData (File Upload)
     const formData = await req.formData();
     const file = formData.get("file") as File;
-    const fileType = formData.get("fileType") as string;
+    const providedFileType = formData.get("fileType") as string;
 
     if (!file) {
       return NextResponse.json({ error: "Missing required file" }, { status: 400 });
@@ -55,6 +55,19 @@ export async function POST(req: NextRequest) {
 
     const fileName = file.name;
     const fileSize = file.size;
+
+    // Validate file extension for Multi-Format support
+    const allowedExtensions = ['.fasta', '.fa', '.fastq', '.fq', '.vcf', '.bam', '.txt'];
+    const lowerFileName = fileName.toLowerCase();
+    const hasValidExtension = allowedExtensions.some(ext => lowerFileName.endsWith(ext));
+    
+    if (!hasValidExtension) {
+      return NextResponse.json({ 
+        error: "Invalid file format. Supported formats are: .fasta, .fastq, .vcf, .bam" 
+      }, { status: 400 });
+    }
+
+    const fileType = providedFileType || (fileName.split('.').pop() || 'unknown');
 
     // Create uploads directory if it doesn't exist
     const uploadDir = path.join(process.cwd(), "public", "uploads");
