@@ -41,15 +41,25 @@ export async function POST(req: NextRequest) {
     const queryDbPath = queryRes.rows[0].storage_path;
     const refUrl = refRes.rows[0].storage_path;
 
-    // 3. Check if we ALREADY compared these exact two files
+    // 3. Check if we ALREADY compared these exact two files AND it completed successfully
     const existingCheck = await db.query(`
-      SELECT id FROM comparison_results 
+      SELECT id, status FROM comparison_results 
       WHERE query_file_id = $1 AND reference_file_id = $2
+      ORDER BY created_at DESC LIMIT 1
     `, [queryFileId, refFileId]);
 
-    if (existingCheck.rowCount && existingCheck.rowCount > 0 && existingCheck.rows[0]?.id) {
-      // Already running or completed, no need to bombard the Python server
-      return NextResponse.json({ success: true, comparisonId: existingCheck.rows[0].id });
+    if (existingCheck.rowCount && existingCheck.rowCount > 0) {
+      const existing = existingCheck.rows[0];
+      if (existing.status === 'completed') {
+        // Already completed successfully — reuse the cached result
+        return NextResponse.json({ success: true, comparisonId: existing.id });
+      }
+      if (existing.status === 'processing') {
+        // Still running — let the frontend keep polling this comparison
+        return NextResponse.json({ success: true, comparisonId: existing.id });
+      }
+      // Status is 'failed' or 'dismissed' — delete it and re-run below
+      await db.query(`DELETE FROM comparison_results WHERE id = $1`, [existing.id]);
     }
 
     // 4. Create new comparison request
