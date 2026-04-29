@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import styles from "./dna-helix.module.css";
 
 const CHROME_CHIPS = ["Medication safety", "Consent-aware"];
@@ -34,128 +34,156 @@ const PANEL_ITEMS = [
   },
 ];
 
-const NUM_RUNGS = 18;
-// amplitude: how far left/right each node swings (px)
-const AMP = 52;
-// how many full sine cycles are visible at once
-const WAVE_CYCLES = 2;
-// speed: radians per millisecond
 const SPEED = 0.0008;
 
-function drawHelix(
+interface HelixVertexData {
+  positions: number[];
+  colors: number[];
+  normals: number[];
+  basePairCount: number;
+}
+
+function render3DHelix(
   canvas: HTMLCanvasElement,
   ctx: CanvasRenderingContext2D,
+  data: HelixVertexData,
   t: number
 ) {
   const { width: W, height: H } = canvas;
-  const cx = W / 2;
   ctx.clearRect(0, 0, W, H);
 
-  const PADDING = 40;
+  const drawables: any[] = [];
+  const scaleY = (H * 0.85) / 50; // Map -25..25 Y to 85% of Canvas Height
+  const scaleX = Math.min(W, H) / 9; // Map Radius 3 to screen width
+  
+  const { positions, colors, basePairCount } = data;
 
-  for (let i = 0; i < NUM_RUNGS; i++) {
-    // vertical position of this rung stretches from top padding to bottom padding
-    const y = PADDING + ((H - PADDING * 2) / (NUM_RUNGS - 1)) * i;
+  for (let i = 0; i < basePairCount; i++) {
+    const idx = i * 6;
+    const idx2 = idx + 3;
 
-    // phase for this rung — distributes rungs evenly across the wave
-    const phase = (i / NUM_RUNGS) * Math.PI * 2 * WAVE_CYCLES - t;
+    // Retrieve original 3D coords
+    const x1 = positions[idx], y1 = positions[idx + 1], z1 = positions[idx + 2];
+    const x2 = positions[idx2], y2 = positions[idx2 + 1], z2 = positions[idx2 + 2];
 
-    // left strand: sin(phase), right strand: sin(phase + π) = -sin(phase)
-    const xLeft = cx - AMP + AMP * Math.sin(phase);
-    const xRight = cx + AMP + AMP * Math.sin(phase + Math.PI);
+    // Colors (RGB from 0.0 - 1.0)
+    const r1 = Math.round(colors[idx] * 255);
+    const g1 = Math.round(colors[idx + 1] * 255);
+    const b1 = Math.round(colors[idx + 2] * 255);
+    const r2 = Math.round(colors[idx2] * 255);
+    const g2 = Math.round(colors[idx2 + 1] * 255);
+    const b2 = Math.round(colors[idx2 + 2] * 255);
 
-    // depth cue: sin value maps brightness/size
-    const depthL = (Math.sin(phase) + 1) / 2; // 0…1
-    const depthR = (Math.sin(phase + Math.PI) + 1) / 2;
+    // Apply rotation matrix around Y axis
+    const rx1 = x1 * Math.cos(t) - z1 * Math.sin(t);
+    const rz1 = x1 * Math.sin(t) + z1 * Math.cos(t);
+    const rx2 = x2 * Math.cos(t) - z2 * Math.sin(t);
+    const rz2 = x2 * Math.sin(t) + z2 * Math.cos(t);
 
-    // ── rung line ────────────────────────────────────────────────────────────
-    const lineAlpha = 0.35 + 0.45 * ((depthL + depthR) / 2);
-    const grad = ctx.createLinearGradient(xLeft, y, xRight, y);
-    grad.addColorStop(0, `rgba(22,165,150,${lineAlpha})`);
-    grad.addColorStop(1, `rgba(185,131,47,${lineAlpha})`);
-    ctx.beginPath();
-    ctx.moveTo(xLeft, y);
-    ctx.lineTo(xRight, y);
-    ctx.strokeStyle = grad;
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
+    // Project to screen space
+    const sx1 = W / 2 + rx1 * scaleX;
+    const sy1 = H / 2 + y1 * scaleY;
+    const sx2 = W / 2 + rx2 * scaleX;
+    const sy2 = H / 2 + y2 * scaleY;
 
-    // ── left node ────────────────────────────────────────────────────────────
-    const rL = 6 + 5 * depthL;
-    const glowL = ctx.createRadialGradient(xLeft, y, 0, xLeft, y, rL * 2.5);
-    glowL.addColorStop(0, `rgba(22,165,150,${0.5 + 0.5 * depthL})`);
-    glowL.addColorStop(0.6, `rgba(22,165,150,${0.18 * depthL})`);
-    glowL.addColorStop(1, "rgba(22,165,150,0)");
-    ctx.beginPath();
-    ctx.arc(xLeft, y, rL * 2.5, 0, Math.PI * 2);
-    ctx.fillStyle = glowL;
-    ctx.fill();
+    // Calculate normalized depth (0 = far back, 1 = closest)
+    const d1 = (rz1 / 3 + 1) / 2;
+    const d2 = (rz2 / 3 + 1) / 2;
 
-    ctx.beginPath();
-    ctx.arc(xLeft, y, rL, 0, Math.PI * 2);
-    const innerL = ctx.createRadialGradient(
-      xLeft - rL * 0.3,
-      y - rL * 0.3,
-      0,
-      xLeft,
-      y,
-      rL
-    );
-    innerL.addColorStop(0, `rgba(255,255,255,${0.55 + 0.45 * depthL})`);
-    innerL.addColorStop(0.4, `rgba(22,165,150,${0.9})`);
-    innerL.addColorStop(1, `rgba(10,80,70,1)`);
-    ctx.fillStyle = innerL;
-    ctx.shadowColor = `rgba(22,165,150,${0.7 * depthL})`;
-    ctx.shadowBlur = 12 * depthL;
-    ctx.fill();
-    ctx.shadowBlur = 0;
+    // Push entities to Z-buffer array
+    drawables.push({ type: "node", z: rz1, sx: sx1, sy: sy1, d: d1, r: r1, g: g1, b: b1 });
+    drawables.push({ type: "node", z: rz2, sx: sx2, sy: sy2, d: d2, r: r2, g: g2, b: b2 });
+    drawables.push({
+      type: "line",
+      z: (rz1 + rz2) / 2,
+      sx1, sy1, sx2, sy2, d1, d2,
+      c1: { r: r1, g: g1, b: b1 },
+      c2: { r: r2, g: g2, b: b2 }
+    });
+  }
 
-    // ── right node ───────────────────────────────────────────────────────────
-    const rR = 6 + 5 * depthR;
-    const glowR = ctx.createRadialGradient(
-      xRight,
-      y,
-      0,
-      xRight,
-      y,
-      rR * 2.5
-    );
-    glowR.addColorStop(0, `rgba(185,131,47,${0.5 + 0.5 * depthR})`);
-    glowR.addColorStop(0.6, `rgba(185,131,47,${0.18 * depthR})`);
-    glowR.addColorStop(1, "rgba(185,131,47,0)");
-    ctx.beginPath();
-    ctx.arc(xRight, y, rR * 2.5, 0, Math.PI * 2);
-    ctx.fillStyle = glowR;
-    ctx.fill();
+  // Sort by Z to render back-to-front
+  drawables.sort((a, b) => a.z - b.z);
 
-    ctx.beginPath();
-    ctx.arc(xRight, y, rR, 0, Math.PI * 2);
-    const innerR = ctx.createRadialGradient(
-      xRight - rR * 0.3,
-      y - rR * 0.3,
-      0,
-      xRight,
-      y,
-      rR
-    );
-    innerR.addColorStop(0, `rgba(255,255,255,${0.55 + 0.45 * depthR})`);
-    innerR.addColorStop(0.4, `rgba(185,131,47,0.9)`);
-    innerR.addColorStop(1, `rgba(90,55,10,1)`);
-    ctx.fillStyle = innerR;
-    ctx.shadowColor = `rgba(185,131,47,${0.7 * depthR})`;
-    ctx.shadowBlur = 12 * depthR;
-    ctx.fill();
-    ctx.shadowBlur = 0;
+  for (const item of drawables) {
+    if (item.type === "node") {
+      const radius = 1 + 2.5 * item.d;
+      
+      // Node core
+      ctx.beginPath();
+      ctx.arc(item.sx, item.sy, radius, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(255,255,255,${0.3 + 0.7 * item.d})`;
+      ctx.fill();
+
+      // Node glow
+      const glowRad = radius * 4;
+      const glow = ctx.createRadialGradient(item.sx, item.sy, 0, item.sx, item.sy, glowRad);
+      glow.addColorStop(0, `rgba(${item.r},${item.g},${item.b},${0.6 * item.d})`);
+      glow.addColorStop(1, `rgba(${item.r},${item.g},${item.b},0)`);
+      ctx.beginPath();
+      ctx.arc(item.sx, item.sy, glowRad, 0, Math.PI * 2);
+      ctx.fillStyle = glow;
+      ctx.fill();
+    } else {
+      // Connective line (hydrogen bond)
+      const lineAlpha = 0.05 + 0.25 * ((item.d1 + item.d2) / 2);
+      const grad = ctx.createLinearGradient(item.sx1, item.sy1, item.sx2, item.sy2);
+      grad.addColorStop(0, `rgba(${item.c1.r},${item.c1.g},${item.c1.b},${lineAlpha})`);
+      grad.addColorStop(1, `rgba(${item.c2.r},${item.c2.g},${item.c2.b},${lineAlpha})`);
+      
+      ctx.beginPath();
+      ctx.moveTo(item.sx1, item.sy1);
+      ctx.lineTo(item.sx2, item.sy2);
+      ctx.strokeStyle = grad;
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
   }
 }
 
 function DnaCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rafRef = useRef<number | null>(null);
+  const [helixData, setHelixData] = useState<HelixVertexData | null>(null);
+  const [error, setError] = useState<boolean>(false);
+
+  useEffect(() => {
+    // Generate a local procedural helix as fallback
+    function generateLocalHelix(): HelixVertexData {
+      const count = 80;
+      const positions: number[] = [];
+      const colors: number[] = [];
+      const normals: number[] = [];
+      for (let i = 0; i < count; i++) {
+        const t = (i / count) * Math.PI * 6;
+        const y = -25 + (i / count) * 50;
+        // Strand A
+        positions.push(3 * Math.cos(t), y, 3 * Math.sin(t));
+        colors.push(0.06, 0.73, 0.50); // emerald
+        normals.push(Math.cos(t), 0, Math.sin(t));
+        // Strand B
+        positions.push(3 * Math.cos(t + Math.PI), y, 3 * Math.sin(t + Math.PI));
+        colors.push(0.24, 0.56, 0.96); // blue
+        normals.push(Math.cos(t + Math.PI), 0, Math.sin(t + Math.PI));
+      }
+      return { positions, colors, normals, basePairCount: count };
+    }
+
+    // Try viz-service first, fall back to local generation
+    fetch("http://localhost:4500/api/viz/genome/helix-model", { headers: { "x-api-key": "genonexus-viz-api-key-change-in-production" }, signal: AbortSignal.timeout(3000) })
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.success) setHelixData(data.data);
+        else setHelixData(generateLocalHelix());
+      })
+      .catch(() => {
+        setHelixData(generateLocalHelix());
+      });
+  }, []);
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    if (!canvas || !helixData) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
@@ -172,7 +200,7 @@ function DnaCanvas() {
     const tick = (ts: number) => {
       if (!start) start = ts;
       const elapsed = ts - start;
-      drawHelix(canvas, ctx, elapsed * SPEED);
+      render3DHelix(canvas, ctx, helixData, elapsed * SPEED);
       rafRef.current = requestAnimationFrame(tick);
     };
     rafRef.current = requestAnimationFrame(tick);
@@ -181,7 +209,15 @@ function DnaCanvas() {
       if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
       ro.disconnect();
     };
-  }, []);
+  }, [helixData]);
+
+  if (error) {
+    return <div style={{ color: "rgba(255,255,255,0.5)", marginTop: "2rem" }}>DNA Model API offline...</div>;
+  }
+
+  if (!helixData) {
+    return <div style={{ color: "var(--gn-primary)", marginTop: "2rem" }}>Initializing 3D Sequence...</div>;
+  }
 
   return <canvas ref={canvasRef} className={styles.helixCanvas} />;
 }
@@ -232,7 +268,7 @@ export function DnaHelix({ variant = "default" }: DnaHelixProps) {
         ))}
       </div>
 
-      {/* Canvas-rendered sine-wave DNA helix */}
+      {/* Backend-driven 3D DNA helix */}
       <div className={styles.strand}>
         <DnaCanvas />
       </div>

@@ -5,3 +5,4 @@ biopython
 scikit-learn
 numpy
 psycopg2-binary
+pandas==2.1.1

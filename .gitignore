@@ -14,3 +14,8 @@ coverage
 __pycache__/
 *.pyc
 
+
+public/uploads/
+*.fasta
+scratch/
+*.pdf
