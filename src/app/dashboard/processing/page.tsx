@@ -1,45 +1,116 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
+import Link from "next/link";
 import styles from "./page.module.css";
 
-const STEPS = [
-  { id: 1, name: "Uploading sequence data",        duration: 1000 },
-  { id: 2, name: "Cleaning and normalizing reads", duration: 2000 },
-  { id: 3, name: "Analyzing mutation variants",    duration: 3000 },
-  { id: 4, name: "Predicting pathogenic risk scores", duration: 2500 },
+const STAGES = [
+  { label: "Fetching reference from NCBI",       weight: 20 },
+  { label: "Loading query sequence",             weight: 10 },
+  { label: "Running pairwise alignment",         weight: 40 },
+  { label: "Detecting mutation variants",        weight: 20 },
+  { label: "Finalising results",                 weight: 10 },
 ];
 
-import { useEffect } from "react";
-import Link from "next/link";
+// Build cumulative thresholds so we can map overall % → stage
+const THRESHOLDS = STAGES.reduce<number[]>((acc, s) => {
+  acc.push((acc[acc.length - 1] ?? 0) + s.weight);
+  return acc;
+}, []);
+
+function stageFromProgress(pct: number) {
+  for (let i = 0; i < THRESHOLDS.length; i++) {
+    if (pct < THRESHOLDS[i]) return i;
+  }
+  return STAGES.length - 1;
+}
 
 export default function ProcessingPage() {
-  const [currentStep, setCurrentStep] = useState(0);
-  const [progress, setProgress] = useState(0);
-  const [isComplete, setIsComplete] = useState(false);
+  const [progress, setProgress]       = useState(0);
+  const [status, setStatus]           = useState<"processing" | "completed" | "failed">("processing");
+  const [mutationCount, setMutationCount] = useState<number | null>(null);
+  const [matchPct, setMatchPct]       = useState<number | null>(null);
+  const rafRef                        = useRef<number | null>(null);
+  const intervalRef                   = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // ── Real-time smooth progress ticker ──────────────────────────────────────
+  // We don't know true progress from the backend (it's a long-running script),
+  // so we simulate smooth movement that slows down as it approaches 90%,
+  // then jumps to 100% when the poll confirms completion.
+  const targetRef = useRef(5);   // moves up over time
+  const currentRef = useRef(0);  // current animated value
 
   useEffect(() => {
-    let stepIndex = 0;
-    const runNext = () => {
-      if (stepIndex >= STEPS.length) { setIsComplete(true); return; }
-      setCurrentStep(stepIndex);
-      const step = STEPS[stepIndex];
-      let start: number | null = null;
-      const animate = (ts: number) => {
-        if (!start) start = ts;
-        const passed = ts - start;
-        const pct = Math.min((passed / step.duration) * 100, 100);
-        const prev = (stepIndex / STEPS.length) * 100;
-        setProgress(prev + (pct / 100) * (100 / STEPS.length));
-        if (passed < step.duration) requestAnimationFrame(animate);
-        else { stepIndex++; runNext(); }
-      };
-      requestAnimationFrame(animate);
+    // Tick the animated bar smoothly toward target
+    const tick = () => {
+      const diff = targetRef.current - currentRef.current;
+      if (Math.abs(diff) > 0.05) {
+        currentRef.current += diff * 0.04; // eased approach
+        setProgress(Math.min(99, currentRef.current));
+      }
+      rafRef.current = requestAnimationFrame(tick);
     };
-    runNext();
+    rafRef.current = requestAnimationFrame(tick);
+
+    // Slowly push target forward to simulate work (slows near 90%)
+    const nudge = setInterval(() => {
+      if (targetRef.current < 88) {
+        const remaining = 88 - targetRef.current;
+        targetRef.current += remaining * 0.06 + 0.3;
+      }
+    }, 800);
+
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      clearInterval(nudge);
+    };
   }, []);
 
-  const eta = isComplete ? "0s" : `${Math.ceil(((100 - progress) / 100) * 8.5)}s`;
+  // ── Poll the real comparison status ───────────────────────────────────────
+  useEffect(() => {
+    const poll = async () => {
+      try {
+        // Trigger / get the latest comparison ID
+        const autoRes = await fetch("/api/analysis/auto", { method: "POST" });
+        const autoData = await autoRes.json();
+        if (!autoData.success || !autoData.comparisonId) return;
+
+        const compId = autoData.comparisonId;
+
+        // Check its status
+        const statusRes = await fetch(`/api/analysis/compare/${compId}`);
+        const statusData = await statusRes.json();
+        if (!statusData.success) return;
+
+        const result = statusData.result;
+
+        if (result.status === "completed") {
+          const mutations = result.mutations_found || [];
+          setMutationCount(mutations.length);
+          setMatchPct(result.match_percentage);
+          // Animate bar to 100
+          targetRef.current = 100;
+          currentRef.current = 98;
+          setTimeout(() => setStatus("completed"), 600);
+          if (intervalRef.current) clearInterval(intervalRef.current);
+        } else if (result.status === "failed") {
+          setStatus("failed");
+          if (intervalRef.current) clearInterval(intervalRef.current);
+        }
+      } catch {
+        // Silently ignore poll errors — server may briefly be unresponsive
+      }
+    };
+
+    poll(); // run immediately
+    intervalRef.current = setInterval(poll, 3000); // then every 3 s
+    return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
+  }, []);
+
+  const currentStage = stageFromProgress(progress);
+  const isComplete   = status === "completed";
+  const isFailed     = status === "failed";
+  const eta          = isComplete ? "0s" : `${Math.max(1, Math.ceil(((100 - progress) / 100) * 45))}s`;
 
   return (
     <div className={styles.container}>
@@ -54,17 +125,39 @@ export default function ProcessingPage() {
           </div>
           <div className={styles.eyebrow}>✓ Pipeline Finished</div>
           <h1 className={styles.title}>Processing Complete</h1>
-          <p className={styles.subtitle}>All 4 AI stages completed successfully. Your genomic results are ready for review.</p>
+          <p className={styles.subtitle}>All alignment stages completed. Your genomic results are ready for review.</p>
           <div className={styles.completeCards}>
-            <div className={styles.completeKpi}><span>14</span><p>Variants Identified</p></div>
-            <div className={styles.completeKpi}><span>94.7%</span><p>AI Confidence</p></div>
-            <div className={styles.completeKpi}><span>2</span><p>High Priority</p></div>
+            <div className={styles.completeKpi}>
+              <span>{mutationCount ?? "—"}</span>
+              <p>Variants Identified</p>
+            </div>
+            <div className={styles.completeKpi}>
+              <span>{matchPct != null ? `${matchPct}%` : "—"}</span>
+              <p>Sequence Match</p>
+            </div>
+            <div className={styles.completeKpi}>
+              <span>4</span>
+              <p>Diseases Screened</p>
+            </div>
           </div>
           <div className={styles.completeActions}>
             <Link href="/dashboard/analysis" className={styles.primaryButton}>View Mutation Analysis →</Link>
             <Link href="/dashboard/predictions" className={styles.secondaryButton}>See Disease Predictions</Link>
           </div>
         </div>
+
+      ) : isFailed ? (
+        <div className={styles.processingState} style={{ textAlign: "center" }}>
+          <div className={styles.eyebrow} style={{ color: "var(--gn-danger)" }}>✗ Pipeline Failed</div>
+          <h1 className={styles.title}>Analysis Error</h1>
+          <p className={styles.subtitle} style={{ color: "#888" }}>
+            The Python alignment engine encountered an error. Check that the NCBI link is valid and the genomics engine is running.
+          </p>
+          <Link href="/dashboard/upload" className={styles.primaryButton} style={{ marginTop: "2rem", display: "inline-block" }}>
+            ← Back to Upload Station
+          </Link>
+        </div>
+
       ) : (
         <div className={styles.processingState}>
           <div className={styles.eyebrow}>🔄 AI Pipeline · Running</div>
@@ -84,11 +177,11 @@ export default function ProcessingPage() {
           </div>
 
           <ul className={styles.stepList}>
-            {STEPS.map((step, index) => {
-              const isActive = index === currentStep;
-              const isDone   = index < currentStep;
+            {STAGES.map((stage, index) => {
+              const isActive = index === currentStage;
+              const isDone   = index < currentStage;
               return (
-                <li key={step.id} className={`${styles.stepItem} ${isActive ? styles.stepActive : ""} ${isDone ? styles.stepDone : ""}`}>
+                <li key={index} className={`${styles.stepItem} ${isActive ? styles.stepActive : ""} ${isDone ? styles.stepDone : ""}`}>
                   <div className={styles.stepIconBox}>
                     {isDone
                       ? <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
@@ -98,7 +191,7 @@ export default function ProcessingPage() {
                     }
                   </div>
                   <div className={styles.stepContent}>
-                    <span className={styles.stepName}>{step.name}</span>
+                    <span className={styles.stepName}>{stage.label}</span>
                     <span className={styles.stepStatus}>
                       {isDone ? "Complete" : isActive ? "In progress…" : "Pending"}
                     </span>
