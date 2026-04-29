@@ -98,8 +98,12 @@ export async function POST(req: NextRequest) {
     })
     .catch(async err => {
       console.error("FastAPI call failed:", err);
-      // In a real app we might want to log the error to the database or an error tracking service
-      // But for now, we just mark the status as failed
+      // Failsafe to update database when the engine fails
+      try {
+        await db.query(`UPDATE comparison_results SET status = 'failed' WHERE id = $1`, [resultId]);
+      } catch (dbErr) {
+        console.error("Failed to mark as failed in DB:", dbErr);
+      }
     });
 
     return NextResponse.json({ success: true, comparisonId: resultId });
@@ -109,3 +113,4 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
+
