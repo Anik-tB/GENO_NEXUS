@@ -1,14 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import styles from "./page.module.css";
-
-const PREDICTIONS = [
-  { id: "p1", disease: "Type 2 Diabetes", risk: 78, confidence: 94, trend: "increasing",severity: "high", genes: "TCF7L2, KCNQ1", insight: "High likelihood due to combined mutations in TCF7L2 and KCNQ1. Lifestyle intervention heavily recommended to delay onset." },
-  { id: "p2", disease: "Coronary Artery Disease", risk: 62, confidence: 88, trend: "stable", severity: "medium", genes: "APOB, LDLR", insight: "Moderate genetic predisposition. Monitor lipid panels closely; standard statin therapy is projected to be highly effective." },
-  { id: "p3", disease: "Breast Cancer (BRCA)", risk: 15, confidence: 99, trend: "stable",  severity: "low",    genes: "BRCA1, BRCA2", insight: "Low likelihood. No pathogenic variants detected in BRCA1/BRCA2 footprint." },
-  { id: "p4", disease: "Late-Onset Alzheimer's", risk: 45, confidence: 82, trend: "increasing", severity: "medium", genes: "APOE, CLU", insight: "Heterozygous APOE e4 carrier status detected. Elevated risk compared to baseline population, but not deterministic." },
-];
 
 const RISK_COLOR: Record<string, string> = {
   high:   "var(--gn-danger)",
@@ -20,9 +13,56 @@ const TREND_ICON: Record<string, string> = { increasing: "↗", stable: "→", d
 const TREND_LABEL: Record<string, string> = { increasing: "Rising", stable: "Stable", decreasing: "Declining" };
 
 export default function PredictionsPage() {
-  const [selected, setSelected] = useState(PREDICTIONS[0]);
+  const [predictions, setPredictions] = useState<any[]>([]);
+  const [selected, setSelected] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [meta, setMeta] = useState<{ fileName: string; matchPct: number; mutationCount: number } | null>(null);
 
-  const riskColor = RISK_COLOR[selected.severity];
+  useEffect(() => {
+    async function loadPredictions() {
+      try {
+        const res = await fetch("/api/predictions");
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Failed to load predictions");
+        setPredictions(data.predictions || []);
+        if (data.meta) setMeta(data.meta);
+        if (data.predictions?.length > 0) setSelected(data.predictions[0]);
+      } catch (err: any) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadPredictions();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className={styles.container} style={{display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '80vh'}}>
+        <div style={{width: 60, height: 60, border: '4px solid rgba(16, 185, 129, 0.1)', borderLeftColor: '#10b981', borderRadius: '50%', animation: 'spin 1s linear infinite'}} />
+        <h2 style={{marginTop: '2rem', color: '#10b981', letterSpacing: '0.1em'}}>COMPUTING AI RISK SCORES...</h2>
+        <p style={{color: '#888', marginTop: '0.5rem'}}>Running variants against heuristic neural network models</p>
+        <style>{`@keyframes spin { 100% { transform: rotate(360deg); } }`}</style>
+      </div>
+    );
+  }
+
+  if (error || predictions.length === 0) {
+    return (
+      <div className={styles.container} style={{padding: '5rem', textAlign: 'center'}}>
+        <h2 style={{color: 'var(--gn-warning)'}}>No Predictions Available</h2>
+        <p style={{color: '#888', marginTop: '1rem', marginBottom: '2rem'}}>
+          {error || "We need a completed genome analysis to generate disease predictions. Please upload and analyze DNA first."}
+        </p>
+        <a href="/dashboard/upload" style={{display: 'inline-block', padding: '1rem 2rem', background: 'var(--gn-primary)', color: 'black', fontWeight: 'bold', borderRadius: '8px', textDecoration: 'none'}}>
+          Go to Upload Station
+        </a>
+      </div>
+    );
+  }
+
+  const riskColor = RISK_COLOR[selected?.severity || "low"];
   const circumference = 2 * Math.PI * 40; // r=40
 
   return (
@@ -33,14 +73,23 @@ export default function PredictionsPage() {
           <div className={styles.eyebrow}>🤖 AI Copilot · Pathogenic Modelling</div>
           <h1 className={styles.title}>AI Disease Predictions</h1>
           <p className={styles.subtitle}>Pathogenic risk modelling based on sequence analysis and multi-cohort benchmarking. Click any card to view a detailed explanation.</p>
+          {meta && (
+            <div style={{ marginTop: '1rem', display: 'inline-flex', alignItems: 'center', gap: '1.5rem', background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.25)', borderRadius: '8px', padding: '0.6rem 1.2rem', fontSize: '0.85rem' }}>
+              <span>📄 <strong style={{ color: 'var(--gn-primary)' }}>{meta.fileName}</strong></span>
+              <span style={{ color: '#888' }}>·</span>
+              <span>🔗 <strong style={{ color: 'var(--gn-blue)' }}>{meta.matchPct}% match</strong> to reference</span>
+              <span style={{ color: '#888' }}>·</span>
+              <span>🧬 <strong style={{ color: 'var(--gn-warning)' }}>{meta.mutationCount}</strong> variants analysed</span>
+            </div>
+          )}
         </div>
       </header>
 
       <div className={styles.layout}>
         {/* ── Risk Cards ── */}
         <div className={styles.cardsCol}>
-          <p className={styles.colLabel}>Risk Models — {PREDICTIONS.length} conditions screened</p>
-          {PREDICTIONS.map((pred) => {
+          <p className={styles.colLabel}>Risk Models — {predictions.length} conditions screened</p>
+          {predictions.map((pred) => {
             const color = RISK_COLOR[pred.severity];
             const isSelected = selected.id === pred.id;
             return (
@@ -135,7 +184,7 @@ export default function PredictionsPage() {
           <div className={styles.insightGenes}>
             <p className={styles.smallLabel}>Contributing Genes</p>
             <div className={styles.geneChips}>
-              {selected.genes.split(", ").map((g) => (
+              {selected.genes.split(", ").map((g: string) => (
                 <code key={g} className={styles.geneCode}>{g}</code>
               ))}
             </div>
