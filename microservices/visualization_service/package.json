@@ -1,0 +1,35 @@
+{
+  "name": "genonexus-visualization-service",
+  "version": "1.0.0",
+  "description": "GenoNexus Group C — Decoupled Visualization Backend Service",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "docker:build": "docker build -t genonexus-viz-service .",
+    "docker:up": "docker-compose up -d"
+  },
+  "dependencies": {
+    "axios": "^1.7.9",
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "express-rate-limit": "^7.5.0",
+    "helmet": "^8.0.0",
+    "ioredis": "^5.4.2",
+    "jsonwebtoken": "^9.0.2",
+    "pino": "^9.6.0",
+    "pino-pretty": "^13.0.0",
+    "ws": "^8.18.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.0",
+    "@types/jsonwebtoken": "^9.0.7",
+    "@types/node": "^22.10.1",
+    "@types/ws": "^8.5.13",
+    "tsx": "^4.21.0",
+    "typescript": "^5.7.2"
+  }
+}

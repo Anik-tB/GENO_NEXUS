@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import styles from "./page.module.css";
 import { GenomeBrowser } from "@/components/visualization/GenomeBrowser";
 import { DigitalCellTwin } from "@/components/visualization/DigitalCellTwin";
@@ -42,6 +42,14 @@ const HELIX_SUB_TABS = [
 export default function VisualizationPage() {
   const [activeTab, setActiveTab] = useState("helix");
   const [helixView, setHelixView] = useState<"helix" | "chromosome">("helix");
+  const [analysisData, setAnalysisData] = useState<any>(null);
+
+  useEffect(() => {
+    fetch("/api/visualization/analysis-data")
+      .then((r) => r.json())
+      .then((d) => setAnalysisData(d))
+      .catch(() => {});
+  }, []);
 
   const activeTabData = TABS.find((t) => t.id === activeTab)!;
 
@@ -94,10 +102,13 @@ export default function VisualizationPage() {
               <p className={styles.toolboxLabel}>Sequence Info</p>
               <div className={styles.stats}>
                 {[
-                  { label: "Active View", value: helixView === "helix" ? "3D Helix" : "Chromosome Map" },
-                  { label: "Highlighted Loci", value: "3 Pathogenic" },
-                  { label: "Render Precision", value: "Atomic (0.1 nm)" },
-                  { label: "Model Interaction", value: "Live WebGL" },
+                  { label: "Active View",  value: helixView === "helix" ? "3D Helix" : "Chromosome Map" },
+                  { label: "File",         value: analysisData?.hasData ? analysisData.fileName : "No analysis yet" },
+                  { label: "Seq Match",    value: analysisData?.hasData ? `${analysisData.matchPct}%` : "—" },
+                  { label: "Mutations",    value: analysisData?.hasData ? String(analysisData.totalMutations) : "—" },
+                  { label: "Pathogenic",   value: analysisData?.hasData ? String(analysisData.pathogenicCount) : "—" },
+                  { label: "Uncertain",    value: analysisData?.hasData ? String(analysisData.uncertainCount) : "—" },
+                  { label: "Benign",       value: analysisData?.hasData ? String(analysisData.benignCount) : "—" },
                 ].map((s, i) => (
                   <div key={i} className={styles.statItem}>
                     <span className={styles.statLabel}>{s.label}</span>

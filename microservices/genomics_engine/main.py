@@ -22,7 +22,7 @@ from typing import Optional
 from Bio import SeqIO
 from Bio.Align import PairwiseAligner
 
-from virus_classifier import predict_severity
+from virus_classifier import predict_severity, predict_severity_batch
 
 app = FastAPI(title="GenoNexus Engine v2", version="2.0.0")
 
@@ -278,10 +278,10 @@ async def compare_sequences(req: CompareRequest):
             raise HTTPException(status_code=400, detail="One or both sequences are empty")
 
         # ── 2. Detect organism ─────────────────────────────────────────────
-        # Prefer ref header, fall back to query header
-        detected_organism = _detect_organism(ref_header)
+        # Prefer query header, fall back to ref header
+        detected_organism = _detect_organism(query_header)
         if detected_organism == "Unknown":
-            detected_organism = _detect_organism(query_header)
+            detected_organism = _detect_organism(ref_header)
 
         # ── 3. Get gene map ────────────────────────────────────────────────
         gene_map_raw = _get_reference_info(detected_organism)["gene_map"]
@@ -304,12 +304,13 @@ async def compare_sequences(req: CompareRequest):
         aligner.extend_gap_score = -0.5
 
         alignments = aligner.align(ref_aln, qry_aln)
-        best = next(iter(alignments))
+        best = alignments[0]
         alignment_score = float(best.score)
 
         # Extract the two aligned strings (with gap characters)
-        aligned_ref = str(best[0])
-        aligned_qry = str(best[1])
+        lines = format(best, "fasta").splitlines()
+        aligned_ref = lines[1].strip()
+        aligned_qry = lines[3].strip()
 
         # ── 5. Extract mutations (SNPs + Indels) ──────────────────────────
         dr_positions = KNOWN_DR_POSITIONS.get(detected_organism, set())
@@ -320,6 +321,8 @@ async def compare_sequences(req: CompareRequest):
         matches = 0
         total_aligned = 0
 
+        mutations_features = []
+        
         for ref_char, qry_char in zip(aligned_ref, aligned_qry):
             is_ref_gap = ref_char == "-"
             is_qry_gap = qry_char == "-"
@@ -363,22 +366,15 @@ async def compare_sequences(req: CompareRequest):
             in_dom, domain_name = _in_domain(genomic_ref_pos, gene_map)
             is_dr = genomic_ref_pos in dr_positions
 
-            severity, confidence = predict_severity(
-                is_transition=is_transition,
-                is_indel=False,
-                gc_context=gc,
-                codon_position=cp,
-                in_functional_domain=in_dom,
-                is_drug_resistance_site=is_dr,
-            )
+            mutations_features.append((is_transition, False, gc, cp, in_dom, is_dr))
 
             mutations.append({
                 "position": genomic_ref_pos,
                 "reference": ref_char,
                 "query": qry_char,
                 "type": "Transition" if is_transition else "Transversion",
-                "severity": severity,
-                "ai_confidence": confidence,
+                "severity": "low",
+                "ai_confidence": 0.0,
                 "gc_context": gc,
                 "functional_region": domain_name,
                 "in_functional_domain": in_dom,
@@ -386,28 +382,35 @@ async def compare_sequences(req: CompareRequest):
                 "codon_position": cp,
             })
 
+        # Batch predict SNP mutations
+        if mutations_features:
+            snp_preds = predict_severity_batch(mutations_features)
+            for i, p in enumerate(snp_preds):
+                mutations[i]["severity"] = p[0]
+                mutations[i]["ai_confidence"] = p[1]
+
         # Score Indels with the RF too
+        indels_features = []
         for indel in indels:
             pos = indel["position"]
             in_dom, domain_name = _in_domain(pos, gene_map)
             is_dr = pos in dr_positions
             gc = _gc_context(ref_aln, pos - 1)
             cp = _codon_position(pos, gene_map)
-            severity, confidence = predict_severity(
-                is_transition=False,
-                is_indel=True,
-                gc_context=gc,
-                codon_position=cp,
-                in_functional_domain=in_dom,
-                is_drug_resistance_site=is_dr,
-            )
+            indels_features.append((False, True, gc, cp, in_dom, is_dr))
             indel.update({
-                "severity": severity,
-                "ai_confidence": confidence,
+                "severity": "low",
+                "ai_confidence": 0.0,
                 "functional_region": domain_name,
                 "in_functional_domain": in_dom,
                 "drug_resistance_site": is_dr,
             })
+
+        if indels_features:
+            indel_preds = predict_severity_batch(indels_features)
+            for i, p in enumerate(indel_preds):
+                indels[i]["severity"] = p[0]
+                indels[i]["ai_confidence"] = p[1]
 
         match_percentage = round((matches / total_aligned * 100) if total_aligned > 0 else 0.0, 2)
 

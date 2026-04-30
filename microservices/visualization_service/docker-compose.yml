@@ -1,0 +1,53 @@
+# ============================================================
+# GenoNexus Visualization Service — Docker Compose
+# ============================================================
+
+version: "3.9"
+
+services:
+  visualization-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: genonexus-viz-service
+    ports:
+      - "4500:4500"
+    environment:
+      - NODE_ENV=production
+      - PORT=4500
+      - REDIS_URL=redis://redis:6379
+      - GENOMICS_API_URL=http://host.docker.internal:8000
+      - ML_API_URL=http://host.docker.internal:8001
+      - JWT_SECRET=${JWT_SECRET:-genonexus-viz-jwt-secret-change-in-production}
+      - API_KEY=${API_KEY:-genonexus-viz-api-key-change-in-production}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-http://localhost:3000}
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - viz-network
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: genonexus-viz-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - viz-network
+    restart: unless-stopped
+
+networks:
+  viz-network:
+    driver: bridge
+
+volumes:
+  redis-data:
+    driver: local

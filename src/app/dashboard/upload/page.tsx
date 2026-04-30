@@ -60,9 +60,10 @@ export default function UploadPage() {
     fetchStats();
   }, []);
 
-  const handleLinkSubmit = async (e: React.FormEvent) => {
+  const handleLinkSubmit = async (e: React.FormEvent | React.MouseEvent) => {
     e.preventDefault();
-    if (!linkUrl.trim()) return;
+    if (refType === "link" && !linkUrl.trim()) return;
+    if (refType === "file" && !refFile) return;
 
     try {
       let referenceFileId = "";
@@ -323,7 +324,7 @@ export default function UploadPage() {
             {refType === "link" ? (
               <input 
                 type="url" 
-                placeholder="e.g. https://www.ncbi.nlm.nih.gov/nuccore/NC_045512.2?report=fasta" 
+                placeholder="e.g. NC_045512.2 (COVID) or NC_001802.1 (HIV-1)" 
                 value={linkUrl}
                 onChange={(e) => setLinkUrl(e.target.value)}
                 style={{ width: "100%", padding: "0.85rem 1.25rem", borderRadius: "10px", border: "1px solid #1e293b", background: "#05080d", color: "var(--gn-white)", outline: "none", fontSize: "0.95rem", transition: 'border-color 0.2s' }}
@@ -351,27 +352,6 @@ export default function UploadPage() {
                 />
               </div>
             )}
-            
-            <button 
-              type="submit" 
-              disabled={isLinking || (refType === "link" ? !linkUrl : !refFile)}
-              style={{
-                width: "100%",
-                padding: "0.9rem",
-                borderRadius: "10px",
-                background: "var(--gn-primary)",
-                color: "#111",
-                fontWeight: "700",
-                fontSize: "0.95rem",
-                border: "none",
-                cursor: isLinking || (refType === "link" ? !linkUrl : !refFile) ? "not-allowed" : "pointer",
-                opacity: isLinking || (refType === "link" ? !linkUrl : !refFile) ? 0.5 : 1,
-                transition: "all 0.25s transform active",
-                boxShadow: "0 4px 14px 0 rgba(16, 185, 129, 0.39)"
-              }}
-            >
-              {isLinking ? "Initializing Analysis Engines..." : "Launch Comparative Pipeline"}
-            </button>
           </form>
         </div>
       </div>
@@ -422,9 +402,19 @@ export default function UploadPage() {
                   {file.status === "success" && (
                     <div className={styles.nextStep}>
                       <p>✅ AI validation passed — sequence is ready for mutation analysis.</p>
-                      <Link href="/dashboard/processing" className={styles.nextStepButton}>
+                      <button 
+                        onClick={(e) => {
+                          if ((refType === "link" && linkUrl.trim()) || (refType === "file" && refFile)) {
+                            handleLinkSubmit(e);
+                          } else {
+                            router.push("/dashboard/processing");
+                          }
+                        }} 
+                        className={styles.nextStepButton}
+                        style={{ background: "transparent", border: "none", cursor: "pointer", fontFamily: "inherit", fontSize: "inherit", display: "inline-block" }}
+                      >
                         Start Analysis Pipeline →
-                      </Link>
+                      </button>
                     </div>
                   )}
                   {file.status === "error" && (
