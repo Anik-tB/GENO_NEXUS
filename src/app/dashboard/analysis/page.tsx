@@ -532,6 +532,8 @@ export default function AnalysisPage() {
                         background: variantTab === "snps" ? 'var(--gn-primary)' : 'transparent',
                         color: variantTab === "snps" ? '#000' : 'var(--gn-text-muted)'
                       }}
+                      onMouseOver={(e) => { if (variantTab !== "snps") { e.currentTarget.style.background = 'rgba(16, 185, 129, 0.15)'; e.currentTarget.style.color = 'var(--gn-primary)'; e.currentTarget.style.boxShadow = '0 0 12px rgba(16,185,129,0.2)'; }}}
+                      onMouseOut={(e) => { if (variantTab !== "snps") { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--gn-text-muted)'; e.currentTarget.style.boxShadow = 'none'; }}}
                     >SNPs ({mutations.length})</button>
                     <button
                       onClick={() => setVariantTab("indels")}
@@ -539,6 +541,8 @@ export default function AnalysisPage() {
                         background: variantTab === "indels" ? '#f59e0b' : 'transparent',
                         color: variantTab === "indels" ? '#000' : 'var(--gn-text-muted)'
                       }}
+                      onMouseOver={(e) => { if (variantTab !== "indels") { e.currentTarget.style.background = 'rgba(245, 158, 11, 0.15)'; e.currentTarget.style.color = '#f59e0b'; e.currentTarget.style.boxShadow = '0 0 12px rgba(245,158,11,0.2)'; }}}
+                      onMouseOut={(e) => { if (variantTab !== "indels") { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--gn-text-muted)'; e.currentTarget.style.boxShadow = 'none'; }}}
                     >Indels ({indels.length})</button>
                   </div>
                 </div>
