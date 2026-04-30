@@ -525,6 +525,32 @@ async def predict_disease(req: PredictDiseaseRequest):
                 "trend": "stable",
                 "insight": insight_msg
             })
+
+            if high_sev_count > 0 or med_sev_count > 0:
+                prostate_risk = min(45, (high_sev_count * 10) + (med_sev_count * 5))
+                predictions.append({
+                    "id": "pred-prostate",
+                    "disease": "Prostate Cancer Risk (Male)",
+                    "genes": "BRCA1",
+                    "severity": "medium" if prostate_risk >= 30 else "low",
+                    "risk": int(prostate_risk),
+                    "confidence": 85,
+                    "trend": "stable",
+                    "insight": "BRCA1 pathogenic variants also increase the lifetime risk of developing aggressive prostate cancer in male carriers."
+                })
+
+                pancreatic_risk = min(25, (high_sev_count * 8) + (med_sev_count * 2))
+                predictions.append({
+                    "id": "pred-pancreatic",
+                    "disease": "Pancreatic Cancer Risk",
+                    "genes": "BRCA1",
+                    "severity": "low",
+                    "risk": int(pancreatic_risk),
+                    "confidence": 80,
+                    "trend": "stable",
+                    "insight": "Pathogenic alterations in BRCA1 confer a modest but clinically significant elevated risk for pancreatic adenocarcinoma."
+                })
+
             return {"predictions": predictions}
 
         # 1. Primary Disease Profile (Pathogens)
