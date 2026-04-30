@@ -309,90 +309,164 @@ export default function AnalysisPage() {
 
   return (
     <div className={styles.container}>
-      {/* ── Header ── */}
       <header className={styles.header}>
-        <div className={styles.headerContent}>
-          <div className={styles.eyebrow}>
-            <span>🔬 Variant Analysis Module</span>
+        <div className={styles.headerTopRow}>
+          {/* Left: Title + Subtitle + Button */}
+          <div className={styles.titleArea}>
+            <div className={styles.eyebrow}>
+              <span>🔬 Variant Analysis Module</span>
+            </div>
+            <h1 className={styles.title}>Mutation Analysis</h1>
+            <p style={{ color: 'var(--gn-text-secondary)', fontSize: '0.9rem', margin: 0, lineHeight: 1.5 }}>
+              Review identified variants, severity classifications, and AI-based clinical impacts.
+            </p>
+            <button
+              onClick={() => { setShowHistoryView(!showHistoryView); if (!showHistoryView) fetchHistory(); }}
+              style={{
+                marginTop: '0.6rem',
+                background: 'transparent',
+                border: '1px solid var(--gn-primary)',
+                color: 'var(--gn-primary)',
+                padding: '0.75rem 2rem',
+                borderRadius: '10px',
+                cursor: 'pointer',
+                fontSize: '1rem',
+                fontWeight: 700,
+                transition: 'all 0.2s',
+                outline: 'none',
+                whiteSpace: 'nowrap',
+                width: 'fit-content',
+              }}
+              onMouseOver={(e) => { e.currentTarget.style.background = 'rgba(16, 185, 129, 0.12)'; e.currentTarget.style.boxShadow = '0 0 16px rgba(16,185,129,0.2)'; }}
+              onMouseOut={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.boxShadow = 'none'; }}
+            >
+              {showHistoryView ? "← Return to Active Analysis" : "📋 View Past Analyses"}
+            </button>
           </div>
-          <h1 className={styles.title}>Mutation Analysis</h1>
-          <p className={styles.subtitle}>Review identified variants, severity classifications, and evidence-based clinical impacts.</p>
-          {analysisInfo && (
-            <div style={{
-              marginTop: '1rem', padding: '0.75rem 1.25rem',
-              background: 'rgba(16,185,129,0.07)', border: '1px solid rgba(16,185,129,0.2)',
-              borderRadius: '10px', display: 'flex', flexWrap: 'wrap', gap: '1rem', alignItems: 'center'
-            }}>
-              <span style={{color: 'var(--gn-primary)', fontWeight: 700, fontSize: '0.9rem'}}>
-                🧬 {analysisInfo.organism || "Unknown Organism"}
-              </span>
-              <span style={{color: 'var(--gn-text-muted)', fontSize: '0.8rem'}}>•</span>
-              <span style={{color: 'var(--gn-text-secondary)', fontSize: '0.82rem'}}>
-                {analysisInfo.algorithm} alignment
-              </span>
-              <span style={{color: 'var(--gn-text-muted)', fontSize: '0.8rem'}}>•</span>
-              <span style={{color: 'var(--gn-text-secondary)', fontSize: '0.82rem'}}>
-                AI: {analysisInfo.model}
-              </span>
-              {analysisInfo.geneMap?.length > 0 && (
-                <>
-                  <span style={{color: 'var(--gn-text-muted)', fontSize: '0.8rem'}}>•</span>
-                  <span style={{color: 'var(--gn-text-secondary)', fontSize: '0.82rem'}}>
-                    Gene map: {analysisInfo.geneMap.join(", ")}
-                  </span>
-                </>
-              )}
-              {drCount > 0 && (
-                <span style={{
-                  background: 'rgba(239,68,68,0.15)', color: '#f87171',
-                  padding: '2px 8px', borderRadius: '4px', fontSize: '0.78rem', fontWeight: 700
-                }}>⚠️ {drCount} Drug Resistance Site{drCount > 1 ? 's' : ''}</span>
-              )}
+
+          {/* Right: KPI Stats */}
+          {!showHistoryView && (
+            <div className={styles.statsGrid}>
+              <div className={styles.kpiBubble}>
+                <span className={styles.kpiNum}>{mutations.length}</span>
+                <span className={styles.kpiLbl}>SNPs</span>
+              </div>
+              <div className={styles.kpiBubble}>
+                <span className={styles.kpiNum}>{indels.length}</span>
+                <span className={styles.kpiLbl}>Indels</span>
+              </div>
+              <div className={`${styles.kpiBubble} ${styles.kpiDanger}`}>
+                <span className={styles.kpiNum}>{highCount}</span>
+                <span className={styles.kpiLbl}>High</span>
+              </div>
+              <div className={`${styles.kpiBubble} ${styles.kpiWarning}`}>
+                <span className={styles.kpiNum}>{medCount}</span>
+                <span className={styles.kpiLbl}>Medium</span>
+              </div>
+              <div className={`${styles.kpiBubble} ${styles.kpiSuccess}`}>
+                <span className={styles.kpiNum}>{lowCount}</span>
+                <span className={styles.kpiLbl}>Low Risk</span>
+              </div>
+              <div className={`${styles.kpiBubble}`} style={{borderColor: '#f59e0b', background: 'rgba(245,158,11,0.05)'}}>
+                <span className={styles.kpiNum} style={{color: '#f59e0b'}}>{drCount}</span>
+                <span className={styles.kpiLbl}>Drug Resist.</span>
+              </div>
             </div>
           )}
-          <button 
-            onClick={() => { setShowHistoryView(!showHistoryView); if (!showHistoryView) fetchHistory(); }}
-            style={{ 
-               background: 'transparent', border: '1px solid var(--gn-primary)', 
-               color: 'var(--gn-primary)', padding: '0.5rem 1rem', borderRadius: '6px', 
-               cursor: 'pointer', fontSize: '0.85rem', marginTop: '1rem', fontWeight: 600,
-               width: 'fit-content', transition: 'all 0.2s', outline: 'none'
-            }}
-            onMouseOver={(e) => { e.currentTarget.style.background = 'rgba(16, 185, 129, 0.1)' }}
-            onMouseOut={(e) => { e.currentTarget.style.background = 'transparent' }}
-          >
-            {showHistoryView ? "← Return to Active Analysis" : "View Past Analyses"}
-          </button>
         </div>
-        {!showHistoryView && (
-          <div className={styles.kpiStrip}>
-            <div className={styles.kpiBubble}>
-              <span className={styles.kpiNum}>{mutations.length}</span>
-              <span className={styles.kpiLbl}>SNPs</span>
-            </div>
-            <div className={styles.kpiBubble}>
-              <span className={styles.kpiNum}>{indels.length}</span>
-              <span className={styles.kpiLbl}>Indels</span>
-            </div>
-            <div className={`${styles.kpiBubble} ${styles.kpiDanger}`}>
-              <span className={styles.kpiNum}>{highCount}</span>
-              <span className={styles.kpiLbl}>High Priority</span>
-            </div>
-            <div className={`${styles.kpiBubble} ${styles.kpiWarning}`}>
-              <span className={styles.kpiNum}>{medCount}</span>
-              <span className={styles.kpiLbl}>Medium</span>
-            </div>
-            <div className={`${styles.kpiBubble} ${styles.kpiSuccess}`}>
-              <span className={styles.kpiNum}>{lowCount}</span>
-              <span className={styles.kpiLbl}>Low Risk</span>
-            </div>
-            <div className={`${styles.kpiBubble}`} style={{borderColor: '#f59e0b', background: 'rgba(245,158,11,0.05)'}}>
-              <span className={styles.kpiNum} style={{color: '#f59e0b'}}>{drCount}</span>
-              <span className={styles.kpiLbl}>Drug Resist.</span>
-            </div>
-          </div>
-        )}
       </header>
+
+      {!showHistoryView && (
+        <details className={styles.guideSection} style={{ marginBottom: '1.5rem' }}>
+          <summary className={styles.guideSummary}>
+            <span>📖</span> Beginner's Guide: Understanding Your Results
+            <span style={{ marginLeft: 'auto', fontSize: '0.75rem', color: 'var(--gn-text-muted)', fontWeight: 400 }}>Click to expand / collapse</span>
+          </summary>
+          <div className={styles.guideGrid}>
+
+            <div className={styles.guideItem} style={{ borderTop: '3px solid #10b981' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.5rem' }}>
+                <span style={{ fontSize: '1.4rem' }}>🔤</span>
+                <strong style={{ color: '#10b981', fontSize: '0.95rem' }}>SNP</strong>
+                <span style={{ fontSize: '0.72rem', color: 'var(--gn-text-muted)', background: 'rgba(16,185,129,0.1)', padding: '1px 7px', borderRadius: '999px', border: '1px solid rgba(16,185,129,0.25)' }}>Single Nucleotide Polymorphism</span>
+              </div>
+              <p style={{ margin: 0, color: 'var(--gn-text-secondary)', fontSize: '0.85rem', lineHeight: 1.6 }}>
+                A change in <strong style={{ color: 'var(--gn-white)' }}>one single letter</strong> of the DNA code — like a typo in a sentence. Very common, but can affect how a gene works.
+              </p>
+              <div style={{ marginTop: '0.6rem', display: 'flex', alignItems: 'center', gap: '0.4rem', fontFamily: 'monospace', fontSize: '0.9rem' }}>
+                <span style={{ color: '#60a5fa', padding: '2px 8px', background: 'rgba(96,165,250,0.1)', borderRadius: '4px', border: '1px solid rgba(96,165,250,0.2)' }}>C</span>
+                <span style={{ color: 'var(--gn-text-muted)' }}>→</span>
+                <span style={{ color: '#f87171', padding: '2px 8px', background: 'rgba(248,113,113,0.1)', borderRadius: '4px', border: '1px solid rgba(248,113,113,0.2)' }}>T</span>
+                <span style={{ color: 'var(--gn-text-muted)', fontSize: '0.75rem', marginLeft: '0.3rem' }}>one letter swapped</span>
+              </div>
+            </div>
+
+            <div className={styles.guideItem} style={{ borderTop: '3px solid #f59e0b' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.5rem' }}>
+                <span style={{ fontSize: '1.4rem' }}>✂️</span>
+                <strong style={{ color: '#f59e0b', fontSize: '0.95rem' }}>Indel</strong>
+                <span style={{ fontSize: '0.72rem', color: 'var(--gn-text-muted)', background: 'rgba(245,158,11,0.1)', padding: '1px 7px', borderRadius: '999px', border: '1px solid rgba(245,158,11,0.25)' }}>Insertion / Deletion</span>
+              </div>
+              <p style={{ margin: 0, color: 'var(--gn-text-secondary)', fontSize: '0.85rem', lineHeight: 1.6 }}>
+                DNA letters that were <strong style={{ color: 'var(--gn-white)' }}>added or removed</strong>. Even one missing letter can shift how the entire gene is read and may greatly alter the resulting protein.
+              </p>
+              <div style={{ marginTop: '0.6rem', fontSize: '0.78rem', color: 'var(--gn-text-muted)', display: 'flex', gap: '0.5rem' }}>
+                <span style={{ background: 'rgba(52,211,153,0.1)', color: '#34d399', padding: '2px 8px', borderRadius: '4px', border: '1px solid rgba(52,211,153,0.2)' }}>➕ Insertion</span>
+                <span style={{ background: 'rgba(248,113,113,0.1)', color: '#f87171', padding: '2px 8px', borderRadius: '4px', border: '1px solid rgba(248,113,113,0.2)' }}>➖ Deletion</span>
+              </div>
+            </div>
+
+            <div className={styles.guideItem} style={{ borderTop: '3px solid #818cf8' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.5rem' }}>
+                <span style={{ fontSize: '1.4rem' }}>🔀</span>
+                <strong style={{ color: '#818cf8', fontSize: '0.95rem' }}>Transition / Transversion</strong>
+              </div>
+              <p style={{ margin: 0, color: 'var(--gn-text-secondary)', fontSize: '0.85rem', lineHeight: 1.6 }}>
+                Two subtypes of SNPs. <strong style={{ color: 'var(--gn-white)' }}>Transitions</strong> swap similar bases (A↔G or C↔T) — very common and often less harmful. <strong style={{ color: 'var(--gn-white)' }}>Transversions</strong> swap different base types — rarer and potentially more disruptive.
+              </p>
+            </div>
+
+            <div className={styles.guideItem} style={{ borderTop: '3px solid #22d3ee' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.5rem' }}>
+                <span style={{ fontSize: '1.4rem' }}>🧬</span>
+                <strong style={{ color: '#22d3ee', fontSize: '0.95rem' }}>Functional Domain</strong>
+              </div>
+              <p style={{ margin: 0, color: 'var(--gn-text-secondary)', fontSize: '0.85rem', lineHeight: 1.6 }}>
+                An <strong style={{ color: 'var(--gn-white)' }}>important working region</strong> of the genome — like the engine of a car. Mutations here are more likely to have a real, clinically significant effect.
+              </p>
+              <div style={{ marginTop: '0.6rem', fontSize: '0.75rem', color: '#22d3ee', background: 'rgba(34,211,238,0.07)', padding: '4px 8px', borderRadius: '4px', display: 'inline-block' }}>
+                ⚠️ Variants here are flagged with higher attention
+              </div>
+            </div>
+
+            <div className={styles.guideItem} style={{ borderTop: '3px solid #64748b' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.5rem' }}>
+                <span style={{ fontSize: '1.4rem' }}>🔗</span>
+                <strong style={{ color: '#94a3b8', fontSize: '0.95rem' }}>Intergenic Region</strong>
+              </div>
+              <p style={{ margin: 0, color: 'var(--gn-text-secondary)', fontSize: '0.85rem', lineHeight: 1.6 }}>
+                The <strong style={{ color: 'var(--gn-white)' }}>"filler" space</strong> between genes — like punctuation between sentences. Mutations here usually have low functional impact, but are still tracked.
+              </p>
+            </div>
+
+            <div className={styles.guideItem} style={{ borderTop: '3px solid #f87171', background: 'rgba(248,113,113,0.04)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.5rem' }}>
+                <span style={{ fontSize: '1.4rem' }}>⚠️</span>
+                <strong style={{ color: '#f87171', fontSize: '0.95rem' }}>AI Confidence Score</strong>
+              </div>
+              <p style={{ margin: 0, color: 'var(--gn-text-secondary)', fontSize: '0.85rem', lineHeight: 1.6 }}>
+                How <strong style={{ color: 'var(--gn-white)' }}>certain our AI model is</strong> about its severity classification. Higher % = more reliable. Rows below 60% should be reviewed carefully by a specialist.
+              </p>
+              <div style={{ marginTop: '0.6rem', display: 'flex', gap: '0.5rem', fontSize: '0.75rem' }}>
+                <span style={{ color: '#10b981' }}>✅ &gt;80% reliable</span>
+                <span style={{ color: '#f59e0b' }}>⚡ 60–80% uncertain</span>
+                <span style={{ color: '#f87171' }}>❌ &lt;60% low</span>
+              </div>
+            </div>
+
+          </div>
+        </details>
+      )}
 
       {showHistoryView ? (
         <div style={{marginTop: '2rem', textAlign: 'left', maxWidth: '100%', margin: '2rem 0 4rem 0'}}>
@@ -436,176 +510,205 @@ export default function AnalysisPage() {
         </div>
       ) : (
         <div className={styles.grid}>
-        {/* ── Variant Table ── */}
-        <section className={styles.tableSection}>
-          <div className={styles.cardHeader}>
-            <div style={{display:'flex', gap:'0.75rem', alignItems:'center'}}>
-              <h2 className={styles.cardTitle}>Identified Variants</h2>
-              <div style={{display:'flex', background:'#05080d', padding:'3px', borderRadius:'8px', border:'1px solid #1e293b'}}>
-                <button
-                  onClick={() => setVariantTab("snps")}
-                  style={{padding:'4px 12px', borderRadius:'6px', fontSize:'0.8rem', fontWeight:600, border:'none', cursor:'pointer', transition:'all 0.2s',
-                    background: variantTab === "snps" ? 'var(--gn-primary)' : 'transparent',
-                    color: variantTab === "snps" ? '#000' : 'var(--gn-text-muted)'
-                  }}
-                >SNPs ({mutations.length})</button>
-                <button
-                  onClick={() => setVariantTab("indels")}
-                  style={{padding:'4px 12px', borderRadius:'6px', fontSize:'0.8rem', fontWeight:600, border:'none', cursor:'pointer', transition:'all 0.2s',
-                    background: variantTab === "indels" ? '#f59e0b' : 'transparent',
-                    color: variantTab === "indels" ? '#000' : 'var(--gn-text-muted)'
-                  }}
-                >Indels ({indels.length})</button>
-              </div>
-            </div>
-            <div className={styles.filterPills}>
-              {["all", "high", "medium", "low"].map((s) => (
-                <button
-                  key={s}
-                  className={`${styles.pill} ${filter === s ? styles.pillActive : ""} ${filter === s && s !== "all" ? styles[`pill_${s}`] : ""}`}
-                  onClick={() => setFilter(s)}
-                >
-                  {s === "all" ? "All" : s.charAt(0).toUpperCase() + s.slice(1)}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className={styles.tableWrapper}>
-            {variantTab === "snps" ? (
-            <table className={styles.table}>
-              <thead>
-                <tr>
-                  <th>#</th>
-                  <th>Locus</th>
-                  <th>Type</th>
-                  <th>Variant</th>
-                  <th>Region</th>
-                  <th>AI Confidence</th>
-                  <th>Severity</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(filter === "all" ? mutations : mutations.filter(m => m.severity === filter)).map((mut, idx) => (
-                  <tr
-                    key={mut.id}
-                    className={`${styles.tableRow} ${selectedGene?.id === mut.id ? styles.rowActive : ""}`}
-                    onClick={() => setSelectedGene(mut)}
-                    style={mut.drug_resistance_site ? {borderLeft: '3px solid #f87171'} : {}}
-                  >
-                    <td className={styles.tdNum}>{idx + 1}</td>
-                    <td>
-                      <span className={styles.geneLabel}>{mut.gene}</span>
-                    </td>
-                    <td>{mut.type}</td>
-                    <td><code className={styles.code} style={{color: '#f87171'}}>{mut.variant}</code></td>
-                    <td>
-                      <span className={styles.categoryPill}>
-                        {CATEGORY_ICONS[mut.category] ?? '🔗'} {mut.functional_region}
-                      </span>
-                    </td>
-                    <td>
-                      <div style={{display:'flex', alignItems:'center', gap:'0.4rem'}}>
-                        <div style={{width:40, height:5, background:'#1e293b', borderRadius:3, overflow:'hidden'}}>
-                          <div style={{width:`${Math.round(mut.ai_confidence*100)}%`, height:'100%', background: mut.ai_confidence > 0.7 ? 'var(--gn-primary)' : '#f59e0b', borderRadius:3}} />
-                        </div>
-                        <span style={{fontSize:'0.75rem', color:'var(--gn-text-muted)'}}>{Math.round(mut.ai_confidence*100)}%</span>
-                      </div>
-                    </td>
-                    <td>
-                      <span className={`${styles.severityBadge} ${styles[`badge_${mut.severity}`]}`}>
-                        {SEVERITY_LABELS[mut.severity]}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            ) : (
-            <table className={styles.table}>
-              <thead>
-                <tr>
-                  <th>#</th>
-                  <th>Position</th>
-                  <th>Type</th>
-                  <th>Base</th>
-                  <th>Region</th>
-                  <th>AI Confidence</th>
-                  <th>Severity</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(filter === "all" ? indels : indels.filter(m => m.severity === filter)).map((indel, idx) => (
-                  <tr key={indel.id} className={styles.tableRow} style={indel.drug_resistance_site ? {borderLeft: '3px solid #f87171'} : {}}>
-                    <td className={styles.tdNum}>{idx + 1}</td>
-                    <td><span className={styles.geneLabel}>pos.{indel.position}</span></td>
-                    <td><code className={styles.code} style={{color: indel.type === 'Insertion' ? '#34d399' : '#f87171'}}>{indel.type}</code></td>
-                    <td><code className={styles.code}>{indel.base}</code></td>
-                    <td><span className={styles.categoryPill}>🧬 {indel.functional_region}</span></td>
-                    <td>
-                      <div style={{display:'flex', alignItems:'center', gap:'0.4rem'}}>
-                        <div style={{width:40, height:5, background:'#1e293b', borderRadius:3, overflow:'hidden'}}>
-                          <div style={{width:`${Math.round(indel.ai_confidence*100)}%`, height:'100%', background: indel.ai_confidence > 0.7 ? 'var(--gn-primary)' : '#f59e0b', borderRadius:3}} />
-                        </div>
-                        <span style={{fontSize:'0.75rem', color:'var(--gn-text-muted)'}}>{Math.round(indel.ai_confidence*100)}%</span>
-                      </div>
-                    </td>
-                    <td><span className={`${styles.severityBadge} ${styles[`badge_${indel.severity}`]}`}>{SEVERITY_LABELS[indel.severity]}</span></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            )}
-          </div>
-          {filtered.length === 0 && (
-            <div className={styles.noResults}>No variations detected within this biological filter set.</div>
-          )}
-        </section>
-
-        {/* ── Side Panel ── */}
-        {selectedGene && (
-          <div className={styles.sidePanel}>
-            {/* Gene Detail */}
-            <section className={styles.detailCard}>
-              <div className={styles.detailTopBar}>
-                <span className={styles.categoryTag}>
-                  {CATEGORY_ICONS[selectedGene.category]} {selectedGene.category}
-                </span>
-                <span className={`${styles.severityBadge} ${styles[`badge_${selectedGene.severity}`]}`}>
-                  {SEVERITY_LABELS[selectedGene.severity]}
-                </span>
-              </div>
-
-              <h3 className={styles.detailGeneName}>{selectedGene.gene}</h3>
-
-              <div className={styles.detailProperty}>
-                <span className={styles.propertyLabel}>Mutation Type</span>
-                <span className={styles.propertyValue}>{selectedGene.type}</span>
-              </div>
-              <div className={styles.detailProperty}>
-                <span className={styles.propertyLabel}>Variant Substitution Map</span>
-                <code className={styles.code} style={{display: 'inline-block', background: 'var(--gn-bg)', border: '1px solid var(--gn-border)', padding: '0.6rem 1rem', borderRadius: '6px', fontSize: '1.1rem', letterSpacing: '4px'}}>
-                  <span style={{color: 'var(--gn-blue)', fontWeight: 'bold'}}>{selectedGene.raw.reference}</span>
-                  <span style={{color: '#555', margin: '0 1rem'}}>→</span>
-                  <span style={{color: 'var(--gn-danger)', fontWeight: 'bold'}}>{selectedGene.raw.query}</span>
-                </code>
-              </div>
-              <div className={styles.detailProperty}>
-                <span className={styles.propertyLabel}>Clinical Impact</span>
-                <p className={styles.impactText}>{selectedGene.impact}</p>
-              </div>
-
-              {selectedGene.severity === "high" && (
-                <div className={styles.urgentAlert}>
-                  <span>⚠️</span>
-                  <span>Immediate clinical review recommended for this variant.</span>
+          <div className={styles.mainColumn}>
+            {/* ── Variant Table ── */}
+            <section className={styles.tableSection}>
+              <div className={styles.cardHeader}>
+                <div style={{display:'flex', gap:'0.75rem', alignItems:'center'}}>
+                  <h2 className={styles.cardTitle}>Identified Variants</h2>
+                  <div style={{display:'flex', background:'#05080d', padding:'3px', borderRadius:'8px', border:'1px solid #1e293b'}}>
+                    <button
+                      onClick={() => setVariantTab("snps")}
+                      style={{padding:'4px 12px', borderRadius:'6px', fontSize:'0.8rem', fontWeight:600, border:'none', cursor:'pointer', transition:'all 0.2s',
+                        background: variantTab === "snps" ? 'var(--gn-primary)' : 'transparent',
+                        color: variantTab === "snps" ? '#000' : 'var(--gn-text-muted)'
+                      }}
+                    >SNPs ({mutations.length})</button>
+                    <button
+                      onClick={() => setVariantTab("indels")}
+                      style={{padding:'4px 12px', borderRadius:'6px', fontSize:'0.8rem', fontWeight:600, border:'none', cursor:'pointer', transition:'all 0.2s',
+                        background: variantTab === "indels" ? '#f59e0b' : 'transparent',
+                        color: variantTab === "indels" ? '#000' : 'var(--gn-text-muted)'
+                      }}
+                    >Indels ({indels.length})</button>
+                  </div>
                 </div>
-              )}
+                <div className={styles.filterPills}>
+                  {["all", "high", "medium", "low"].map((s) => (
+                    <button
+                      key={s}
+                      className={`${styles.pill} ${filter === s ? styles.pillActive : ""} ${filter === s && s !== "all" ? styles[`pill_${s}`] : ""}`}
+                      onClick={() => setFilter(s)}
+                    >
+                      {s === "all" ? "All" : s.charAt(0).toUpperCase() + s.slice(1)}
+                    </button>
+                  ))}
+                </div>
+              </div>
 
-              <button className={styles.actionButton}>
-                Explore in 3D Viewer →
-              </button>
+              <div className={styles.tableWrapper}>
+                {variantTab === "snps" ? (
+                <table className={styles.table}>
+                  <thead>
+                    <tr>
+                      <th title="Serial Number">#</th>
+                      <th title="Location in the genome where the mutation was found.">Locus ⓘ</th>
+                      <th title="Specific chemical nature of the mutation (e.g. Transition).">Type ⓘ</th>
+                      <th title="The original sequence versus the mutated sequence.">Variant ⓘ</th>
+                      <th title="The biological region affected.">Region ⓘ</th>
+                      <th title="Our AI model's certainty about its severity classification.">AI Confidence ⓘ</th>
+                      <th title="Overall urgency for clinical review.">Severity ⓘ</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(filter === "all" ? mutations : mutations.filter(m => m.severity === filter)).map((mut, idx) => (
+                      <tr
+                        key={mut.id}
+                        className={`${styles.tableRow} ${selectedGene?.id === mut.id ? styles.rowActive : ""}`}
+                        onClick={() => setSelectedGene(mut)}
+                        style={mut.drug_resistance_site ? {borderLeft: '3px solid #f87171'} : {}}
+                      >
+                        <td className={styles.tdNum}>{idx + 1}</td>
+                        <td>
+                          <span className={styles.geneLabel}>{mut.gene}</span>
+                        </td>
+                        <td>{mut.type}</td>
+                        <td><code className={styles.code} style={{color: '#f87171'}}>{mut.variant}</code></td>
+                        <td>
+                          <span className={styles.categoryPill}>
+                            {CATEGORY_ICONS[mut.category] ?? '🔗'} {mut.functional_region}
+                          </span>
+                        </td>
+                        <td>
+                          <div style={{display:'flex', alignItems:'center', gap:'0.4rem'}}>
+                            <div style={{width:40, height:5, background:'#1e293b', borderRadius:3, overflow:'hidden'}}>
+                              <div style={{width:`${Math.round(mut.ai_confidence*100)}%`, height:'100%', background: mut.ai_confidence > 0.7 ? 'var(--gn-primary)' : '#f59e0b', borderRadius:3}} />
+                            </div>
+                            <span style={{fontSize:'0.75rem', color:'var(--gn-text-muted)'}}>{Math.round(mut.ai_confidence*100)}%</span>
+                          </div>
+                        </td>
+                        <td>
+                          <span className={`${styles.severityBadge} ${styles[`badge_${mut.severity}`]}`}>
+                            {SEVERITY_LABELS[mut.severity]}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                ) : (
+                <table className={styles.table}>
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th title="Genomic position of the Indel.">Position ⓘ</th>
+                      <th title="Whether letters were added (Insertion) or removed (Deletion).">Type ⓘ</th>
+                      <th title="The specific DNA characters involved.">Base ⓘ</th>
+                      <th title="The biological region affected.">Region ⓘ</th>
+                      <th title="Our AI model's certainty about its severity classification.">AI Confidence ⓘ</th>
+                      <th title="Overall urgency for clinical review.">Severity ⓘ</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(filter === "all" ? indels : indels.filter(m => m.severity === filter)).map((indel, idx) => (
+                      <tr key={indel.id} className={styles.tableRow} style={indel.drug_resistance_site ? {borderLeft: '3px solid #f87171'} : {}}>
+                        <td className={styles.tdNum}>{idx + 1}</td>
+                        <td><span className={styles.geneLabel}>pos.{indel.position}</span></td>
+                        <td><code className={styles.code} style={{color: indel.type === 'Insertion' ? '#34d399' : '#f87171'}}>{indel.type}</code></td>
+                        <td><code className={styles.code}>{indel.base}</code></td>
+                        <td><span className={styles.categoryPill}>🧬 {indel.functional_region}</span></td>
+                        <td>
+                          <div style={{display:'flex', alignItems:'center', gap:'0.4rem'}}>
+                            <div style={{width:40, height:5, background:'#1e293b', borderRadius:3, overflow:'hidden'}}>
+                              <div style={{width:`${Math.round(indel.ai_confidence*100)}%`, height:'100%', background: indel.ai_confidence > 0.7 ? 'var(--gn-primary)' : '#f59e0b', borderRadius:3}} />
+                            </div>
+                            <span style={{fontSize:'0.75rem', color:'var(--gn-text-muted)'}}>{Math.round(indel.ai_confidence*100)}%</span>
+                          </div>
+                        </td>
+                        <td><span className={`${styles.severityBadge} ${styles[`badge_${indel.severity}`]}`}>{SEVERITY_LABELS[indel.severity]}</span></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                )}
+              </div>
+              {filtered.length === 0 && (
+                <div className={styles.noResults}>No variations detected within this biological filter set.</div>
+              )}
             </section>
+          </div>
+
+          {/* ── Side Panel ── */}
+          <div className={styles.sidePanel}>
+            {analysisInfo && (
+               <section className={styles.detailCard} style={{padding: '1.25rem'}}>
+                 <h3 className={styles.cardTitle} style={{marginBottom: '0.75rem', opacity: 0.8, fontSize: '0.85rem'}}>Analysis Summary</h3>
+                 <div style={{display: 'flex', flexDirection: 'column', gap: '0.6rem'}}>
+                    <div style={{display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '0.4rem'}}>
+                      <span style={{color: 'var(--gn-text-muted)', fontSize: '0.8rem'}}>Organism</span>
+                      <span style={{color: 'var(--gn-primary)', fontWeight: 700, fontSize: '0.8rem'}}>{analysisInfo.organism}</span>
+                    </div>
+                    <div style={{display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '0.4rem'}}>
+                      <span style={{color: 'var(--gn-text-muted)', fontSize: '0.8rem'}}>Algorithm</span>
+                      <span style={{color: 'var(--gn-text-secondary)', fontSize: '0.8rem'}}>{analysisInfo.algorithm}</span>
+                    </div>
+                    <div style={{display: 'flex', justifyContent: 'space-between'}}>
+                      <span style={{color: 'var(--gn-text-muted)', fontSize: '0.8rem'}}>AI Engine</span>
+                      <span style={{color: 'var(--gn-text-secondary)', fontSize: '0.8rem'}}>{analysisInfo.model}</span>
+                    </div>
+                 </div>
+               </section>
+            )}
+
+            {selectedGene && (
+              <section className={styles.detailCard}>
+                <div className={styles.detailTopBar}>
+                  <span className={styles.categoryTag}>
+                    {CATEGORY_ICONS[selectedGene.category]} {selectedGene.category}
+                  </span>
+                  <span className={`${styles.severityBadge} ${styles[`badge_${selectedGene.severity}`]}`}>
+                    {SEVERITY_LABELS[selectedGene.severity]}
+                  </span>
+                </div>
+
+                <h3 className={styles.detailGeneName}>{selectedGene.gene}</h3>
+
+                <div className={styles.detailProperty}>
+                  <span className={styles.propertyLabel}>Mutation Type</span>
+                  <span className={styles.propertyValue}>{selectedGene.type}</span>
+                  <p className={styles.mutationHelper}>
+                    {selectedGene.type === 'Transition' && "A swap between similar DNA building blocks (e.g., A ↔ G). These are common mutations and often have a lower impact."}
+                    {selectedGene.type === 'Transversion' && "A swap between different types of DNA building blocks (e.g., A ↔ T). Rarer and potentially more disruptive to protein structure."}
+                    {selectedGene.type === 'Insertion' && "New DNA letters were added to the sequence here. This often causes a 'frameshift', which changes how the whole protein is built."}
+                    {selectedGene.type === 'Deletion' && "Genetic information is missing at this position. Like insertions, this can significantly alter the resulting protein."}
+                    {selectedGene.type !== 'Transition' && selectedGene.type !== 'Transversion' && selectedGene.type !== 'Insertion' && selectedGene.type !== 'Deletion' && "A change noted in the genetic sequence that differs from the reference."}
+                  </p>
+                </div>
+                <div className={styles.detailProperty}>
+                  <span className={styles.propertyLabel}>Variant Substitution Map</span>
+                  <code className={styles.code} style={{display: 'inline-block', background: 'var(--gn-bg)', border: '1px solid var(--gn-border)', padding: '0.6rem 1rem', borderRadius: '6px', fontSize: '1.1rem', letterSpacing: '4px'}}>
+                    <span style={{color: 'var(--gn-blue)', fontWeight: 'bold'}}>{selectedGene.raw.reference}</span>
+                    <span style={{color: '#555', margin: '0 1rem'}}>→</span>
+                    <span style={{color: 'var(--gn-danger)', fontWeight: 'bold'}}>{selectedGene.raw.query}</span>
+                  </code>
+                </div>
+                <div className={styles.detailProperty}>
+                  <span className={styles.propertyLabel}>Clinical Impact</span>
+                  <p className={styles.impactText}>{selectedGene.impact}</p>
+                </div>
+
+                {selectedGene.severity === "high" && (
+                  <div className={styles.urgentAlert}>
+                    <span>⚠️</span>
+                    <span>Immediate clinical review recommended for this variant.</span>
+                  </div>
+                )}
+
+                <button className={styles.actionButton}>
+                  Explore in 3D Viewer →
+                </button>
+              </section>
+            )}
 
             {/* Heatmap */}
             <section className={styles.heatmapCard}>
@@ -629,8 +732,7 @@ export default function AnalysisPage() {
               </div>
             </section>
           </div>
-        )}
-      </div>
+        </div>
       )}
     </div>
   );

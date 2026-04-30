@@ -16,15 +16,23 @@
 
 /* ── Header ────────────────────────────────────────────────────── */
 .header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 1.5rem;
-  padding-bottom: 1.25rem;
+  padding-bottom: 2rem;
   border-bottom: 1px solid var(--gn-border-light);
 }
 
-.headerContent { display: flex; flex-direction: column; gap: 0.4rem; flex: 1; }
+.headerTopRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 2rem;
+  width: 100%;
+}
+
+.titleArea {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
 
 .eyebrow {
   display: inline-flex;
@@ -43,44 +51,52 @@
 }
 
 .title {
-  font-size: 1.85rem;
-  font-weight: 700;
+  font-size: 2.5rem;
+  font-weight: 800;
   color: var(--gn-white);
   margin: 0;
-  letter-spacing: -0.03em;
+  letter-spacing: -0.04em;
+  line-height: 1.1;
 }
 
-.subtitle {
-  color: var(--gn-text-secondary);
-  font-size: 0.88rem;
-  margin: 0;
-  line-height: 1.5;
+/* ── KPI Stats ─────────────────────────────────────────────────── */
+.statsGrid {
+  display: flex;
+  gap: 0.6rem;
+  flex-shrink: 0;
 }
-
-/* KPI Strip */
-.kpiStrip { display: flex; gap: 0.65rem; flex-shrink: 0; }
 
 .kpiBubble {
   background: var(--gn-bg-glass);
   border: 1px solid var(--gn-border-light);
   border-radius: 12px;
-  padding: 0.55rem 0.9rem;
+  padding: 0.75rem 1rem;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.1rem;
-  min-width: 60px;
+  justify-content: center;
+  gap: 0.2rem;
+  flex: 1;
+  min-height: 70px;
+  min-width: 72px;
+  transition: all 0.2s ease;
+}
+
+.kpiBubble:hover {
+  border-color: var(--gn-border-light-strong);
+  background: var(--gn-bg-glass-light);
+  transform: translateY(-2px);
 }
 
 .kpiNum {
-  font-size: 1.2rem;
-  font-weight: 700;
+  font-size: 1.4rem;
+  font-weight: 800;
   color: var(--gn-white);
   line-height: 1;
 }
 
 .kpiLbl {
-  font-size: 0.65rem;
+  font-size: 0.62rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -95,9 +111,15 @@
 /* ── Layout Grid ───────────────────────────────────────────────── */
 .grid {
   display: grid;
-  grid-template-columns: 1.75fr 1fr;
-  gap: 1.25rem;
+  grid-template-columns: 1fr 340px;
+  gap: 1.5rem;
   align-items: start;
+}
+
+.mainColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
 }
 
 /* ── Table Section ─────────────────────────────────────────────── */
@@ -324,7 +346,7 @@
   box-shadow: 0 4px 16px var(--gn-primary-glow);
 }
 
-/* Heatmap */
+/* ── Heatmap ───────────────────────────────────────────────────── */
 .heatmapCard {
   background: var(--gn-bg-glass);
   border: 1px solid var(--gn-border-light);
@@ -371,13 +393,82 @@
   border-radius: 999px;
 }
 
+/* ── Beginner Guide ──────────────────────────────────────────── */
+.guideSection {
+  background: rgba(16, 185, 129, 0.04);
+  border: 1px solid rgba(16, 185, 129, 0.15);
+  padding: 1.5rem;
+  border-radius: 14px;
+  color: var(--gn-text-secondary);
+  transition: all 0.3s ease;
+}
+
+.guideSummary {
+  font-weight: 700;
+  color: var(--gn-primary);
+  outline: none;
+  font-size: 1.05rem;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}
+
+.guideSummary::-webkit-details-marker {
+  display: none;
+}
+
+.guideGrid {
+  margin-top: 1.5rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+  gap: 1rem;
+}
+
+.guideItem {
+  background: rgba(255, 255, 255, 0.025);
+  backdrop-filter: blur(10px);
+  padding: 1.25rem;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
+}
+
+.guideItem:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+/* ── Mutation Helper in Detail Panel ───────────────────────────── */
+.mutationHelper {
+  font-size: 0.85rem;
+  color: var(--gn-text-muted);
+  margin-top: 8px;
+  margin-bottom: 0;
+  line-height: 1.5;
+  background: var(--gn-bg-glass-light);
+  padding: 10px 12px;
+  border-radius: 8px;
+  border-left: 3px solid var(--gn-primary);
+  animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(-5px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
 /* ── Responsive ────────────────────────────────────────────────── */
 @media (max-width: 1024px) {
   .grid { grid-template-columns: 1fr; }
-  .kpiStrip { flex-wrap: wrap; }
+  .headerTopRow { flex-direction: column; }
+  .statsGrid { flex-wrap: wrap; }
 }
 
 @media (max-width: 640px) {
-  .header { flex-direction: column; }
   .filterPills { flex-wrap: wrap; }
+  .guideGrid { grid-template-columns: 1fr; }
 }
