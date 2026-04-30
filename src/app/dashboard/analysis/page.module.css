@@ -404,7 +404,14 @@
   padding: 1.5rem;
   border-radius: 14px;
   color: var(--gn-text-secondary);
-  transition: all 0.3s ease;
+  transition: all 0.25s ease;
+  cursor: pointer;
+}
+
+.guideSection:hover {
+  border-color: var(--gn-primary);
+  background: rgba(16, 185, 129, 0.08);
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.15);
 }
 
 .guideSummary {
