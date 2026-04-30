@@ -1,76 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import styles from "./page.module.css";
 
 // ─── Data ──────────────────────────────────────────────────────────────────────
-
-const KPI_CARDS = [
-  {
-    label: "Genes Analyzed",
-    value: "18,482",
-    delta: "+4.2%",
-    deltaDir: "up",
-    note: "this week",
-    risk: "low",
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M8 3v3m0 4v1m0 4v1m0 4v3M16 3v3m0 4v1m0 4v1m0 4v3M3 8h3m4 0h2m4 0h3M3 16h3m4 0h2m4 0h3"/>
-      </svg>
-    ),
-    sparkline: [30, 55, 40, 70, 60, 85, 90],
-  },
-  {
-    label: "Mutation Count",
-    value: "276",
-    delta: "+12",
-    deltaDir: "up",
-    note: "19 urgent markers",
-    risk: "high",
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
-      </svg>
-    ),
-    sparkline: [20, 38, 30, 65, 50, 78, 72],
-  },
-  {
-    label: "Risk Level",
-    value: "Moderate",
-    delta: "Stable",
-    deltaDir: "neutral",
-    note: "2 cohorts escalated",
-    risk: "moderate",
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-      </svg>
-    ),
-    sparkline: [60, 55, 70, 58, 65, 60, 64],
-  },
-  {
-    label: "AI Confidence",
-    value: "94.7%",
-    delta: "+0.3%",
-    deltaDir: "up",
-    note: "Model drift stable",
-    risk: "low",
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/>
-      </svg>
-    ),
-    sparkline: [80, 78, 85, 88, 84, 92, 95],
-  },
-];
-
-const RECENT_ACTIVITY = [
-  { action: "Sequence Upload", file: "patient_20481.vcf", time: "10 mins ago", status: "Complete", type: "upload" },
-  { action: "Mutation Analysis", file: "oncology_panel.fastq", time: "2 hours ago", status: "In Progress", type: "analysis" },
-  { action: "Report Generated", file: "BRCA1_summary.pdf", time: "1 day ago", status: "Complete", type: "report" },
-  { action: "Drug Interaction Scan", file: "CYP2C19_cohort.vcf", time: "2 days ago", status: "Complete", type: "drug" },
-];
 
 const QUICK_LINKS = [
   { label: "Upload Data", href: "/dashboard/upload", icon: "⬆️", desc: "Import VCF, FASTQ, BAM" },
@@ -128,6 +62,23 @@ const ACTIVITY_ICONS: Record<string, string> = {
 
 export default function DashboardPage() {
   const [timeframe, setTimeframe] = useState("30");
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState<any>(null);
+
+  useEffect(() => {
+    async function fetchStats() {
+      try {
+        const res = await fetch('/api/dashboard/overview');
+        const json = await res.json();
+        if (json.success) setStats(json.data);
+      } catch (err) {
+        console.error("Failed to load overview", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchStats();
+  }, []);
 
   const graphData: Record<string, { path: string; points: [number, number][]; labels: string[] }> = {
     "7": {
@@ -192,9 +143,9 @@ export default function DashboardPage() {
             </svg>
           </div>
           <div>
-            <p className={styles.insightTitle}>AI Insight · Moderate Genetic Risk Detected</p>
+            <p className={styles.insightTitle}>{stats?.insightBanner?.title || "AI Insight · Gathering Data"}</p>
             <p className={styles.insightText}>
-              Mutation patterns in the recent <code>CYP2C19</code> cohort indicate pharmacogenomic risk. Immediate review recommended before prescribing clopidogrel derivatives.
+              {stats?.insightBanner?.text || "Processing recent genomic cohorts to determine baseline risk factors."}
             </p>
           </div>
         </div>
@@ -204,8 +155,70 @@ export default function DashboardPage() {
       </section>
 
       {/* ── KPI Cards ── */}
+      {loading ? (
+        <div className={styles.summaryGrid}>
+           {[1,2,3,4].map(i => <div key={i} className={styles.summaryCard} style={{height: 140, opacity: 0.5, animation: 'pulse 2s infinite'}} />)}
+        </div>
+      ) : (
       <div className={styles.summaryGrid}>
-        {KPI_CARDS.map((card, i) => {
+        {[
+          {
+            label: "Total Bases Aligned",
+            value: stats?.genesAnalyzed || "0",
+            delta: "Live",
+            deltaDir: "up",
+            note: "across your uploads",
+            risk: "low",
+            icon: (
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M8 3v3m0 4v1m0 4v1m0 4v3M16 3v3m0 4v1m0 4v1m0 4v3M3 8h3m4 0h2m4 0h3M3 16h3m4 0h2m4 0h3"/>
+              </svg>
+            ),
+            sparkline: [30, 55, 40, 70, 60, 85, 90],
+          },
+          {
+            label: "Mutation Count",
+            value: stats?.mutationCount || "0",
+            delta: stats?.urgentMarkers ? `${stats.urgentMarkers} urgent` : "Stable",
+            deltaDir: stats?.urgentMarkers ? "up" : "neutral",
+            note: "detected across cohorts",
+            risk: stats?.urgentMarkers > 0 ? "high" : "low",
+            icon: (
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+              </svg>
+            ),
+            sparkline: [20, 38, 30, 65, 50, 78, 72],
+          },
+          {
+            label: "Risk Level",
+            value: stats?.riskLevel || "Low",
+            delta: "Active",
+            deltaDir: "neutral",
+            note: "based on urgent markers",
+            risk: stats?.riskLevel === 'High' ? 'high' : stats?.riskLevel === 'Moderate' ? 'moderate' : 'low',
+            icon: (
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              </svg>
+            ),
+            sparkline: [60, 55, 70, 58, 65, 60, 64],
+          },
+          {
+            label: "AI Confidence",
+            value: stats?.avgConfidence ? `${stats.avgConfidence.toFixed(1)}%` : "0%",
+            delta: "Trained",
+            deltaDir: "up",
+            note: "Random Forest engine",
+            risk: "low",
+            icon: (
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/>
+              </svg>
+            ),
+            sparkline: [80, 78, 85, 88, 84, 92, 95],
+          },
+        ].map((card, i) => {
           const sparkColor =
             card.risk === "high" ? "#f43f5e" :
             card.risk === "moderate" ? "#eab308" : "#10b981";
@@ -231,6 +244,7 @@ export default function DashboardPage() {
           );
         })}
       </div>
+      )}
 
       {/* ── Quick Access ── */}
       <section className={styles.quickSection}>
@@ -297,28 +311,34 @@ export default function DashboardPage() {
           <div className={styles.cardHeader}>
             <div>
               <h2 className={styles.cardTitle}>Recent Activity</h2>
-              <p className={styles.cardSubtitle}>{RECENT_ACTIVITY.length} events in the last 48 hours</p>
+              <p className={styles.cardSubtitle}>{stats?.recentActivity?.length || 0} events in the last 48 hours</p>
             </div>
             <Link href="/dashboard/collaboration" className={styles.viewAll}>View History →</Link>
           </div>
           <ul className={styles.activityList}>
-            {RECENT_ACTIVITY.map((activity, i) => (
-              <li key={i} className={styles.activityItem}>
-                <div className={styles.activityIconWrapper}>
-                  {ACTIVITY_ICONS[activity.type]}
-                </div>
-                <div className={styles.activityDetails}>
-                  <p className={styles.activityAction}>{activity.action}</p>
-                  <p className={styles.activityFile}>{activity.file}</p>
-                </div>
-                <div className={styles.activityStatusGroup}>
-                  <span className={styles.activityTime}>{activity.time}</span>
-                  <span className={`${styles.statusBadge} ${activity.status === "Complete" ? styles.statusComplete : styles.statusProgress}`}>
-                    {activity.status === "Complete" ? "✓ " : "⏳ "}{activity.status}
-                  </span>
-                </div>
-              </li>
-            ))}
+            {loading ? (
+              <p style={{color: '#888', padding: '1rem'}}>Loading history...</p>
+            ) : stats?.recentActivity?.length > 0 ? (
+              stats.recentActivity.map((activity: any, i: number) => (
+                <li key={i} className={styles.activityItem}>
+                  <div className={styles.activityIconWrapper}>
+                    {ACTIVITY_ICONS[activity.type] || "🧬"}
+                  </div>
+                  <div className={styles.activityDetails}>
+                    <p className={styles.activityAction}>{activity.action}</p>
+                    <p className={styles.activityFile}>{activity.file}</p>
+                  </div>
+                  <div className={styles.activityStatusGroup}>
+                    <span className={styles.activityTime}>{activity.time}</span>
+                    <span className={`${styles.statusBadge} ${activity.status === "Complete" ? styles.statusComplete : styles.statusProgress}`}>
+                      {activity.status === "Complete" ? "✓ " : activity.status === "Failed" ? "❌ " : "⏳ "}{activity.status}
+                    </span>
+                  </div>
+                </li>
+              ))
+            ) : (
+              <p style={{color: '#888', padding: '1rem'}}>No recent activity. Upload a sequence to get started.</p>
+            )}
           </ul>
         </section>
 
