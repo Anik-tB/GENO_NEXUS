@@ -162,7 +162,7 @@ def _detect_organism(header: str) -> str:
     """
     h = header.upper()
     patterns = {
-        "HIV-1":       ["HIV-1", "HIV1", "HUMAN IMMUNODEFICIENCY VIRUS 1", "NC_001802"],
+        "HIV-1":       ["HIV-1", "HIV1", "HIV", "HUMAN IMMUNODEFICIENCY VIRUS 1", "NC_001802"],
         "HIV-2":       ["HIV-2", "HIV2", "HUMAN IMMUNODEFICIENCY VIRUS 2", "NC_001722"],
         "SARS-CoV-2":  ["SARS-COV-2", "SARS2", "COVID", "NC_045512", "SEVERE ACUTE"],
         "Influenza-A": ["INFLUENZA A", "H1N1", "H3N2", "NC_002016"],
@@ -277,11 +277,30 @@ async def compare_sequences(req: CompareRequest):
         if not ref_seq or not query_seq:
             raise HTTPException(status_code=400, detail="One or both sequences are empty")
 
-        # ── 2. Detect organism ─────────────────────────────────────────────
+        # ── 2. Detect and validate organism match ──────────────────────────
+        query_organism = _detect_organism(query_header)
+        ref_organism = _detect_organism(ref_header)
+
+        # Cross-species validation: prevent analyzing e.g. HIV against COVID reference
+        if query_organism != "Unknown" and ref_organism != "Unknown" and query_organism != ref_organism:
+            raise HTTPException(
+                status_code=400, 
+                detail=f"Organism mismatch detected. You are trying to align an {query_organism} sequence against a {ref_organism} reference genome. This is scientifically invalid."
+            )
+
+        query_len = len(query_seq)
+        ref_len = len(ref_seq)
+        max_len = max(query_len, ref_len)
+        
+        # Length-based cross-species fallback validation
+        if max_len > 0 and abs(query_len - ref_len) / max_len > 0.30:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Organism mismatch detected. The query sequence ({query_len:,} bp) and reference ({ref_len:,} bp) differ in size by more than 30%. You are likely comparing completely different organisms."
+            )
+
         # Prefer query header, fall back to ref header
-        detected_organism = _detect_organism(query_header)
-        if detected_organism == "Unknown":
-            detected_organism = _detect_organism(ref_header)
+        detected_organism = query_organism if query_organism != "Unknown" else ref_organism
 
         # ── 3. Get gene map ────────────────────────────────────────────────
         gene_map_raw = _get_reference_info(detected_organism)["gene_map"]
