@@ -56,6 +56,7 @@ BUILTIN_REFERENCES = {
     "Dengue-1":     {"accession": "NC_001477.1", "gene_map": {"E": [937, 2421]}},
     "Ebola":        {"accession": "NC_002549.1", "gene_map": {"GP": [6039, 8068], "NP": [469, 2689]}},
     "Monkeypox":    {"accession": "NC_063383.1", "gene_map": {}},
+    "BRCA1 (Homo sapiens)": {"accession": "NM_007294.4", "gene_map": {"BRCA1_CDS": [1, 7224]}},
 }
 
 # Known high-severity mutation positions per organism (simplified HIVDB/ClinVar seeds)
@@ -167,6 +168,7 @@ def _detect_organism(header: str) -> str:
     """
     h = header.upper()
     patterns = {
+        "BRCA1 (Homo sapiens)": ["BRCA1", "HOMO SAPIENS", "NC_000017", "NM_007294"],
         "HIV-1":       ["HIV-1", "HIV1", "HIV", "HUMAN IMMUNODEFICIENCY VIRUS 1", "NC_001802"],
         "HIV-2":       ["HIV-2", "HIV2", "HUMAN IMMUNODEFICIENCY VIRUS 2", "NC_001722"],
         "SARS-CoV-2":  ["SARS-COV-2", "SARS2", "COVID", "NC_045512", "SEVERE ACUTE"],
@@ -241,9 +243,9 @@ def _in_domain(genomic_pos: int, gene_map: dict) -> tuple[bool, str]:
 # ---------------------------------------------------------------------------
 def _fetch_ncbi(accession_or_url: str) -> tuple[str, str]:
     """Returns (sequence_string, description)"""
-    # Extract accession from URL if needed
+    # Extract accession from URL if needed (handles NC_, NM_, NG_, etc.)
     acc = accession_or_url
-    nc_match = re.search(r"NC_[\d.]+", accession_or_url)
+    nc_match = re.search(r"[A-Z]{2}_[\d.]+", accession_or_url)
     if nc_match:
         acc = nc_match.group(0)
 
@@ -297,15 +299,15 @@ async def compare_sequences(req: CompareRequest):
         ref_len = len(ref_seq)
         max_len = max(query_len, ref_len)
 
-        # Length-based cross-species fallback validation
-        if max_len > 0 and abs(query_len - ref_len) / max_len > 0.30:
+        # Prefer query header, fall back to ref header
+        detected_organism = query_organism if query_organism != "Unknown" else ref_organism
+
+        # Length-based cross-species fallback validation (skip for Human Genetics)
+        if detected_organism != "BRCA1 (Homo sapiens)" and max_len > 0 and abs(query_len - ref_len) / max_len > 0.30:
             raise HTTPException(
                 status_code=400,
                 detail=f"Organism mismatch detected. The query sequence ({query_len:,} bp) and reference ({ref_len:,} bp) differ in size by more than 30%. You are likely comparing completely different organisms."
             )
-
-        # Prefer query header, fall back to ref header
-        detected_organism = query_organism if query_organism != "Unknown" else ref_organism
 
         # ── 3. Get gene map ────────────────────────────────────────────────
         gene_map_raw = _get_reference_info(detected_organism)["gene_map"]
@@ -479,7 +481,8 @@ async def predict_disease(req: PredictDiseaseRequest):
             "Hepatitis-C": "Hepatitis C",
             "Dengue-1": "Dengue Fever",
             "Ebola": "Ebola Virus Disease",
-            "Monkeypox": "Mpox (Monkeypox)"
+            "Monkeypox": "Mpox (Monkeypox)",
+            "BRCA1 (Homo sapiens)": "Hereditary Breast and Ovarian Cancer Syndrome"
         }
 
         base_disease = disease_map.get(req.organism, "Unknown Pathogenic Infection")
@@ -499,7 +502,32 @@ async def predict_disease(req: PredictDiseaseRequest):
 
         predictions = []
 
-        # 1. Primary Disease Profile
+        # Oncology Pathway (Human Genetics)
+        if req.organism == "BRCA1 (Homo sapiens)":
+            if high_sev_count > 0:
+                primary_risk = min(99, 60 + (high_sev_count * 20))
+                insight_msg = f"Detected {high_sev_count} high-severity (e.g., frameshift, nonsense) mutations in the BRCA1 tumor suppressor gene. High risk for Hereditary Breast and Ovarian Cancer (HBOC) syndrome."
+            elif med_sev_count > 0:
+                primary_risk = min(40, 10 + (med_sev_count * 10))
+                insight_msg = f"Detected {med_sev_count} variants of unknown or moderate significance in BRCA1. Clinical correlation required."
+            else:
+                primary_risk = 5
+                insight_msg = f"High sequence homology ({req.matchPct}%) to the wild-type BRCA1 reference. No pathogenic variants detected. Standard baseline risk."
+            
+            primary_sev = "high" if primary_risk >= 75 else "medium" if primary_risk >= 40 else "low"
+            predictions.append({
+                "id": "pred-brca1",
+                "disease": "Breast/Ovarian Cancer Risk",
+                "genes": "BRCA1",
+                "severity": primary_sev,
+                "risk": int(primary_risk),
+                "confidence": 95 if high_sev_count > 0 else 80,
+                "trend": "stable",
+                "insight": insight_msg
+            })
+            return {"predictions": predictions}
+
+        # 1. Primary Disease Profile (Pathogens)
         # The user logically expects that if the sequence matches the pathogenic reference genome 
         # heavily (e.g. >99%), then the "Risk" of having that disease is equally high (>99%).
         primary_risk = min(99, max(0, req.matchPct))

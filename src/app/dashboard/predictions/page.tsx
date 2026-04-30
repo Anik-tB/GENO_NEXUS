@@ -23,6 +23,7 @@ export default function PredictionsPage() {
   const getPreventionPlan = (diseaseName: string) => {
     const isCovid = diseaseName.toLowerCase().includes("covid");
     const isHiv = diseaseName.toLowerCase().includes("hiv");
+    const isBrca = diseaseName.toLowerCase().includes("breast") || diseaseName.toLowerCase().includes("ovarian") || diseaseName.toLowerCase().includes("brca");
     
     if (isCovid) {
       return [
@@ -35,6 +36,12 @@ export default function PredictionsPage() {
         { title: "Immediate Action", content: "Schedule an appointment with an infectious disease specialist immediately for confirmatory viral load testing." },
         { title: "Medical Intervention", content: "Initiate Antiretroviral Therapy (ART) as soon as possible. The mutation profile will guide which specific drug classes will be most effective." },
         { title: "Prevention Protocol", content: "Practice safe sex, do not share needles, and inform partners so they can seek testing and PEP/PrEP if necessary." }
+      ];
+    } else if (isBrca) {
+      return [
+        { title: "Genetic Counseling", content: "Schedule a consultation with a board-certified genetic counselor to discuss these findings and family history implications." },
+        { title: "Enhanced Screening", content: "Discuss initiating early and enhanced screening protocols, such as annual breast MRIs and transvaginal ultrasounds, depending on your age." },
+        { title: "Risk-Reducing Strategies", content: "Consult with an oncologist regarding risk-reducing options, which may include chemoprevention or prophylactic surgeries, tailored to your specific mutation profile." }
       ];
     } else {
       return [
