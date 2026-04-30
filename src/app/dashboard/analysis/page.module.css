@@ -369,38 +369,40 @@
 .heatmapGrid {
   display: grid;
   grid-template-columns: repeat(8, 1fr);
-  gap: 3px;
+  gap: 4px;
   margin-bottom: 0.85rem;
 }
 
 .heatCell {
   aspect-ratio: 1;
-  border-radius: 3px;
-  transition: transform 0.15s ease;
+  border-radius: 4px;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
   cursor: crosshair;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
 }
 
-.heatCell:hover { transform: scale(1.25); z-index: 2; }
+.heatCell:hover { 
+  transform: scale(1.15); 
+  z-index: 2; 
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5); 
+}
+
+.cellLabel {
+  font-size: 0.5rem;
+  font-weight: 800;
+  color: rgba(255,255,255,0.8);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  pointer-events: none;
+}
 
 .heat_high   { background: var(--gn-danger); }
 .heat_medium { background: var(--gn-warning); }
 .heat_low    { background: var(--gn-success); }
 .heat_none   { background: var(--gn-bg-glass-light); border: 1px solid var(--gn-border-light); }
-
-.heatLegend {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.72rem;
-  color: var(--gn-text-muted);
-}
-
-.legendGradient {
-  flex: 1;
-  height: 5px;
-  background: linear-gradient(90deg, var(--gn-success), var(--gn-warning), var(--gn-danger));
-  border-radius: 999px;
-}
 
 /* ── Beginner Guide ──────────────────────────────────────────── */
 .guideSection {

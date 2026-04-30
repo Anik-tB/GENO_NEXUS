@@ -21,7 +21,8 @@ export default function AnalysisPage() {
   const [error, setError] = useState("");
   const [mutations, setMutations] = useState<any[]>([]);
   const [indels, setIndels] = useState<any[]>([]);
-  const [heatmapData, setHeatmapData] = useState<string[]>(Array(64).fill("none"));
+  const [heatmapData, setHeatmapData] = useState<any[]>(Array(64).fill({severityClass: "none", variantCount: 0, score: 0}));
+  const [genomeLength, setGenomeLength] = useState(0);
   const [selectedGene, setSelectedGene] = useState<any>(null);
   const [filter, setFilter] = useState("all");
   const [variantTab, setVariantTab] = useState<"snps" | "indels">("snps");
@@ -63,21 +64,34 @@ export default function AnalysisPage() {
 
     // Chromosome heatmap — weighted by AI severity
     const allVariants = [...rawMutations, ...rawIndels];
-    const newHeatmap = Array(64).fill(0);
-    const maxPos = allVariants.length > 0 ? Math.max(...allVariants.map((m: any) => m.position)) : 1;
+    const maxPos = sData.result.reference_length || (allVariants.length > 0 ? Math.max(...allVariants.map((m: any) => m.position)) : 1000);
+    setGenomeLength(maxPos);
     const scale = maxPos > 0 ? maxPos : 1;
+    const segmentSize = maxPos / 64;
+
+    const newHeatmap = Array(64).fill(null).map((_, i) => ({
+      score: 0,
+      variantCount: 0,
+      startPos: Math.floor(i * segmentSize),
+      endPos: Math.floor((i + 1) * segmentSize),
+      severityClass: "none"
+    }));
+
     allVariants.forEach((m: any) => {
       const bucket = Math.min(63, Math.floor((m.position / scale) * 63));
       if (bucket >= 0 && bucket < 64) {
-        newHeatmap[bucket] += m.severity === "high" ? 6 : m.severity === "medium" ? 3 : 1;
+        newHeatmap[bucket].score += m.severity === "high" ? 6 : m.severity === "medium" ? 3 : 1;
+        newHeatmap[bucket].variantCount += 1;
       }
     });
-    setHeatmapData(newHeatmap.map(count => {
-      if (count >= 6) return "high";
-      if (count >= 3) return "medium";
-      if (count >= 1) return "low";
-      return "none";
-    }));
+
+    newHeatmap.forEach(bucket => {
+      if (bucket.score >= 6) bucket.severityClass = "high";
+      else if (bucket.score >= 3) bucket.severityClass = "medium";
+      else if (bucket.score >= 1) bucket.severityClass = "low";
+    });
+    
+    setHeatmapData(newHeatmap);
 
     // Format SNPs — severity, category, impact come from AI engine directly
     const formatted = rawMutations.map((m: any, idx: number) => {
@@ -336,11 +350,24 @@ export default function AnalysisPage() {
                 outline: 'none',
                 whiteSpace: 'nowrap',
                 width: 'fit-content',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
               }}
               onMouseOver={(e) => { e.currentTarget.style.background = 'rgba(16, 185, 129, 0.12)'; e.currentTarget.style.boxShadow = '0 0 16px rgba(16,185,129,0.2)'; }}
               onMouseOut={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.boxShadow = 'none'; }}
             >
-              {showHistoryView ? "← Return to Active Analysis" : "📋 View Past Analyses"}
+              {showHistoryView ? (
+                <>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+                  Return to Active Analysis
+                </>
+              ) : (
+                <>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                  View Past Analyses
+                </>
+              )}
             </button>
           </div>
 
@@ -723,25 +750,49 @@ export default function AnalysisPage() {
               </section>
             )}
 
-            {/* Heatmap */}
+            {/* Heatmap Grid */}
             <section className={styles.heatmapCard}>
               <div className={styles.cardHeader}>
                 <h3 className={styles.cardTitle}>Chromosome Heatmap</h3>
               </div>
-              <p className={styles.heatmapDesc}>Mutation density distribution across the evaluated genomic sequence.</p>
+              <p className={styles.heatmapDesc}>
+                The genome is divided into 64 equal blocks, reading left-to-right, top-to-bottom. Colors indicate the highest variant risk found in each block.
+              </p>
+              
+              <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '0.6rem', fontSize: '0.75rem', color: 'var(--gn-text-muted)', fontWeight: 600}}>
+                <span>Start: 0 bp</span>
+                <span>End: {genomeLength ? `${genomeLength.toLocaleString()} bp` : ''}</span>
+              </div>
+
               <div className={styles.heatmapGrid}>
-                {heatmapData.map((val, i) => (
+                {heatmapData.map((data, i) => (
                   <div
                     key={i}
-                    className={`${styles.heatCell} ${styles[`heat_${val}`]}`}
-                    title={`Region Segment ${i + 1}: ${val} mutation density`}
-                  />
+                    className={`${styles.heatCell} ${styles[`heat_${data.severityClass || data}`]}`}
+                    title={data.startPos !== undefined ? `Block ${i + 1} (Region: ${data.startPos.toLocaleString()} - ${data.endPos.toLocaleString()} bp)\nVariants Found: ${data.variantCount}\nSeverity Score: ${data.score}` : `Region Segment ${i + 1}`}
+                  >
+                    {i === 0 && <span className={styles.cellLabel}>Start</span>}
+                    {i === 63 && <span className={styles.cellLabel}>End</span>}
+                  </div>
                 ))}
               </div>
-              <div className={styles.heatLegend}>
-                <span>Low</span>
-                <div className={styles.legendGradient} />
-                <span>High</span>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.8rem', marginTop: '1.2rem', fontSize: '0.75rem', color: 'var(--gn-text-muted)', justifyContent: 'center' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <div className={`${styles.heatCell} ${styles.heat_none}`} style={{ width: '14px', height: '14px', cursor: 'default' }}></div>
+                  <span>Clear (0)</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <div className={`${styles.heatCell} ${styles.heat_low}`} style={{ width: '14px', height: '14px', cursor: 'default' }}></div>
+                  <span>Low Risk</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <div className={`${styles.heatCell} ${styles.heat_medium}`} style={{ width: '14px', height: '14px', cursor: 'default' }}></div>
+                  <span>Med Risk</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <div className={`${styles.heatCell} ${styles.heat_high}`} style={{ width: '14px', height: '14px', cursor: 'default' }}></div>
+                  <span>High Risk</span>
+                </div>
               </div>
             </section>
           </div>
