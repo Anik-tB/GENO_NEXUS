@@ -506,24 +506,43 @@ async def predict_disease(req: PredictDiseaseRequest):
         if req.organism == "BRCA1 (Homo sapiens)":
             if high_sev_count > 0:
                 primary_risk = min(99, 60 + (high_sev_count * 20))
-                insight_msg = f"Detected {high_sev_count} high-severity (e.g., frameshift, nonsense) mutations in the BRCA1 tumor suppressor gene. High risk for Hereditary Breast and Ovarian Cancer (HBOC) syndrome."
+                ovarian_risk = min(85, 40 + (high_sev_count * 15))
+                insight_breast = f"Detected {high_sev_count} high-severity mutations in the BRCA1 tumor suppressor gene. High lifetime risk for Breast Cancer."
+                insight_ovarian = f"Detected {high_sev_count} high-severity mutations in BRCA1. Significantly elevated risk for Ovarian Cancer."
             elif med_sev_count > 0:
                 primary_risk = min(40, 10 + (med_sev_count * 10))
-                insight_msg = f"Detected {med_sev_count} variants of unknown or moderate significance in BRCA1. Clinical correlation required."
+                ovarian_risk = min(35, 10 + (med_sev_count * 8))
+                insight_breast = f"Detected {med_sev_count} variants of unknown or moderate significance in BRCA1. Clinical correlation required for Breast Cancer risk."
+                insight_ovarian = f"Detected {med_sev_count} variants of moderate significance. Clinical correlation required for Ovarian Cancer risk."
             else:
                 primary_risk = 5
-                insight_msg = f"High sequence homology ({req.matchPct}%) to the wild-type BRCA1 reference. No pathogenic variants detected. Standard baseline risk."
+                ovarian_risk = 5
+                insight_breast = f"High sequence homology ({req.matchPct}%) to the wild-type BRCA1 reference. Standard baseline Breast Cancer risk."
+                insight_ovarian = f"High sequence homology ({req.matchPct}%) to the wild-type BRCA1 reference. Standard baseline Ovarian Cancer risk."
             
             primary_sev = "high" if primary_risk >= 75 else "medium" if primary_risk >= 40 else "low"
+            ovarian_sev = "high" if ovarian_risk >= 75 else "medium" if ovarian_risk >= 40 else "low"
+
             predictions.append({
-                "id": "pred-brca1",
-                "disease": "Breast/Ovarian Cancer Risk",
+                "id": "pred-breast",
+                "disease": "Breast Cancer Risk",
                 "genes": "BRCA1",
                 "severity": primary_sev,
                 "risk": int(primary_risk),
                 "confidence": 95 if high_sev_count > 0 else 80,
                 "trend": "stable",
-                "insight": insight_msg
+                "insight": insight_breast
+            })
+
+            predictions.append({
+                "id": "pred-ovary",
+                "disease": "Ovarian Cancer Risk",
+                "genes": "BRCA1",
+                "severity": ovarian_sev,
+                "risk": int(ovarian_risk),
+                "confidence": 90 if high_sev_count > 0 else 80,
+                "trend": "stable",
+                "insight": insight_ovarian
             })
 
             if high_sev_count > 0 or med_sev_count > 0:
