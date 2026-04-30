@@ -60,7 +60,7 @@ export default function UploadPage() {
     fetchStats();
   }, []);
 
-  const handleLinkSubmit = async (e: React.FormEvent | React.MouseEvent) => {
+  const handleLinkSubmit = async (e: React.FormEvent | React.MouseEvent, targetRoute: string = "/dashboard/analysis") => {
     e.preventDefault();
     if (refType === "link" && !linkUrl.trim()) return;
     if (refType === "file" && !refFile) return;
@@ -118,9 +118,9 @@ export default function UploadPage() {
       const latestQuery = statsData.files?.find((f: any) => f.id !== referenceFileId && !f.storage_path.startsWith("http"));
       
       if (latestQuery) {
-        router.push(`/dashboard/analysis?queryId=${latestQuery.id}&refId=${referenceFileId}`);
+        router.push(`${targetRoute}?queryId=${latestQuery.id}&refId=${referenceFileId}`);
       } else {
-        router.push("/dashboard/analysis");
+        router.push(targetRoute);
       }
     } catch (error) {
       console.error(error);
@@ -401,20 +401,33 @@ export default function UploadPage() {
 
                   {file.status === "success" && (
                     <div className={styles.nextStep}>
-                      <p>✅ AI validation passed — sequence is ready for mutation analysis.</p>
-                      <button 
-                        onClick={(e) => {
-                          if ((refType === "link" && linkUrl.trim()) || (refType === "file" && refFile)) {
-                            handleLinkSubmit(e);
-                          } else {
-                            router.push("/dashboard/processing");
-                          }
-                        }} 
-                        className={styles.nextStepButton}
-                        style={{ background: "transparent", border: "none", cursor: "pointer", fontFamily: "inherit", fontSize: "inherit", display: "inline-block" }}
-                      >
-                        Start Analysis Pipeline →
-                      </button>
+                      <p style={{marginBottom: "1rem"}}>✅ AI validation passed — sequence is ready for processing.</p>
+                      <div style={{display: 'flex', gap: '1rem', flexWrap: 'wrap'}}>
+                        <button 
+                          onClick={(e) => {
+                            if ((refType === "link" && linkUrl.trim()) || (refType === "file" && refFile)) {
+                              handleLinkSubmit(e, "/dashboard/analysis");
+                            } else {
+                              router.push("/dashboard/processing");
+                            }
+                          }} 
+                          style={{ background: "rgba(16, 185, 129, 0.15)", color: "var(--gn-primary)", border: "1px solid rgba(16, 185, 129, 0.3)", cursor: "pointer", padding: "0.6rem 1.2rem", borderRadius: "8px", fontWeight: "600", fontSize: "0.9rem", transition: "all 0.2s" }}
+                        >
+                          View Mutation Analysis →
+                        </button>
+                        <button 
+                          onClick={(e) => {
+                            if ((refType === "link" && linkUrl.trim()) || (refType === "file" && refFile)) {
+                              handleLinkSubmit(e, "/dashboard/predictions");
+                            } else {
+                              router.push("/dashboard/processing");
+                            }
+                          }} 
+                          style={{ background: "rgba(59, 130, 246, 0.15)", color: "var(--gn-blue)", border: "1px solid rgba(59, 130, 246, 0.3)", cursor: "pointer", padding: "0.6rem 1.2rem", borderRadius: "8px", fontWeight: "600", fontSize: "0.9rem", transition: "all 0.2s" }}
+                        >
+                          View Disease Predictions →
+                        </button>
+                      </div>
                     </div>
                   )}
                   {file.status === "error" && (
