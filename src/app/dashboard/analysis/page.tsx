@@ -379,7 +379,7 @@ export default function AnalysisPage() {
       {!showHistoryView && (
         <details className={styles.guideSection} style={{ marginBottom: '1.5rem' }}>
           <summary className={styles.guideSummary}>
-            <span>📖</span> Beginner's Guide: Understanding Your Results
+            <span>🧪</span> Quick Reference — Key Genomic Terms Explained
             <span style={{ marginLeft: 'auto', fontSize: '0.75rem', color: 'var(--gn-text-muted)', fontWeight: 400 }}>Click to expand / collapse</span>
           </summary>
           <div className={styles.guideGrid}>
