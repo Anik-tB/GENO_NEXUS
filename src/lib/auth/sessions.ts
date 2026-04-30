@@ -55,7 +55,14 @@ export async function getUserFromSessionToken(token: string): Promise<AuthUser |
         users.google_id,
         users.firebase_uid,
         users.account_locked_until,
-        users.failed_login_count
+        users.failed_login_count,
+        users.bio,
+        users.job_title,
+        users.avatar_url,
+        users.phone,
+        users.organization,
+        users.created_at,
+        users.last_login_at
       FROM sessions
       INNER JOIN users ON users.id = sessions.user_id
       WHERE sessions.token_hash = $1
@@ -75,22 +82,31 @@ export async function getUserFromSessionToken(token: string): Promise<AuthUser |
     [tokenHash]
   ).catch(() => {});
 
+  const row = result.rows[0];
   return {
-    id: result.rows[0].id,
-    firstName: result.rows[0].first_name,
-    lastName: result.rows[0].last_name,
-    email: result.rows[0].email,
-    accountCategory: result.rows[0].account_category,
-    passwordHash: result.rows[0].password_hash,
-    githubId: result.rows[0].github_id,
-    googleId: result.rows[0].google_id,
-    firebaseUid: result.rows[0].firebase_uid,
-    accountLockedUntil: result.rows[0].account_locked_until
-      ? new Date(result.rows[0].account_locked_until)
+    id: row.id,
+    firstName: row.first_name,
+    lastName: row.last_name,
+    email: row.email,
+    accountCategory: row.account_category,
+    passwordHash: row.password_hash,
+    githubId: row.github_id,
+    googleId: row.google_id,
+    firebaseUid: row.firebase_uid,
+    accountLockedUntil: row.account_locked_until
+      ? new Date(row.account_locked_until)
       : null,
-    failedLoginCount: result.rows[0].failed_login_count ?? 0,
+    failedLoginCount: row.failed_login_count ?? 0,
+    bio: row.bio ?? null,
+    jobTitle: row.job_title ?? null,
+    avatarUrl: row.avatar_url ?? null,
+    phone: row.phone ?? null,
+    organization: row.organization ?? null,
+    createdAt: row.created_at ? new Date(row.created_at) : null,
+    lastLoginAt: row.last_login_at ? new Date(row.last_login_at) : null,
   };
 }
+
 
 export function buildSessionCookie(token: string, expiresAt: Date) {
   return {

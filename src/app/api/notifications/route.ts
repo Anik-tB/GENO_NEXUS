@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
     
     // Fetch latest 20 notifications
     const result = await db.query(
-      `SELECT * FROM notifications 
+      `SELECT * FROM user_notifications 
        WHERE user_id = $1 
        ORDER BY created_at DESC 
        LIMIT 20`,

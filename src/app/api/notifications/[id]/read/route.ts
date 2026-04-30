@@ -25,7 +25,7 @@ export async function PATCH(
     const db = assertDatabase();
     
     await db.query(
-      `UPDATE notifications 
+      `UPDATE user_notifications 
        SET is_read = true 
        WHERE id = $1 AND user_id = $2`,
       [id, user.id]

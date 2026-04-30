@@ -1,5 +1,5 @@
 -- Create notifications table
-CREATE TABLE IF NOT EXISTS notifications (
+CREATE TABLE IF NOT EXISTS user_notifications (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   title TEXT NOT NULL,
@@ -8,12 +8,12 @@ CREATE TABLE IF NOT EXISTS notifications (
   is_read BOOLEAN NOT NULL DEFAULT false,
   link TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  CONSTRAINT notifications_type_check CHECK (
+  CONSTRAINT user_notifications_type_check CHECK (
     type IN ('info', 'success', 'warning', 'error')
   )
 );
 
-CREATE INDEX IF NOT EXISTS idx_notifications_user_id_created_at 
-  ON notifications(user_id, created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_notifications_user_id_unread
-  ON notifications(user_id) WHERE is_read = false;
+CREATE INDEX IF NOT EXISTS idx_user_notifications_user_id_created_at 
+  ON user_notifications(user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_user_notifications_user_id_unread
+  ON user_notifications(user_id) WHERE is_read = false;
