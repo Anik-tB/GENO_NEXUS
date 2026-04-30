@@ -744,7 +744,10 @@ export default function AnalysisPage() {
                   </div>
                 )}
 
-                <button className={styles.actionButton}>
+                <button 
+                  className={styles.actionButton}
+                  onClick={() => window.location.href = "/dashboard/visualization"}
+                >
                   Explore in 3D Viewer →
                 </button>
               </section>
