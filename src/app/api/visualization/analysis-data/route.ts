@@ -38,12 +38,26 @@ export async function GET(req: NextRequest) {
     }
 
     const row = result.rows[0];
-    const mutations: Array<{ position: number; reference: string; query: string }> =
-      row.mutations_found || [];
+    const mutations: any[] = row.mutations_found || [];
+    const indels: any[] = row.indels_found || [];
 
     const matchPct: number = row.match_percentage ?? 0;
     const fileName: string = row.file_name;
     const storagePath: string = row.storage_path;
+    const organism: string = row.detected_organism || "Unknown";
+
+    // Bioinformatics metrics
+    const refLength = row.reference_length || (mutations.length > 0 ? Math.max(...mutations.map((m: any) => m.position)) : 30000);
+    const transitionsCount = mutations.filter(m => m.type === 'Transition').length;
+    const transversionsCount = mutations.filter(m => m.type === 'Transversion').length;
+    const tsTvRatio = transversionsCount > 0 ? (transitionsCount / transversionsCount).toFixed(2) : (transitionsCount > 0 ? "∞" : "0.00");
+    
+    const genomeKb = refLength > 0 ? refLength / 1000 : 1;
+    const mutFreq = (mutations.length / genomeKb).toFixed(2);
+
+    const insertions = indels.filter(i => i.type === 'insertion').length;
+    const deletions = indels.filter(i => i.type === 'deletion').length;
+    const indelRatio = deletions > 0 ? (insertions / deletions).toFixed(2) : (insertions > 0 ? "∞" : "0.00");
 
     // ── Classify mutations into severity buckets ──────────────────────────
     // Transitions (C↔T, A↔G) are lower risk; transversions are higher risk
@@ -68,45 +82,43 @@ export async function GET(req: NextRequest) {
     const uncertain  = classified.filter((m) => m.severity === "uncertain");
     const benign     = classified.filter((m) => m.severity === "benign");
 
-    // ── Build chromosome overlay ──────────────────────────────────────────
-    // Spread mutations across 23 chromosomes proportionally by position
-    const totalPos = mutations.length;
+    // ── Build advanced chromosome mapping ─────────────────────────────────
+    // Add small buffer so the last mutation doesn't fall out of bounds
+    const binSize = (refLength + 10) / 23;
+
     const chromosomes = Array.from({ length: 23 }, (_, i) => {
       const label = i < 22 ? String(i + 1) : "XY";
-      // Find the mutation closest to this chromosome's "slot"
-      const slotMut = classified[Math.floor((i / 23) * totalPos)];
-      const hasMutation = !!slotMut && totalPos > 0;
-      const mutType = slotMut?.severity ?? "benign";
-
-      // Gene name heuristics based on substitution type
-      let gene = "";
-      let variant = "";
-      let impact: "High" | "Moderate" | "Low" = "Low";
-      if (slotMut) {
-        if (slotMut.severity === "pathogenic") {
-          gene = ["BRCA2", "TP53", "KRAS", "APOB", "LDLR"][i % 5];
-          variant = `c.${slotMut.position}${slotMut.reference}>${slotMut.query}`;
-          impact = "High";
-        } else if (slotMut.severity === "uncertain") {
-          gene = ["TCF7L2", "APOE", "CLU", "PICALM", "PCSK9"][i % 5];
-          variant = `c.${slotMut.position}${slotMut.reference}>${slotMut.query}`;
-          impact = "Moderate";
-        } else {
-          gene = ["KCNQ1", "SLC30A8", "CDKAL1", "HNF1A", "WFS1"][i % 5];
-          variant = `c.${slotMut.position}${slotMut.reference}>${slotMut.query}`;
-          impact = "Low";
-        }
-      }
+      const chromStart = i * binSize;
+      const chromEnd = (i + 1) * binSize;
+      
+      // Find all mutations that fall into this chromosome's bucket
+      const chrMutations = classified
+        .filter(m => m.position >= chromStart && m.position < chromEnd)
+        .map(m => {
+          const relativePosPct = ((m.position - chromStart) / binSize) * 100;
+          
+          let impact = "Low";
+          if (m.severity === "pathogenic") impact = "High";
+          if (m.severity === "uncertain") impact = "Moderate";
+          
+          return {
+            id: m.idx,
+            position: m.position,
+            relativePosPct: Math.min(98, Math.max(2, relativePosPct)), // Keep within visual bounds
+            type: m.type || "SNP",
+            severity: m.severity as "pathogenic" | "uncertain" | "benign",
+            variant: `g.${m.position}${m.reference}>${m.query}`,
+            gene: m.functional_region || "Intergenic",
+            impact,
+            ai_confidence: m.ai_confidence || 0.5,
+          };
+        });
 
       return {
         id: i + 1,
         label,
-        height: Math.max(40, 100 - i * 3),
-        hasMutation,
-        mutationType: mutType as "pathogenic" | "uncertain" | "benign",
-        gene,
-        variant,
-        impact,
+        height: Math.max(40, 100 - i * 3), // Visual staggered height
+        mutations: chrMutations,
       };
     });
 
@@ -114,11 +126,15 @@ export async function GET(req: NextRequest) {
       hasData: true,
       fileName,
       storagePath,
+      organism,
       matchPct,
       totalMutations: mutations.length,
       pathogenicCount: pathogenic.length,
       uncertainCount:  uncertain.length,
       benignCount:     benign.length,
+      tsTvRatio,
+      mutFreq,
+      indelRatio,
       chromosomes,
     });
 

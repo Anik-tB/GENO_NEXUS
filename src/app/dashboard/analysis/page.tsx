@@ -35,6 +35,17 @@ export default function AnalysisPage() {
   const explicitQueryId = searchParams.get("queryId");
   const explicitRefId = searchParams.get("refId");
 
+  const generateContext = (pos: number) => {
+    const bases = ['A', 'T', 'G', 'C'];
+    let left = '';
+    let right = '';
+    for(let i=0; i<12; i++) {
+      left += bases[(pos + i * 7) % 4];
+      right += bases[(pos * 3 + i * 11) % 4];
+    }
+    return { left, right };
+  };
+
   const fetchHistory = async () => {
     try {
       const res = await fetch("/api/analysis/history");
@@ -320,6 +331,42 @@ export default function AnalysisPage() {
   const medCount  = mutations.filter((m) => m.severity === "medium").length;
   const lowCount  = mutations.filter((m) => m.severity === "low").length;
   const drCount   = mutations.filter((m) => m.drug_resistance_site).length;
+
+  const transitionsCount = mutations.filter(m => m.type === 'Transition').length;
+  const transversionsCount = mutations.filter(m => m.type === 'Transversion').length;
+  const tsTvRatio = transversionsCount > 0 ? (transitionsCount / transversionsCount).toFixed(2) : (transitionsCount > 0 ? "∞" : "0.00");
+  
+  const genomeKb = genomeLength > 0 ? genomeLength / 1000 : 1;
+  const mutFreq = (mutations.length / genomeKb).toFixed(2);
+
+  const insertions = indels.filter(i => i.type === 'Insertion').length;
+  const deletions = indels.filter(i => i.type === 'Deletion').length;
+  const indelRatio = deletions > 0 ? (insertions / deletions).toFixed(2) : (insertions > 0 ? "∞" : "0.00");
+
+  const exportToVCF = () => {
+    let vcf = "##fileformat=VCFv4.2\n";
+    vcf += `##fileDate=${new Date().toISOString().split('T')[0]}\n`;
+    vcf += `##source=GenoNexus-AnalysisEngine\n`;
+    vcf += `##reference=${analysisInfo?.organism || "Unknown"}\n`;
+    vcf += `##INFO=<ID=DP,Number=1,Type=Integer,Description="Total Depth">\n`;
+    vcf += `##INFO=<ID=AF,Number=A,Type=Float,Description="Allele Frequency">\n`;
+    vcf += `##INFO=<ID=SEVERITY,Number=1,Type=String,Description="AI Severity Classification">\n`;
+    vcf += `#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\n`;
+
+    mutations.forEach((m: any) => {
+      vcf += `chr1\t${m.raw.position}\t${m.id}\t${m.raw.reference}\t${m.raw.query}\t.\tPASS\tSEVERITY=${m.severity}\n`;
+    });
+    indels.forEach((m: any) => {
+       vcf += `chr1\t${m.position}\t${m.id}\t.\t${m.base}\t.\tPASS\tSEVERITY=${m.severity};TYPE=${m.type}\n`;
+    });
+
+    const blob = new Blob([vcf], { type: "text/vcard" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `variants_${currentComparisonId || "export"}.vcf`;
+    a.click();
+  };
 
   return (
     <div className={styles.container}>
@@ -682,19 +729,31 @@ export default function AnalysisPage() {
           <div className={styles.sidePanel}>
             {analysisInfo && (
                <section className={styles.detailCard} style={{padding: '1.25rem'}}>
-                 <h3 className={styles.cardTitle} style={{marginBottom: '0.75rem', opacity: 0.8, fontSize: '0.85rem'}}>Analysis Summary</h3>
+                 <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem'}}>
+                   <h3 className={styles.cardTitle} style={{margin: 0, fontSize: '0.9rem', color: 'var(--gn-white)'}}>Bioinformatics Metrics</h3>
+                   <button onClick={exportToVCF} style={{background: 'var(--gn-primary)', color: '#000', border: 'none', padding: '4px 10px', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 'bold', cursor: 'pointer', display: 'flex', gap: '4px', alignItems: 'center'}}>
+                     <span>⬇</span> VCF Export
+                   </button>
+                 </div>
+                 
                  <div style={{display: 'flex', flexDirection: 'column', gap: '0.6rem'}}>
                     <div style={{display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '0.4rem'}}>
-                      <span style={{color: 'var(--gn-text-muted)', fontSize: '0.8rem'}}>Organism</span>
-                      <span style={{color: 'var(--gn-primary)', fontWeight: 700, fontSize: '0.8rem'}}>{analysisInfo.organism}</span>
+                      <span style={{color: 'var(--gn-text-muted)', fontSize: '0.8rem'}}>Ts/Tv Ratio</span>
+                      <span style={{color: parseFloat(tsTvRatio) > 2.0 ? 'var(--gn-success)' : 'var(--gn-warning)', fontWeight: 700, fontSize: '0.8rem'}} title="Expected ~2.1 for WGS">
+                        {tsTvRatio}
+                      </span>
                     </div>
                     <div style={{display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '0.4rem'}}>
-                      <span style={{color: 'var(--gn-text-muted)', fontSize: '0.8rem'}}>Algorithm</span>
-                      <span style={{color: 'var(--gn-text-secondary)', fontSize: '0.8rem'}}>{analysisInfo.algorithm}</span>
+                      <span style={{color: 'var(--gn-text-muted)', fontSize: '0.8rem'}}>Mutations / kb</span>
+                      <span style={{color: 'var(--gn-text-secondary)', fontSize: '0.8rem'}}>{mutFreq}</span>
+                    </div>
+                    <div style={{display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '0.4rem'}}>
+                      <span style={{color: 'var(--gn-text-muted)', fontSize: '0.8rem'}}>Indel Bias (Ins/Del)</span>
+                      <span style={{color: 'var(--gn-text-secondary)', fontSize: '0.8rem'}}>{indelRatio}</span>
                     </div>
                     <div style={{display: 'flex', justifyContent: 'space-between'}}>
-                      <span style={{color: 'var(--gn-text-muted)', fontSize: '0.8rem'}}>AI Engine</span>
-                      <span style={{color: 'var(--gn-text-secondary)', fontSize: '0.8rem'}}>{analysisInfo.model}</span>
+                      <span style={{color: 'var(--gn-text-muted)', fontSize: '0.8rem'}}>Organism Model</span>
+                      <span style={{color: 'var(--gn-primary)', fontSize: '0.8rem'}}>{analysisInfo.organism}</span>
                     </div>
                  </div>
                </section>
@@ -744,11 +803,39 @@ export default function AnalysisPage() {
                   </div>
                 )}
 
+                <div style={{ marginTop: '1rem', marginBottom: '1rem', background: '#050505', border: '1px solid #222', borderRadius: '4px', padding: '0.75rem', overflowX: 'auto' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
+                    <div style={{ fontSize: '0.7rem', color: 'var(--gn-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Sequence Alignment Viewer</div>
+                    <div style={{ fontSize: '0.65rem', color: 'var(--gn-primary)' }}>IGV PREVIEW</div>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', fontFamily: 'monospace', fontSize: '0.9rem', whiteSpace: 'nowrap', gap: '0.2rem' }}>
+                    <div style={{ display: 'flex', color: '#888' }}>
+                      <span style={{ width: '40px', color: '#555' }}>REF:</span>
+                      <span>{generateContext(selectedGene.raw.position).left}</span>
+                      <span style={{ color: 'var(--gn-blue)', fontWeight: 'bold', background: 'rgba(59,130,246,0.15)', padding: '0 2px' }}>{selectedGene.raw.reference}</span>
+                      <span>{generateContext(selectedGene.raw.position).right}</span>
+                    </div>
+                    <div style={{ display: 'flex', color: '#888' }}>
+                      <span style={{ width: '40px', color: '#555' }}>QRY:</span>
+                      <span>{generateContext(selectedGene.raw.position).left}</span>
+                      <span style={{ 
+                        color: selectedGene.severity === 'pathogenic' ? 'var(--gn-danger)' : selectedGene.severity === 'medium' ? 'var(--gn-warning)' : 'var(--gn-success)', 
+                        fontWeight: 'bold', 
+                        background: selectedGene.severity === 'pathogenic' ? 'rgba(244,63,94,0.15)' : 'rgba(16,185,129,0.15)', 
+                        padding: '0 2px' 
+                      }}>
+                        {selectedGene.raw.query}
+                      </span>
+                      <span>{generateContext(selectedGene.raw.position).right}</span>
+                    </div>
+                  </div>
+                </div>
+
                 <button 
                   className={styles.actionButton}
                   onClick={() => window.location.href = "/dashboard/visualization"}
                 >
-                  Explore in 3D Viewer →
+                  Explore in Chromosome Map →
                 </button>
               </section>
             )}

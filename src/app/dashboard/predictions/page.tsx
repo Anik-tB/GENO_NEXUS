@@ -19,6 +19,30 @@ export default function PredictionsPage() {
   const [error, setError] = useState("");
   const [meta, setMeta] = useState<{ fileName: string; matchPct: number; mutationCount: number } | null>(null);
   const [showPreventionPlan, setShowPreventionPlan] = useState(false);
+  const [exporting, setExporting] = useState(false);
+
+  const exportToReport = async () => {
+    if (!selected || exporting) return;
+    setExporting(true);
+    try {
+      const res = await fetch("/api/reports", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(selected),
+      });
+      const data = await res.json();
+      if (data.success) {
+        window.location.href = "/dashboard/reports";
+      } else {
+        alert("Failed to export report");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Error exporting report");
+    } finally {
+      setExporting(false);
+    }
+  };
 
   const getPreventionPlan = (diseaseName: string) => {
     const isCovid = diseaseName.toLowerCase().includes("covid");
@@ -220,7 +244,14 @@ export default function PredictionsPage() {
 
           <div className={styles.insightActions}>
             <button className={styles.primaryAction} onClick={() => setShowPreventionPlan(true)}>Generate Prevention Plan</button>
-            <button className={styles.secondaryAction}>Export to Report</button>
+            <button 
+              className={styles.secondaryAction} 
+              onClick={exportToReport} 
+              disabled={exporting}
+              style={{ opacity: exporting ? 0.7 : 1, cursor: exporting ? 'not-allowed' : 'pointer' }}
+            >
+              {exporting ? "Exporting..." : "Export to Report"}
+            </button>
           </div>
         </aside>
       </div>

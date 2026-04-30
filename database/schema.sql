@@ -181,3 +181,18 @@ CREATE INDEX IF NOT EXISTS idx_comparison_results_query
   ON comparison_results(query_file_id);
 CREATE INDEX IF NOT EXISTS idx_comparison_results_ref
   ON comparison_results(reference_file_id);
+
+CREATE TABLE IF NOT EXISTS reports (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  comparison_id UUID REFERENCES comparison_results(id) ON DELETE SET NULL,
+  name TEXT NOT NULL,
+  patient_id TEXT NOT NULL,
+  size_bytes BIGINT NOT NULL DEFAULT 0,
+  status TEXT NOT NULL DEFAULT 'Draft',
+  content JSONB NOT NULL DEFAULT '{}',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_reports_user_id ON reports(user_id, created_at DESC);

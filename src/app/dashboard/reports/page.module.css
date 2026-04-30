@@ -185,6 +185,59 @@
 
 .exportBtn:hover { background: var(--gn-bg-glass-light); color: var(--gn-text-primary); border-color: var(--gn-primary); color: var(--gn-primary); }
 
+/* QC Metrics */
+.qcGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+.qcItem {
+  background: var(--gn-bg-glass-light);
+  border: 1px solid var(--gn-border-light-strong);
+  padding: 0.75rem;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.qcLabel {
+  font-size: 0.7rem;
+  color: var(--gn-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+}
+.qcValue {
+  font-size: 1.1rem;
+  color: var(--gn-white);
+  font-weight: 700;
+}
+
+/* Recommendations */
+.recommendationsList {
+  list-style-type: disc;
+  padding-left: 1.5rem;
+  color: var(--gn-text-secondary);
+  font-size: 0.875rem;
+  line-height: 1.6;
+  margin: 0;
+}
+.recommendationsList li {
+  margin-bottom: 0.5rem;
+}
+
+/* Methodology */
+.methodology {
+  font-size: 0.75rem;
+  color: var(--gn-text-muted);
+  line-height: 1.5;
+  background: rgba(0,0,0,0.1);
+  padding: 1rem;
+  border-radius: 8px;
+  border-left: 3px solid var(--gn-border-light-strong);
+}
+
 @media (max-width: 1024px) {
   .contentGrid { grid-template-columns: 1fr; }
 }

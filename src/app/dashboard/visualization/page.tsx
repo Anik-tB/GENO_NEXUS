@@ -3,45 +3,18 @@
 import { useState, useEffect } from "react";
 import styles from "./page.module.css";
 import { GenomeBrowser } from "@/components/visualization/GenomeBrowser";
-import { DigitalCellTwin } from "@/components/visualization/DigitalCellTwin";
-import { PhyloTree } from "@/components/visualization/PhyloTree";
-import { VirusTracker } from "@/components/visualization/VirusTracker";
 
 const TABS = [
   {
-    id: "helix",
-    label: "3D Genome Browser",
+    id: "chromosome",
+    label: "Chromosome Map Viewer",
     icon: "🧬",
-    sub: "Explore DNA helix & chromosome mutations",
-  },
-  {
-    id: "cell",
-    label: "Digital Cell Twin",
-    icon: "🔬",
-    sub: "Simulate cellular drug interactions",
-  },
-  {
-    id: "phylo",
-    label: "Phylogenetic Tree",
-    icon: "🌿",
-    sub: "Evolutionary lineage builder",
-  },
-  {
-    id: "virus",
-    label: "Virus Mutation Tracker",
-    icon: "🦠",
-    sub: "Real-time outbreak visualization",
-  },
-];
-
-const HELIX_SUB_TABS = [
-  { id: "helix", label: "3D Helix" },
-  { id: "chromosome", label: "Chromosome Map" },
+    sub: "Explore chromosome mutations & risk loci",
+  }
 ];
 
 export default function VisualizationPage() {
-  const [activeTab, setActiveTab] = useState("helix");
-  const [helixView, setHelixView] = useState<"helix" | "chromosome">("helix");
+  const [activeTab, setActiveTab] = useState("chromosome");
   const [analysisData, setAnalysisData] = useState<any>(null);
 
   useEffect(() => {
@@ -62,25 +35,10 @@ export default function VisualizationPage() {
           <h1 className={styles.title}>{activeTabData.icon} {activeTabData.label}</h1>
           <p className={styles.subtitle}>{activeTabData.sub}</p>
         </div>
-
-        {/* Sub-tabs only for helix */}
-        {activeTab === "helix" && (
-          <div className={styles.viewToggles}>
-            {HELIX_SUB_TABS.map((t) => (
-              <button
-                key={t.id}
-                className={`${styles.toggleBtn} ${helixView === t.id ? styles.toggleActive : ""}`}
-                onClick={() => setHelixView(t.id as "helix" | "chromosome")}
-              >
-                {t.label}
-              </button>
-            ))}
-          </div>
-        )}
       </header>
 
-      {/* Module Tabs */}
-      <nav className={styles.moduleTabs}>
+      {/* Module Tabs - Hidden since there's only one tab now, but kept for future real expansions */}
+      <nav className={styles.moduleTabs} style={{ display: 'none' }}>
         {TABS.map((tab) => (
           <button
             key={tab.id}
@@ -95,24 +53,27 @@ export default function VisualizationPage() {
 
       {/* Content Area */}
       <div className={styles.contentArea}>
-        {activeTab === "helix" && (
+        {activeTab === "chromosome" && (
           <div className={styles.viewerWrapper}>
             {/* Sidebar */}
             <aside className={styles.toolbox}>
               <p className={styles.toolboxLabel}>Sequence Info</p>
               <div className={styles.stats}>
                 {[
-                  { label: "Active View",  value: helixView === "helix" ? "3D Helix" : "Chromosome Map" },
                   { label: "File",         value: analysisData?.hasData ? analysisData.fileName : "No analysis yet" },
+                  { label: "Organism",     value: analysisData?.hasData ? analysisData.organism : "—" },
                   { label: "Seq Match",    value: analysisData?.hasData ? `${analysisData.matchPct}%` : "—" },
-                  { label: "Mutations",    value: analysisData?.hasData ? String(analysisData.totalMutations) : "—" },
-                  { label: "Pathogenic",   value: analysisData?.hasData ? String(analysisData.pathogenicCount) : "—" },
-                  { label: "Uncertain",    value: analysisData?.hasData ? String(analysisData.uncertainCount) : "—" },
-                  { label: "Benign",       value: analysisData?.hasData ? String(analysisData.benignCount) : "—" },
+                  { label: "Total Variants", value: analysisData?.hasData ? String(analysisData.totalMutations) : "—" },
+                  { label: "Ts/Tv Ratio",  value: analysisData?.hasData ? analysisData.tsTvRatio : "—" },
+                  { label: "Mutations/kb", value: analysisData?.hasData ? analysisData.mutFreq : "—" },
+                  { label: "Indel Bias",   value: analysisData?.hasData ? analysisData.indelRatio : "—" },
                 ].map((s, i) => (
                   <div key={i} className={styles.statItem}>
                     <span className={styles.statLabel}>{s.label}</span>
-                    <strong className={styles.statValue}>{s.value}</strong>
+                    <strong className={styles.statValue} style={
+                      s.label === "Ts/Tv Ratio" && analysisData?.hasData && parseFloat(analysisData.tsTvRatio) > 2.0 ? { color: 'var(--gn-success)' } : 
+                      s.label === "Ts/Tv Ratio" && analysisData?.hasData ? { color: 'var(--gn-warning)' } : {}
+                    }>{s.value}</strong>
                   </div>
                 ))}
               </div>
@@ -134,33 +95,18 @@ export default function VisualizationPage() {
 
             {/* Render Area */}
             <div className={styles.renderArea}>
-              <div className={styles.renderOverlay}>
+              <div className={styles.renderOverlay} style={{ display: 'flex', gap: '1rem' }}>
                 <span className={styles.overlayBadge}>
-                  <span className={styles.blinkDot}>●</span> Live Hardware Rendering
+                  <span className={styles.blinkDot}>●</span> Analysis Data Rendered
+                </span>
+                <span className={styles.overlayBadge} style={{ background: 'var(--gn-bg)', border: '1px solid var(--gn-primary)', color: 'var(--gn-primary)' }}>
+                  👆 Click on any chromosome strand to view Sequence Alignments
                 </span>
               </div>
               <div className={styles.helixContainer}>
-                <GenomeBrowser activeView={helixView} />
+                <GenomeBrowser chromosomes={analysisData?.chromosomes} />
               </div>
             </div>
-          </div>
-        )}
-
-        {activeTab === "cell" && (
-          <div className={styles.fullArea}>
-            <DigitalCellTwin />
-          </div>
-        )}
-
-        {activeTab === "phylo" && (
-          <div className={styles.fullArea}>
-            <PhyloTree />
-          </div>
-        )}
-
-        {activeTab === "virus" && (
-          <div className={styles.fullArea}>
-            <VirusTracker />
           </div>
         )}
       </div>
