@@ -34,9 +34,17 @@ export async function GET() {
     let confidenceSamples = 0;
     let totalBasesAnalyzed = 0;
 
+    const parseJSON = (val: any) => {
+      if (!val) return [];
+      if (typeof val === 'string') {
+        try { return JSON.parse(val); } catch(e) { return []; }
+      }
+      return val;
+    };
+
     for (const row of completedRes.rows) {
-      const muts = row.mutations_found || [];
-      const indels = row.indels_found || [];
+      const muts = parseJSON(row.mutations_found);
+      const indels = parseJSON(row.indels_found);
       
       const allVars = [...muts, ...indels];
       totalMutations += allVars.length;
@@ -131,6 +139,77 @@ export async function GET() {
       };
     });
 
+    // 4. Calculate Health Trend
+    const getRiskScore = (row: any) => {
+      const muts = parseJSON(row.mutations_found);
+      const indels = parseJSON(row.indels_found);
+      let u = 0, m = 0;
+      [...muts, ...indels].forEach((v: any) => {
+        if(v.severity === 'high') u++;
+        else if(v.severity === 'medium') m++;
+      });
+      return Math.min(100, (u * 20) + (m * 5));
+    };
+
+    let trend7 = [0, 0, 0, 0];
+    let trend30 = [0, 0, 0, 0];
+    let trend90 = [0, 0, 0, 0];
+
+    if (completedRes.rows.length > 0) {
+      const nowMs = Date.now();
+      const daysMap: Record<number, number> = {};
+      
+      // Calculate risk for each run and bucket by days ago
+      completedRes.rows.forEach(r => {
+        const diffDays = Math.floor((nowMs - new Date(r.created_at).getTime()) / (1000 * 60 * 60 * 24));
+        const risk = getRiskScore(r);
+        if (!daysMap[diffDays] || risk > daysMap[diffDays]) {
+          daysMap[diffDays] = risk;
+        }
+      });
+
+      // Get the absolute latest risk to use as a baseline fallback
+      const latestRisk = getRiskScore(completedRes.rows[0]);
+
+      const buildTrend = (daysStep: number) => {
+        const points = [];
+        let lastKnownRisk = latestRisk; // Start with latest known if no older data exists
+
+        // Iterate from oldest (index 0) to newest (index 3)
+        for (let i = 3; i >= 0; i--) {
+          const targetDay = i * daysStep;
+          let bestRisk = -1;
+          let minDiff = 999;
+          
+          for (const [dayStr, risk] of Object.entries(daysMap)) {
+            const d = parseInt(dayStr);
+            const diff = Math.abs(d - targetDay);
+            // Relax the window to find nearby data points
+            if (diff < minDiff && diff <= daysStep * 1.5 + 2) {
+              minDiff = diff;
+              bestRisk = risk;
+            }
+          }
+          
+          if (bestRisk !== -1) {
+            lastKnownRisk = bestRisk;
+            points.push(bestRisk);
+          } else {
+            // Forward fill missing data points to prevent drops to 0
+            points.push(lastKnownRisk);
+          }
+        }
+        
+        // Final pass: if somehow still 0 but we have a latest risk, flatten it.
+        return points.every(v => v === 0) && latestRisk > 0 ? 
+               [latestRisk, latestRisk, latestRisk, latestRisk] : points;
+      };
+
+      trend7 = buildTrend(2);   
+      trend30 = buildTrend(8);  
+      trend90 = buildTrend(22); 
+    }
+
     return NextResponse.json({
       success: true,
       data: {
@@ -141,7 +220,12 @@ export async function GET() {
         riskLevel: riskLevel,
         avgConfidence: avgConfidence,
         insightBanner: insightBanner,
-        recentActivity: recentActivity
+        recentActivity: recentActivity,
+        healthTrend: {
+          "7": trend7,
+          "30": trend30,
+          "90": trend90
+        }
       }
     });
 

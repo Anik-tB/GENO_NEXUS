@@ -51,6 +51,30 @@ function Sparkline({ data, color }: { data: number[]; color: string }) {
   );
 }
 
+function generateGraphData(values: number[] = [0,0,0,0], labels: string[]) {
+  const xCoords = [0, 133, 266, 400];
+  const h = 160;
+  
+  const points: [number, number][] = values.map((val, i) => {
+    const risk = Math.max(0, Math.min(100, val));
+    const y = h - (risk / 100) * h;
+    return [xCoords[i], y];
+  });
+
+  let path = `M${points[0][0]},${points[0][1]} `;
+  for(let i=0; i<points.length-1; i++) {
+    const p1 = points[i];
+    const p2 = points[i+1];
+    const cx1 = p1[0] + (p2[0] - p1[0]) / 2;
+    const cy1 = p1[1];
+    const cx2 = cx1;
+    const cy2 = p2[1];
+    path += `C${cx1},${cy1} ${cx2},${cy2} ${p2[0]},${p2[1]} `;
+  }
+
+  return { path, points, labels };
+}
+
 const ACTIVITY_ICONS: Record<string, string> = {
   upload: "🧬",
   analysis: "🔍",
@@ -80,25 +104,14 @@ export default function DashboardPage() {
     fetchStats();
   }, []);
 
-  const graphData: Record<string, { path: string; points: [number, number][]; labels: string[] }> = {
-    "7": {
-      path: "M0,100 C60,110 90,60 120,50 C180,30 220,70 260,60 C300,50 350,20 400,15",
-      points: [[0,100], [120,50], [260,60], [400,15]],
-      labels: ["Day 1", "Day 3", "Day 5", "Day 7"]
-    },
-    "30": {
-      path: "M0,130 C40,130 70,90 120,70 C170,50 200,30 260,40 C320,50 360,20 400,10",
-      points: [[0,130], [120,70], [260,40], [400,10]],
-      labels: ["Week 1", "Week 2", "Week 3", "Week 4"]
-    },
-    "90": {
-      path: "M0,30 C50,20 80,60 120,70 C160,80 200,40 260,50 C320,60 360,90 400,120",
-      points: [[0,30], [120,70], [260,50], [400,120]],
-      labels: ["Month 1", "Month 2", "Month 3", "Today"]
-    }
+  const healthTrendData = stats?.healthTrend || { "7": [0,0,0,0], "30": [0,0,0,0], "90": [0,0,0,0] };
+  const graphLabels: Record<string, string[]> = {
+    "7": ["7 Days Ago", "5 Days Ago", "3 Days Ago", "Today"],
+    "30": ["Week 4", "Week 3", "Week 2", "This Week"],
+    "90": ["Month 3", "Month 2", "Last Month", "This Month"]
   };
-
-  const currentGraph = graphData[timeframe];
+  
+  const currentGraph = generateGraphData(healthTrendData[timeframe], graphLabels[timeframe]);
 
   const now = new Date().toLocaleString("en-US", {
     weekday: "long", year: "numeric", month: "long", day: "numeric",
