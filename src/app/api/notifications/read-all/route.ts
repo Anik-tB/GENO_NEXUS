@@ -21,7 +21,7 @@ export async function PATCH(req: NextRequest) {
     const db = assertDatabase();
     
     await db.query(
-      `UPDATE notifications 
+      `UPDATE user_notifications 
        SET is_read = true 
        WHERE user_id = $1 AND is_read = false`,
       [user.id]

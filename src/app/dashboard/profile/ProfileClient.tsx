@@ -1,212 +1,263 @@
 "use client";
 
+import { useState, useTransition } from "react";
 import styles from "./page.module.css";
-import { useState } from "react";
 
-export default function ProfileClient({ user }: { user: any }) {
-  const [activeTab, setActiveTab] = useState("intel");
+const ACCOUNT_CATEGORIES = [
+  { value: "patient", label: "Patient" },
+  { value: "caregiver", label: "Caregiver" },
+  { value: "clinician", label: "Clinician" },
+  { value: "researcher", label: "Researcher" },
+  { value: "lab_staff", label: "Lab Staff" },
+  { value: "other", label: "Other" },
+];
 
-  const fullName = [user.firstName, user.lastName].filter(Boolean).join(" ") || "Unknown User";
-  const userInitials = `${user.firstName?.[0] ?? ""}${user.lastName?.[0] ?? ""}`.toUpperCase() || "GN";
+interface Profile {
+  id: string; firstName: string; lastName: string; email: string;
+  accountCategory: string; bio: string; jobTitle: string;
+  phone: string; organization: string; avatarUrl: string | null;
+  githubId: string | null; googleId: string | null; firebaseUid: string | null;
+  emailVerified: string | null; createdAt: string | null; lastLoginAt: string | null;
+  dnaFilesCount: number; analysesCount: number;
+}
 
-  const RESEARCHER = {
-    name: fullName,
-    idString: `UID: ${userInitials}-${user.id?.substring(0, 5) || "ALPHA"}`,
-    role: "Lead Bioinformatician",
-    clearance: "Level 5 - Nexus Alpha",
-    status: "Active Deployment",
-    specialties: ["Machine Learning", "Pharmacogenomics", "Outbreak Modeling"],
-    avatar: userInitials,
-  };
+export default function ProfileClient({ profile: initial }: { profile: Profile }) {
+  const [profile, setProfile] = useState(initial);
+  const [activeTab, setActiveTab] = useState<"info" | "security">("info");
+  const [editing, setEditing] = useState(false);
+  const [form, setForm] = useState({
+    firstName: initial.firstName, lastName: initial.lastName,
+    bio: initial.bio, jobTitle: initial.jobTitle,
+    phone: initial.phone, organization: initial.organization,
+    accountCategory: initial.accountCategory,
+  });
+  const [pwForm, setPwForm] = useState({ current: "", next: "", confirm: "" });
+  const [toast, setToast] = useState<{ msg: string; type: "success" | "error" } | null>(null);
+  const [isPending, startTransition] = useTransition();
 
-  const STATS = {
-    modelsDeployed: 14,
-    hypothesesResolved: 48,
-    datasetAuthored: 120,
-    nexusScore: 9840,
-  };
+  const initials = `${profile.firstName[0] ?? ""}${profile.lastName[0] ?? ""}`.toUpperCase() || "GN";
+  const joinDate = profile.createdAt ? new Date(profile.createdAt).toLocaleDateString("en-US", { month: "long", year: "numeric" }) : "—";
+  const accountAge = profile.createdAt ? Math.floor((Date.now() - new Date(profile.createdAt).getTime()) / (1000 * 60 * 60 * 24)) : 0;
 
-  const RECENT_ACCESS_LOGS = [
-    { time: "09:42 AM", location: "Global Nexus Hub", action: "Authorized" },
-    { time: "08:14 AM", location: "Cluster 4 (WGS Pipeline)", action: "Compute Init" },
-    { time: "Yesterday", location: "Bio-containment DB", action: "Pushed Update" },
-  ];
+  function showToast(msg: string, type: "success" | "error") {
+    setToast({ msg, type });
+    setTimeout(() => setToast(null), 3500);
+  }
 
-  const DEPLOYED_MODELS = [
-    { name: "BRCA1 Pathogenicity Rescorer", status: "Active", accuracy: "99.4%", uptime: "240h" },
-    { name: "CYP450 Metabolizer Intel", status: "Iterating", accuracy: "84.2%", uptime: "12h" },
-    { name: "Global Outbreak Forecaster", status: "Active", accuracy: "92.1%", uptime: "15d" },
-  ];
+  async function saveProfile() {
+    startTransition(async () => {
+      const res = await fetch("/api/profile", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setProfile(prev => ({ ...prev, ...form }));
+        setEditing(false);
+        showToast("Profile updated successfully!", "success");
+      } else {
+        const data = await res.json();
+        showToast(data.error || "Failed to update profile.", "error");
+      }
+    });
+  }
+
+  async function changePassword() {
+    if (pwForm.next !== pwForm.confirm) return showToast("Passwords do not match.", "error");
+    if (pwForm.next.length < 8) return showToast("Password must be at least 8 characters.", "error");
+    startTransition(async () => {
+      const res = await fetch("/api/profile/password", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ currentPassword: pwForm.current, newPassword: pwForm.next }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setPwForm({ current: "", next: "", confirm: "" });
+        showToast("Password changed successfully!", "success");
+      } else {
+        showToast(data.error || "Failed to change password.", "error");
+      }
+    });
+  }
 
   return (
-    <div className={styles.dossierContainer}>
-      
-      {/* ── Dossier Header ── */}
-      <header className={styles.dossierHeader}>
-        <div className={styles.headerGlow}></div>
-        <div className={styles.headerContent}>
-          <div className={styles.holoBadge}>
-            <div className={styles.avatarNode}>{RESEARCHER.avatar}</div>
-            <div className={styles.scanLines}></div>
+    <div className={styles.page}>
+      {/* Toast */}
+      {toast && <div className={`${styles.toast} ${styles[`toast_${toast.type}`]}`}>{toast.msg}</div>}
+
+      {/* Hero Header */}
+      <div className={styles.hero}>
+        <div className={styles.heroBg} />
+        <div className={styles.heroContent}>
+          <div className={styles.avatar}>
+            <span>{initials}</span>
+            <div className={styles.avatarRing} />
           </div>
-          <div className={styles.researcherIdentity}>
-            <h1 className={styles.resName}>{RESEARCHER.name}</h1>
-            <div className={styles.resTags}>
-              <span className={styles.tagId}>{RESEARCHER.idString}</span>
-              <span className={styles.tagClearance}>{RESEARCHER.clearance}</span>
+          <div className={styles.heroInfo}>
+            <div className={styles.heroName}>{profile.firstName} {profile.lastName}</div>
+            <div className={styles.heroMeta}>
+              <span className={styles.badge}>{profile.accountCategory.replace("_", " ")}</span>
+              {profile.jobTitle && <span className={styles.heroJob}>{profile.jobTitle}</span>}
+              {profile.organization && <span className={styles.heroOrg}>@ {profile.organization}</span>}
             </div>
-            <h2 className={styles.resRole}>{RESEARCHER.role}</h2>
+            <div className={styles.heroEmail}>{profile.email}</div>
+            {profile.bio && <p className={styles.heroBio}>{profile.bio}</p>}
+          </div>
+          <div className={styles.heroStats}>
+            <div className={styles.statCard}><span className={styles.statVal}>{profile.dnaFilesCount}</span><span className={styles.statLbl}>DNA Files</span></div>
+            <div className={styles.statCard}><span className={styles.statVal}>{profile.analysesCount}</span><span className={styles.statLbl}>Analyses</span></div>
+            <div className={styles.statCard}><span className={styles.statVal}>{accountAge}</span><span className={styles.statLbl}>Days Active</span></div>
           </div>
         </div>
-        <div className={styles.headerMetrics}>
-          <div className={styles.metricCard}>
-            <span className={styles.metricVal}>{STATS.nexusScore}</span>
-            <span className={styles.metricLabel}>Nexus Score</span>
-          </div>
-          <div className={styles.metricCard}>
-            <span className={styles.metricVal}>{STATS.modelsDeployed}</span>
-            <span className={styles.metricLabel}>Models Deployed</span>
-          </div>
-        </div>
-      </header>
+      </div>
 
-      {/* ── Dossier Grid ── */}
-      <div className={styles.dossierGrid}>
+      {/* Tabs */}
+      <div className={styles.tabs}>
+        {(["info", "security"] as const).map(tab => (
+          <button key={tab} className={`${styles.tab} ${activeTab === tab ? styles.tabActive : ""}`} onClick={() => setActiveTab(tab)}>
+            {tab === "info" ? "👤 Profile Info" : "🔐 Security"}
+          </button>
+        ))}
+      </div>
 
-        {/* Left Col: Specs & Logs */}
-        <aside className={styles.sideCol}>
-          
-          <div className={styles.panel}>
-            <h3 className={styles.panelTitle}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/><line x1="21.17" y1="8" x2="12" y2="8"/><line x1="3.95" y1="6.06" x2="8.54" y2="14"/></svg>
-              Core Specialties
-            </h3>
-            <ul className={styles.specialtyList}>
-              {RESEARCHER.specialties.map(spec => (
-                <li key={spec}>{spec}</li>
-              ))}
-            </ul>
-          </div>
+      <div className={styles.body}>
+        {/* ── Profile Info Tab ── */}
+        {activeTab === "info" && (
+          <div className={styles.fadeIn}>
+            <div className={styles.card}>
+              <div className={styles.cardHeader}>
+                <h2 className={styles.cardTitle}>Personal Information</h2>
+                {!editing
+                  ? <button className={styles.editBtn} onClick={() => setEditing(true)}>✏️ Edit</button>
+                  : <div className={styles.btnRow}>
+                      <button className={styles.cancelBtn} onClick={() => { setEditing(false); setForm({ firstName: profile.firstName, lastName: profile.lastName, bio: profile.bio, jobTitle: profile.jobTitle, phone: profile.phone, organization: profile.organization, accountCategory: profile.accountCategory }); }}>Cancel</button>
+                      <button className={styles.saveBtn} onClick={saveProfile} disabled={isPending}>{isPending ? "Saving…" : "💾 Save"}</button>
+                    </div>
+                }
+              </div>
 
-          <div className={styles.panel}>
-            <h3 className={styles.panelTitle}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-              Access Logs
-            </h3>
-            <div className={styles.logStream}>
-              {RECENT_ACCESS_LOGS.map((log, i) => (
-                <div key={i} className={styles.logItem}>
-                   <div className={styles.logIndicator}></div>
-                   <div className={styles.logDetails}>
-                     <span className={styles.logLoc}>{log.location}</span>
-                     <span className={styles.logAction}>{log.action} · {log.time}</span>
-                   </div>
+              <div className={styles.formGrid}>
+                <div className={styles.field}>
+                  <label>First Name</label>
+                  {editing ? <input value={form.firstName} onChange={e => setForm(f => ({ ...f, firstName: e.target.value }))} className={styles.input} /> : <div className={styles.value}>{profile.firstName || "—"}</div>}
                 </div>
-              ))}
+                <div className={styles.field}>
+                  <label>Last Name</label>
+                  {editing ? <input value={form.lastName} onChange={e => setForm(f => ({ ...f, lastName: e.target.value }))} className={styles.input} /> : <div className={styles.value}>{profile.lastName || "—"}</div>}
+                </div>
+                <div className={styles.field}>
+                  <label>Email Address</label>
+                  <div className={styles.value}>{profile.email} {profile.emailVerified && <span className={styles.verified}>✓ Verified</span>}</div>
+                </div>
+                <div className={styles.field}>
+                  <label>Account Category</label>
+                  {editing
+                    ? <select value={form.accountCategory} onChange={e => setForm(f => ({ ...f, accountCategory: e.target.value }))} className={styles.input}>
+                        {ACCOUNT_CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+                      </select>
+                    : <div className={styles.value}>{profile.accountCategory.replace("_", " ")}</div>
+                  }
+                </div>
+                <div className={styles.field}>
+                  <label>Job Title</label>
+                  {editing ? <input value={form.jobTitle} onChange={e => setForm(f => ({ ...f, jobTitle: e.target.value }))} className={styles.input} placeholder="e.g. Lead Bioinformatician" /> : <div className={styles.value}>{profile.jobTitle || "—"}</div>}
+                </div>
+                <div className={styles.field}>
+                  <label>Organization</label>
+                  {editing ? <input value={form.organization} onChange={e => setForm(f => ({ ...f, organization: e.target.value }))} className={styles.input} placeholder="e.g. MIT Genomics Lab" /> : <div className={styles.value}>{profile.organization || "—"}</div>}
+                </div>
+                <div className={styles.field}>
+                  <label>Phone</label>
+                  {editing ? <input value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} className={styles.input} placeholder="+1 (555) 000-0000" /> : <div className={styles.value}>{profile.phone || "—"}</div>}
+                </div>
+                <div className={styles.field}>
+                  <label>Member Since</label>
+                  <div className={styles.value}>{joinDate}</div>
+                </div>
+                <div className={`${styles.field} ${styles.fieldFull}`}>
+                  <label>Bio</label>
+                  {editing
+                    ? <textarea value={form.bio} onChange={e => setForm(f => ({ ...f, bio: e.target.value }))} className={styles.textarea} rows={3} placeholder="Tell your team about yourself…" />
+                    : <div className={styles.value}>{profile.bio || "—"}</div>
+                  }
+                </div>
+              </div>
+            </div>
+
+            {/* Linked Accounts */}
+            <div className={styles.card}>
+              <h2 className={styles.cardTitle}>Linked Accounts</h2>
+              <div className={styles.linkedList}>
+                <div className={`${styles.linkedRow} ${profile.githubId ? styles.linkedActive : ""}`}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12c0 4.42 2.87 8.17 6.84 9.49.5.09.68-.22.68-.48v-1.7C6.73 19.91 6.14 18 6.14 18c-.46-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.61.07-.61 1 .07 1.53 1.03 1.53 1.03.89 1.52 2.34 1.08 2.91.83.09-.65.35-1.08.63-1.33-2.22-.25-4.55-1.11-4.55-4.94 0-1.09.39-1.98 1.03-2.68-.1-.25-.45-1.27.1-2.64 0 0 .84-.27 2.75 1.02A9.56 9.56 0 0 1 12 6.8c.85.004 1.71.11 2.51.33 1.91-1.29 2.75-1.02 2.75-1.02.55 1.37.2 2.39.1 2.64.64.7 1.03 1.59 1.03 2.68 0 3.84-2.34 4.68-4.57 4.93.36.31.68.92.68 1.85v2.74c0 .27.18.58.69.48A10.01 10.01 0 0 0 22 12c0-5.52-4.48-10-10-10z"/></svg>
+                  <div><strong>GitHub</strong><span>{profile.githubId ? "Connected" : "Not connected"}</span></div>
+                  <span className={profile.githubId ? styles.linkedBadge : styles.unlinkedBadge}>{profile.githubId ? "✓ Active" : "—"}</span>
+                </div>
+                <div className={`${styles.linkedRow} ${profile.googleId || profile.firebaseUid ? styles.linkedActive : ""}`}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+                  <div><strong>Google</strong><span>{(profile.googleId || profile.firebaseUid) ? "Connected" : "Not connected"}</span></div>
+                  <span className={(profile.googleId || profile.firebaseUid) ? styles.linkedBadge : styles.unlinkedBadge}>{(profile.googleId || profile.firebaseUid) ? "✓ Active" : "—"}</span>
+                </div>
+              </div>
             </div>
           </div>
+        )}
 
-          <div className={styles.radarPanel}>
-             <h3 className={styles.panelTitle}>Aptitude Resonance</h3>
-             <div className={styles.radarMock}>
-               {/* Pure CSS/SVG Mock of a radar chart */}
-               <svg viewBox="0 0 100 100" className={styles.radarSvg}>
-                 <polygon points="50,10 90,40 75,90 25,90 10,40" stroke="var(--gn-border-light-strong)" fill="transparent" strokeWidth="1"/>
-                 <polygon points="50,20 80,45 70,80 30,80 20,45" stroke="var(--gn-border-light-strong)" fill="transparent" strokeWidth="1"/>
-                 <polygon points="50,30 70,50 63,70 37,70 30,50" stroke="var(--gn-border-light-strong)" fill="transparent" strokeWidth="1"/>
-                 <line x1="50" y1="50" x2="50" y2="10" stroke="var(--gn-border-light-strong)" strokeWidth="1" strokeDasharray="2"/>
-                 <line x1="50" y1="50" x2="90" y2="40" stroke="var(--gn-border-light-strong)" strokeWidth="1" strokeDasharray="2"/>
-                 <line x1="50" y1="50" x2="75" y2="90" stroke="var(--gn-border-light-strong)" strokeWidth="1" strokeDasharray="2"/>
-                 <line x1="50" y1="50" x2="25" y2="90" stroke="var(--gn-border-light-strong)" strokeWidth="1" strokeDasharray="2"/>
-                 <line x1="50" y1="50" x2="10" y2="40" stroke="var(--gn-border-light-strong)" strokeWidth="1" strokeDasharray="2"/>
-                 
-                 <polygon points="50,15 85,50 65,85 40,75 20,35" fill="rgba(16, 185, 129, 0.4)" stroke="var(--gn-primary)" strokeWidth="2"/>
-               </svg>
-             </div>
-          </div>
-        </aside>
-
-        {/* Main Col */}
-        <main className={styles.mainCol}>
-          
-          {/* Custom Tabs */}
-          <div className={styles.dossierTabs}>
-            <button className={`${styles.dTab} ${activeTab === "intel" ? styles.dTabActive : ""}`} onClick={() => setActiveTab("intel")}>Output & Intel</button>
-            <button className={`${styles.dTab} ${activeTab === "models" ? styles.dTabActive : ""}`} onClick={() => setActiveTab("models")}>Deployed Models</button>
-            <button className={`${styles.dTab} ${activeTab === "auth" ? styles.dTabActive : ""}`} onClick={() => setActiveTab("auth")}>Permissions</button>
-          </div>
-
-          <div className={styles.dossierContent}>
-            
-            {activeTab === "intel" && (
-              <div className={styles.fadePanels}>
-                
-                <div className={styles.panel}>
-                  <div className={styles.panelHeaderFlex}>
-                    <h3 className={styles.panelTitle}>Research & Hypothesis Activity</h3>
-                    <span className={styles.pulseLive}>Live Sync</span>
-                  </div>
-                  {/* Hexagon/Grid heatmap mock instead of squares */}
-                  <div className={styles.hexGrid}>
-                     {Array.from({length: 48}).map((_, i) => {
-                       const intensity = Math.floor(Math.random() * 4);
-                       return <div key={i} className={`${styles.hexCell} ${styles[`hex_${intensity}`]}`}></div>
-                     })}
-                  </div>
-                </div>
-
-                <div className={styles.panel}>
-                  <h3 className={styles.panelTitle}>Recent Data Operations</h3>
-                  <div className={styles.dataOpsList}>
-                    <div className={styles.dataOp}>
-                      <div className={styles.opIcon}>🧬</div>
-                      <div className={styles.opText}>
-                        <strong>Compiled WGS Cohort #47</strong>
-                        <span>Integrated 14,000 variants. Confidence validation complete.</span>
-                      </div>
-                      <span className={styles.opMeta}>2H AGO</span>
+        {/* ── Security Tab ── */}
+        {activeTab === "security" && (
+          <div className={styles.fadeIn}>
+            <div className={styles.card}>
+              <h2 className={styles.cardTitle}>Change Password</h2>
+              <p className={styles.cardDesc}>
+                {!initial.githubId && !initial.googleId && !initial.firebaseUid
+                  ? "Update your account password. You'll need to verify your current password first."
+                  : "Set a password for direct login. You currently sign in via OAuth."}
+              </p>
+              <div className={styles.pwGrid}>
+                {initial.githubId || initial.googleId || initial.firebaseUid
+                  ? null
+                  : <div className={styles.field}>
+                      <label>Current Password</label>
+                      <input type="password" value={pwForm.current} onChange={e => setPwForm(f => ({ ...f, current: e.target.value }))} className={styles.input} placeholder="••••••••" />
                     </div>
-                    <div className={styles.dataOp}>
-                      <div className={styles.opIcon}>⚗️</div>
-                      <div className={styles.opText}>
-                        <strong>Formulated Hypothesis H-401</strong>
-                        <span>Target: Elevated expression of marker genes in drug-resistant strains.</span>
-                      </div>
-                      <span className={styles.opMeta}>1D AGO</span>
-                    </div>
-                  </div>
+                }
+                <div className={styles.field}>
+                  <label>New Password</label>
+                  <input type="password" value={pwForm.next} onChange={e => setPwForm(f => ({ ...f, next: e.target.value }))} className={styles.input} placeholder="Min. 8 characters" />
                 </div>
-
-              </div>
-            )}
-
-            {activeTab === "models" && (
-              <div className={styles.fadePanels}>
-                <div className={styles.modelsGrid}>
-                   {DEPLOYED_MODELS.map(model => (
-                     <div key={model.name} className={styles.modelCard}>
-                       <div className={styles.modelStatusFlex}>
-                         <div className={`${styles.modelStatusDot} ${model.status === "Active" ? styles.dotActive : styles.dotIterating}`}></div>
-                         <span className={styles.modelStatusText}>{model.status}</span>
-                       </div>
-                       <h4 className={styles.modelName}>{model.name}</h4>
-                       <div className={styles.modelStats}>
-                         <div><label>Accuracy</label> <span>{model.accuracy}</span></div>
-                         <div><label>Uptime</label> <span>{model.uptime}</span></div>
-                       </div>
-                       <div className={styles.modelGraphMock}>
-                         <svg viewBox="0 0 100 20" preserveAspectRatio="none">
-                           <polyline points="0,15 20,10 40,18 60,5 80,12 100,2" fill="none" stroke="var(--gn-primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                         </svg>
-                       </div>
-                     </div>
-                   ))}
+                <div className={styles.field}>
+                  <label>Confirm New Password</label>
+                  <input type="password" value={pwForm.confirm} onChange={e => setPwForm(f => ({ ...f, confirm: e.target.value }))} className={styles.input} placeholder="Repeat new password" />
                 </div>
               </div>
-            )}
+              {pwForm.next && (
+                <div className={styles.pwStrength}>
+                  <div className={styles.pwBar}>
+                    <div className={styles.pwFill} style={{ width: `${Math.min(100, (pwForm.next.length / 16) * 100)}%`, background: pwForm.next.length < 8 ? "#f43f5e" : pwForm.next.length < 12 ? "#f59e0b" : "#10b981" }} />
+                  </div>
+                  <span style={{ color: pwForm.next.length < 8 ? "#f43f5e" : pwForm.next.length < 12 ? "#f59e0b" : "#10b981", fontSize: "0.75rem" }}>
+                    {pwForm.next.length < 8 ? "Weak" : pwForm.next.length < 12 ? "Good" : "Strong"}
+                  </span>
+                </div>
+              )}
+              <button className={styles.saveBtn} onClick={changePassword} disabled={isPending || !pwForm.next}>
+                {isPending ? "Updating…" : "🔐 Update Password"}
+              </button>
+            </div>
 
+            <div className={styles.card}>
+              <h2 className={styles.cardTitle}>Account Details</h2>
+              <div className={styles.detailList}>
+                <div className={styles.detailRow}><span>Account ID</span><code className={styles.code}>{profile.id.substring(0, 8)}…</code></div>
+                <div className={styles.detailRow}><span>Email Verified</span><span>{profile.emailVerified ? <span className={styles.verified}>✓ Verified</span> : <span className={styles.unverified}>✗ Not verified</span>}</span></div>
+                <div className={styles.detailRow}><span>Member Since</span><span>{joinDate}</span></div>
+                <div className={styles.detailRow}><span>OAuth Providers</span><span>{[profile.githubId && "GitHub", (profile.googleId || profile.firebaseUid) && "Google"].filter(Boolean).join(", ") || "None"}</span></div>
+              </div>
+            </div>
           </div>
-        </main>
+        )}
       </div>
     </div>
   );

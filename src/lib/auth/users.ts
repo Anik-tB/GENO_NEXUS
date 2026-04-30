@@ -16,6 +16,13 @@ export interface AuthUser {
   firebaseUid: string | null;
   accountLockedUntil: Date | null;
   failedLoginCount: number;
+  bio: string | null;
+  jobTitle: string | null;
+  avatarUrl: string | null;
+  phone: string | null;
+  organization: string | null;
+  createdAt: Date | null;
+  lastLoginAt: Date | null;
 }
 
 interface CreateUserInput {
@@ -67,6 +74,13 @@ function mapUser(row: Record<string, any>): AuthUser {
       ? new Date(row.account_locked_until)
       : null,
     failedLoginCount: row.failed_login_count ?? 0,
+    bio: row.bio ?? null,
+    jobTitle: row.job_title ?? null,
+    avatarUrl: row.avatar_url ?? null,
+    phone: row.phone ?? null,
+    organization: row.organization ?? null,
+    createdAt: row.created_at ? new Date(row.created_at) : null,
+    lastLoginAt: row.last_login_at ? new Date(row.last_login_at) : null,
   };
 }
 
@@ -232,6 +246,50 @@ export async function findOrCreateFirebaseGoogleUser(
     ],
   );
 
+  return mapUser(result.rows[0]);
+}
+
+export interface UpdateProfileInput {
+  firstName?: string;
+  lastName?: string;
+  bio?: string;
+  jobTitle?: string;
+  phone?: string;
+  organization?: string;
+  accountCategory?: AccountCategory;
+}
+
+export async function updateUserProfile(userId: string, input: UpdateProfileInput) {
+  const client = assertDatabase();
+  const result = await client.query(
+    `
+      UPDATE users
+      SET
+        first_name = COALESCE($2, first_name),
+        last_name  = COALESCE($3, last_name),
+        bio        = COALESCE($4, bio),
+        job_title  = COALESCE($5, job_title),
+        phone      = COALESCE($6, phone),
+        organization = COALESCE($7, organization),
+        account_category = COALESCE($8, account_category),
+        updated_at = NOW()
+      WHERE id = $1
+      RETURNING id, first_name, last_name, email, account_category, password_hash,
+                github_id, google_id, firebase_uid, account_locked_until,
+                failed_login_count, bio, job_title, avatar_url, phone, organization,
+                created_at, last_login_at
+    `,
+    [
+      userId,
+      input.firstName ?? null,
+      input.lastName ?? null,
+      input.bio ?? null,
+      input.jobTitle ?? null,
+      input.phone ?? null,
+      input.organization ?? null,
+      input.accountCategory ?? null,
+    ]
+  );
   return mapUser(result.rows[0]);
 }
 
