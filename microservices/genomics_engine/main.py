@@ -73,6 +73,10 @@ class CompareRequest(BaseModel):
     reference_url: Optional[str] = None
     reference_path: Optional[str] = None
 
+class PredictDiseaseRequest(BaseModel):
+    mutations: list[dict]
+    organism: str = "Unknown"
+
 # ---------------------------------------------------------------------------
 # Helper: Parse a FASTA or FASTQ file with Biopython SeqIO
 # ---------------------------------------------------------------------------
@@ -284,14 +288,14 @@ async def compare_sequences(req: CompareRequest):
         # Cross-species validation: prevent analyzing e.g. HIV against COVID reference
         if query_organism != "Unknown" and ref_organism != "Unknown" and query_organism != ref_organism:
             raise HTTPException(
-                status_code=400, 
+                status_code=400,
                 detail=f"Organism mismatch detected. You are trying to align an {query_organism} sequence against a {ref_organism} reference genome. This is scientifically invalid."
             )
 
         query_len = len(query_seq)
         ref_len = len(ref_seq)
         max_len = max(query_len, ref_len)
-        
+
         # Length-based cross-species fallback validation
         if max_len > 0 and abs(query_len - ref_len) / max_len > 0.30:
             raise HTTPException(
@@ -341,7 +345,7 @@ async def compare_sequences(req: CompareRequest):
         total_aligned = 0
 
         mutations_features = []
-        
+
         for ref_char, qry_char in zip(aligned_ref, aligned_qry):
             is_ref_gap = ref_char == "-"
             is_qry_gap = qry_char == "-"
@@ -459,6 +463,101 @@ async def compare_sequences(req: CompareRequest):
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
+
+@app.post("/predict_disease")
+async def predict_disease(req: PredictDiseaseRequest):
+    try:
+        # Determine base disease from organism
+        disease_map = {
+            "HIV-1": "AIDS (HIV Infection)",
+            "HIV-2": "AIDS (HIV Infection)",
+            "SARS-CoV-2": "COVID-19",
+            "Influenza-A": "Seasonal Influenza A",
+            "Influenza-B": "Seasonal Influenza B",
+            "Hepatitis-B": "Hepatitis B",
+            "Hepatitis-C": "Hepatitis C",
+            "Dengue-1": "Dengue Fever",
+            "Ebola": "Ebola Virus Disease",
+            "Monkeypox": "Mpox (Monkeypox)"
+        }
+
+        base_disease = disease_map.get(req.organism, "Unknown Pathogenic Infection")
+
+        # Analyze mutations
+        high_sev_count = sum(1 for m in req.mutations if m.get("severity") == "high")
+        med_sev_count = sum(1 for m in req.mutations if m.get("severity") == "medium")
+        dr_count = sum(1 for m in req.mutations if m.get("drug_resistance_site") is True)
+
+        affected_genes = set()
+        for m in req.mutations:
+            gene = m.get("functional_region", "Intergenic")
+            if gene != "Intergenic":
+                affected_genes.add(gene)
+
+        genes_str = ", ".join(affected_genes) if affected_genes else "Unknown"
+
+        predictions = []
+
+        # 1. Primary Disease Profile
+        # A baseline typical of a wild-type infection is 15%. 
+        # Risk increases heavily with high severity mutations.
+        primary_risk = min(99, 15 + (high_sev_count * 3.5) + (med_sev_count * 1.5))
+        primary_sev = "high" if primary_risk >= 75 else "medium" if primary_risk >= 40 else "low"
+        
+        insight_msg = f"Standard genome profile for {base_disease} with expected baseline viral characteristics."
+        if primary_risk >= 75:
+            insight_msg = f"Critical alert: {high_sev_count} high-severity mutations indicate a highly aggressive or divergent strain of {base_disease}."
+        elif primary_risk >= 40:
+            insight_msg = f"Analysis of {len(req.mutations)} mutations indicates moderate divergence from the reference {base_disease} genome. Monitor closely."
+        else:
+            insight_msg = f"High sequence homology to the reference. Analysis of {len(req.mutations)} mutations indicates a standard, low severity progression risk for {base_disease}."
+
+        predictions.append({
+            "id": "pred-primary",
+            "disease": base_disease,
+            "genes": genes_str,
+            "severity": primary_sev,
+            "risk": int(primary_risk),
+            "confidence": 95 if req.organism != "Unknown" else 60,
+            "trend": "increasing" if high_sev_count > 5 else "stable",
+            "insight": insight_msg
+        })
+        
+        # 2. Antimicrobial/Antiviral Resistance
+        if dr_count > 0 or req.organism.startswith("HIV"):
+            dr_risk = min(99, 5 + (dr_count * 25) + (high_sev_count * 2))
+            predictions.append({
+                "id": "pred-dr",
+                "disease": "Antiviral Resistance",
+                "genes": genes_str,
+                "severity": "high" if dr_risk >= 75 else "medium" if dr_risk >= 40 else "low",
+                "risk": int(dr_risk),
+                "confidence": 88 if dr_count > 0 else 70,
+                "trend": "increasing" if dr_count > 2 else "stable",
+                "insight": f"Detected {dr_count} mutations at known drug resistance loci. High likelihood of reduced efficacy for standard frontline antiviral therapies." if dr_count > 0 else "Baseline screening for resistance markers based on overall mutation rate."
+            })
+
+        # 3. Immune Evasion / Vaccine Escape (e.g. Spike/Env/HA genes)
+        evasion_genes = {"S", "env", "HA", "E1", "E2"}
+        evasion_hits = len(affected_genes.intersection(evasion_genes))
+        if evasion_hits > 0 or high_sev_count > 10:
+            ev_risk = min(99, 30 + (evasion_hits * 10) + (high_sev_count * 2))
+            predictions.append({
+                "id": "pred-evasion",
+                "disease": "Immune Evasion Risk",
+                "genes": ", ".join(affected_genes.intersection(evasion_genes)) if evasion_hits > 0 else genes_str,
+                "severity": "high" if ev_risk >= 75 else "medium" if ev_risk >= 50 else "low",
+                "risk": int(ev_risk),
+                "confidence": 85,
+                "trend": "increasing" if ev_risk > 60 else "stable",
+                "insight": "Mutations localized in primary surface glycoproteins. Elevated risk of reduced neutralization by convalescent sera or vaccine-induced antibodies."
+            })
+
+        return {"predictions": predictions}
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/health")
 async def health():

@@ -28,7 +28,7 @@ export async function GET(req: NextRequest) {
 
     // 2. Try to find a completed comparison for the latest file first
     let latestComparison = await db.query(`
-      SELECT cr.mutations_found, cr.match_percentage, df.file_name
+      SELECT cr.mutations_found, cr.match_percentage, df.file_name, cr.detected_organism
       FROM comparison_results cr
       JOIN dna_files df ON cr.query_file_id = df.id
       WHERE cr.query_file_id = $1 AND cr.status = 'completed'
@@ -38,7 +38,7 @@ export async function GET(req: NextRequest) {
     // 3. If no completed result for the latest file, fall back to ANY completed comparison for this user
     if (latestComparison.rowCount === 0) {
       latestComparison = await db.query(`
-        SELECT cr.mutations_found, cr.match_percentage, df.file_name
+        SELECT cr.mutations_found, cr.match_percentage, df.file_name, cr.detected_organism
         FROM comparison_results cr
         JOIN dna_files df ON cr.query_file_id = df.id
         WHERE df.user_id = $1 AND cr.status = 'completed'
@@ -53,12 +53,13 @@ export async function GET(req: NextRequest) {
     const mutations = latestComparison.rows[0].mutations_found || [];
     const fileName = latestComparison.rows[0].file_name;
     const matchPct = latestComparison.rows[0].match_percentage;
+    const organism = latestComparison.rows[0].detected_organism || "Unknown";
 
     // Send to Python FastAPI Engine
     const pyRes = await fetch("http://localhost:8000/predict_disease", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ mutations }),
+      body: JSON.stringify({ mutations, organism }),
     });
 
     if (!pyRes.ok) {
