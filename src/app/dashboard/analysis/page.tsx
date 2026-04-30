@@ -328,11 +328,11 @@ export default function AnalysisPage() {
           {/* Left: Title + Subtitle + Button */}
           <div className={styles.titleArea}>
             <div className={styles.eyebrow}>
-              <span>🔬 Variant Analysis Module</span>
+              <span>🔬 {analysisInfo?.organism ? `${analysisInfo.organism.toUpperCase()} DETECTED` : 'VARIANT ANALYSIS MODULE'}</span>
             </div>
             <h1 className={styles.title}>Mutation Analysis</h1>
             <p style={{ color: 'var(--gn-text-secondary)', fontSize: '0.9rem', margin: 0, lineHeight: 1.5 }}>
-              Review identified variants, severity classifications, and AI-based clinical impacts.
+              Review identified variants, severity classifications, and AI-based clinical impacts for the analyzed {analysisInfo?.organism ? <strong style={{color: 'var(--gn-white)'}}>{analysisInfo.organism}</strong> : 'genomic'} sequence.
             </p>
             <button
               onClick={() => { setShowHistoryView(!showHistoryView); if (!showHistoryView) fetchHistory(); }}
