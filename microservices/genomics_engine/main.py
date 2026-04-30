@@ -76,6 +76,7 @@ class CompareRequest(BaseModel):
 class PredictDiseaseRequest(BaseModel):
     mutations: list[dict]
     organism: str = "Unknown"
+    matchPct: float = 0.0
 
 # ---------------------------------------------------------------------------
 # Helper: Parse a FASTA or FASTQ file with Biopython SeqIO
@@ -499,33 +500,29 @@ async def predict_disease(req: PredictDiseaseRequest):
         predictions = []
 
         # 1. Primary Disease Profile
-        # A baseline typical of a wild-type infection is 15%. 
-        # Risk increases heavily with high severity mutations.
-        primary_risk = min(99, 15 + (high_sev_count * 3.5) + (med_sev_count * 1.5))
+        # The user logically expects that if the sequence matches the pathogenic reference genome 
+        # heavily (e.g. >99%), then the "Risk" of having that disease is equally high (>99%).
+        primary_risk = min(99, max(0, req.matchPct))
         primary_sev = "high" if primary_risk >= 75 else "medium" if primary_risk >= 40 else "low"
         
-        insight_msg = f"Standard genome profile for {base_disease} with expected baseline viral characteristics."
-        if primary_risk >= 75:
-            insight_msg = f"Critical alert: {high_sev_count} high-severity mutations indicate a highly aggressive or divergent strain of {base_disease}."
-        elif primary_risk >= 40:
-            insight_msg = f"Analysis of {len(req.mutations)} mutations indicates moderate divergence from the reference {base_disease} genome. Monitor closely."
-        else:
-            insight_msg = f"High sequence homology to the reference. Analysis of {len(req.mutations)} mutations indicates a standard, low severity progression risk for {base_disease}."
+        insight_msg = f"Diagnostic Match: {req.matchPct}%. High sequence homology confirms a definitive {base_disease} presence."
+        if primary_risk < 50:
+             insight_msg = f"Diagnostic Match: {req.matchPct}%. Low sequence homology suggests an unlikely or highly divergent {base_disease} presence."
 
         predictions.append({
             "id": "pred-primary",
-            "disease": base_disease,
+            "disease": base_disease + " Detection",
             "genes": genes_str,
             "severity": primary_sev,
             "risk": int(primary_risk),
-            "confidence": 95 if req.organism != "Unknown" else 60,
-            "trend": "increasing" if high_sev_count > 5 else "stable",
+            "confidence": 99 if req.matchPct > 80 else 70,
+            "trend": "stable",
             "insight": insight_msg
         })
         
         # 2. Antimicrobial/Antiviral Resistance
         if dr_count > 0 or req.organism.startswith("HIV"):
-            dr_risk = min(99, 5 + (dr_count * 25) + (high_sev_count * 2))
+            dr_risk = min(99, 1 + (dr_count * 25) + (high_sev_count * 1))
             predictions.append({
                 "id": "pred-dr",
                 "disease": "Antiviral Resistance",

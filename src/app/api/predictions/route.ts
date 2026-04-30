@@ -59,7 +59,7 @@ export async function GET(req: NextRequest) {
     const pyRes = await fetch("http://localhost:8000/predict_disease", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ mutations, organism }),
+      body: JSON.stringify({ mutations, organism, matchPct }),
     });
 
     if (!pyRes.ok) {
