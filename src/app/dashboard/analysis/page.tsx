@@ -451,16 +451,25 @@ export default function AnalysisPage() {
 
             <div className={styles.guideItem} style={{ borderTop: '3px solid #f87171', background: 'rgba(248,113,113,0.04)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.5rem' }}>
-                <span style={{ fontSize: '1.4rem' }}>⚠️</span>
-                <strong style={{ color: '#f87171', fontSize: '0.95rem' }}>AI Confidence Score</strong>
+                <span style={{ fontSize: '1.4rem' }}>🚦</span>
+                <strong style={{ color: '#f87171', fontSize: '0.95rem' }}>Severity Levels</strong>
               </div>
               <p style={{ margin: 0, color: 'var(--gn-text-secondary)', fontSize: '0.85rem', lineHeight: 1.6 }}>
-                How <strong style={{ color: 'var(--gn-white)' }}>certain our AI model is</strong> about its severity classification. Higher % = more reliable. Rows below 60% should be reviewed carefully by a specialist.
+                Each mutation is assigned a <strong style={{ color: 'var(--gn-white)' }}>risk level</strong> based on its location, type, and AI analysis. This tells you how urgently a variant may need clinical attention.
               </p>
-              <div style={{ marginTop: '0.6rem', display: 'flex', gap: '0.5rem', fontSize: '0.75rem' }}>
-                <span style={{ color: '#10b981' }}>✅ &gt;80% reliable</span>
-                <span style={{ color: '#f59e0b' }}>⚡ 60–80% uncertain</span>
-                <span style={{ color: '#f87171' }}>❌ &lt;60% low</span>
+              <div style={{ marginTop: '0.7rem', display: 'flex', flexDirection: 'column', gap: '0.45rem', fontSize: '0.82rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <span style={{ background: 'rgba(244,63,94,0.15)', color: '#f87171', padding: '2px 10px', borderRadius: '999px', fontSize: '0.7rem', fontWeight: 700, border: '1px solid rgba(244,63,94,0.3)' }}>HIGH</span>
+                  <span style={{ color: 'var(--gn-text-secondary)' }}>Potentially dangerous — needs immediate review</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <span style={{ background: 'rgba(234,179,8,0.15)', color: '#eab308', padding: '2px 10px', borderRadius: '999px', fontSize: '0.7rem', fontWeight: 700, border: '1px solid rgba(234,179,8,0.3)' }}>MED</span>
+                  <span style={{ color: 'var(--gn-text-secondary)' }}>Worth monitoring — may have moderate effects</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <span style={{ background: 'rgba(16,185,129,0.15)', color: '#10b981', padding: '2px 10px', borderRadius: '999px', fontSize: '0.7rem', fontWeight: 700, border: '1px solid rgba(16,185,129,0.3)' }}>LOW</span>
+                  <span style={{ color: 'var(--gn-text-secondary)' }}>Likely harmless — common or in non-critical regions</span>
+                </div>
               </div>
             </div>
 
