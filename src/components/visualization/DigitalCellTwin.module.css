@@ -247,30 +247,27 @@
 .stateDotDrug { background: var(--gn-warning); box-shadow: 0 0 6px var(--gn-warning); }
 @keyframes dotPulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
 
-.metricsList { display: flex; flex-direction: column; gap: 1.1rem; }
+.metricsList { display: flex; flex-direction: column; gap: 1rem; }
 
-.metricItem { display: flex; flex-direction: column; gap: 0.4rem; }
+.metricItem { display: flex; flex-direction: column; gap: 0.5rem; }
 
 .metricTop {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 0.25rem;
+  align-items: baseline;
 }
 
 .metricLabel { font-size: 0.78rem; color: var(--gn-text-secondary); }
 
-.metricValue { font-size: 0.92rem; font-weight: 700; }
+.metricValue { font-size: 1rem; font-weight: 700; }
 
 .metricUnit { font-size: 0.7rem; font-weight: 400; color: var(--gn-text-muted); }
 
 .metricBar {
-  height: 8px;
+  height: 4px;
   background: rgba(255,255,255,0.08);
   border-radius: 999px;
-  position: relative;
-  overflow: visible;
+  overflow: hidden;
 }
 
 .metricBarFill {
