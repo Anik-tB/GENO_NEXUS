@@ -18,6 +18,31 @@ export default function PredictionsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [meta, setMeta] = useState<{ fileName: string; matchPct: number; mutationCount: number } | null>(null);
+  const [showPreventionPlan, setShowPreventionPlan] = useState(false);
+
+  const getPreventionPlan = (diseaseName: string) => {
+    const isCovid = diseaseName.toLowerCase().includes("covid");
+    const isHiv = diseaseName.toLowerCase().includes("hiv");
+    
+    if (isCovid) {
+      return [
+        { title: "Immediate Action", content: "Isolate immediately to prevent transmission. Contact healthcare provider for diagnostic confirmation." },
+        { title: "Medical Intervention", content: "Depending on symptom severity and the specific mutations identified (e.g. drug resistance), antiviral treatments like Paxlovid may be prescribed. Monitor oxygen saturation." },
+        { title: "Prevention Protocol", content: "Wear N95 masks indoors, ensure proper ventilation, and inform recent close contacts." }
+      ];
+    } else if (isHiv) {
+      return [
+        { title: "Immediate Action", content: "Schedule an appointment with an infectious disease specialist immediately for confirmatory viral load testing." },
+        { title: "Medical Intervention", content: "Initiate Antiretroviral Therapy (ART) as soon as possible. The mutation profile will guide which specific drug classes will be most effective." },
+        { title: "Prevention Protocol", content: "Practice safe sex, do not share needles, and inform partners so they can seek testing and PEP/PrEP if necessary." }
+      ];
+    } else {
+      return [
+        { title: "Clinical Next Steps", content: "Schedule a follow-up with your primary care physician to review these AI predictions and conduct confirmatory laboratory testing." },
+        { title: "Monitoring", content: "Monitor for any symptoms related to this condition and keep a daily log to share with your doctor." }
+      ];
+    }
+  };
 
   useEffect(() => {
     async function loadPredictions() {
@@ -187,11 +212,49 @@ export default function PredictionsPage() {
           </div>
 
           <div className={styles.insightActions}>
-            <button className={styles.primaryAction}>Generate Prevention Plan</button>
+            <button className={styles.primaryAction} onClick={() => setShowPreventionPlan(true)}>Generate Prevention Plan</button>
             <button className={styles.secondaryAction}>Export to Report</button>
           </div>
         </aside>
       </div>
+
+      {/* ── Prevention Plan Modal ── */}
+      {showPreventionPlan && selected && (
+        <div className={styles.modalOverlay} onClick={() => setShowPreventionPlan(false)}>
+          <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <h3 className={styles.modalTitle}>Clinical Prevention Plan</h3>
+              <button className={styles.closeButton} onClick={() => setShowPreventionPlan(false)}>×</button>
+            </div>
+            
+            <div style={{ marginBottom: "1.5rem" }}>
+              <p style={{ color: "var(--gn-text-secondary)", fontSize: "0.95rem" }}>
+                Based on the AI prediction for <strong>{selected.disease}</strong>, here are the recommended next steps:
+              </p>
+            </div>
+
+            <div style={{ maxHeight: "60vh", overflowY: "auto", paddingRight: "0.5rem" }}>
+              {getPreventionPlan(selected.disease).map((section, idx) => (
+                <div key={idx} className={styles.planSection}>
+                  <h4>{section.title}</h4>
+                  <p>{section.content}</p>
+                </div>
+              ))}
+            </div>
+
+            <div style={{ marginTop: "2rem", display: "flex", justifyContent: "flex-end" }}>
+              <button 
+                onClick={() => setShowPreventionPlan(false)}
+                style={{ background: "var(--gn-primary)", color: "#000", border: "none", padding: "0.6rem 1.5rem", borderRadius: "8px", fontWeight: "bold", cursor: "pointer", transition: "all 0.2s" }}
+                onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+                onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
+              >
+                Acknowledge
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

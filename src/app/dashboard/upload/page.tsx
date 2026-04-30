@@ -21,6 +21,7 @@ const FORMAT_INFO = [
   { ext: "VCF", desc: "Variant Call Format", color: "var(--gn-primary)" },
   { ext: "FASTQ", desc: "Raw Sequencing Reads", color: "var(--gn-blue)" },
   { ext: "FASTA", desc: "Reference Sequences", color: "var(--gn-accent)" },
+  { ext: "FNA", desc: "FASTA Nucleic Acid", color: "#a78bfa" },
 ];
 
 const STATUS_ICON: Record<UploadStatus, string> = {
@@ -134,7 +135,7 @@ export default function UploadPage() {
     const id = Date.now().toString() + Math.random().toString().slice(2, 8);
     const fileName = file.name;
     const fileSize = file.size;
-    const isInvalid = !fileName.match(/\.(fasta|fastq|vcf|bam)$/i);
+    const isInvalid = !fileName.match(/\.(fasta|fastq|vcf|bam|fna)$/i);
     const sizeStr = fileSize > 0 ? (fileSize / (1024 * 1024)).toFixed(2) + " MB" : "—";
     const type = fileName.split(".").pop()?.toUpperCase() || "UNKNOWN";
 
@@ -273,14 +274,14 @@ export default function UploadPage() {
             <h3 className={styles.dropzoneTitle}>
               {isDragging ? "Release to upload" : "Drag & drop sequence files here"}
             </h3>
-            <p className={styles.dropzoneHint}>Supports .vcf, .fastq, .fasta, .bam — up to 500 MB per file</p>
+            <p className={styles.dropzoneHint}>Supports .vcf, .fastq, .fasta, .fna, .bam — up to 500 MB per file</p>
             <div className={styles.divider}><span>or</span></div>
             <label className={styles.browseButton}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
               </svg>
               Browse Files
-              <input type="file" multiple accept=".fasta,.fastq,.vcf,.bam" className={styles.hiddenInput} onChange={handleFileInput} />
+              <input type="file" multiple accept=".fasta,.fastq,.vcf,.bam,.fna" className={styles.hiddenInput} onChange={handleFileInput} />
             </label>
           </div>
         </div>
@@ -346,7 +347,7 @@ export default function UploadPage() {
                 <input 
                   id="ref-file-input"
                   type="file" 
-                  accept=".fasta,.fastq,.vcf,.bam"
+                  accept=".fasta,.fastq,.vcf,.bam,.fna"
                   onChange={(e) => setRefFile(e.target.files?.[0] || null)}
                   style={{ display: 'none' }}
                 />
@@ -431,7 +432,7 @@ export default function UploadPage() {
                     </div>
                   )}
                   {file.status === "error" && (
-                    <p className={styles.errorHint}>Unsupported file format. Please use .vcf, .fastq, .fasta, or .bam</p>
+                    <p className={styles.errorHint}>Unsupported file format. Please use .vcf, .fastq, .fasta, .fna, or .bam</p>
                   )}
                 </div>
               </div>
