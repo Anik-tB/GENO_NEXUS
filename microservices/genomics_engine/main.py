@@ -23,6 +23,7 @@ from Bio import SeqIO
 from Bio.Align import PairwiseAligner
 
 from virus_classifier import predict_severity, predict_severity_batch
+from canrisk_client import PatientProfile, FamilyHistory, calculate_boadicea_risk
 
 app = FastAPI(title="GenoNexus Engine v2", version="2.0.0")
 
@@ -78,6 +79,7 @@ class PredictDiseaseRequest(BaseModel):
     mutations: list[dict]
     organism: str = "Unknown"
     matchPct: float = 0.0
+    patient_profile: Optional[dict] = None
 
 # ---------------------------------------------------------------------------
 # Helper: Parse a FASTA or FASTQ file with Biopython SeqIO
@@ -504,73 +506,73 @@ async def predict_disease(req: PredictDiseaseRequest):
 
         # Oncology Pathway (Human Genetics)
         if req.organism == "BRCA1 (Homo sapiens)":
-            if high_sev_count > 0:
-                primary_risk = min(99, 60 + (high_sev_count * 20))
-                ovarian_risk = min(85, 40 + (high_sev_count * 15))
-                insight_breast = f"Detected {high_sev_count} high-severity mutations in the BRCA1 tumor suppressor gene. High lifetime risk for Breast Cancer."
-                insight_ovarian = f"Detected {high_sev_count} high-severity mutations in BRCA1. Significantly elevated risk for Ovarian Cancer."
-            elif med_sev_count > 0:
-                primary_risk = min(40, 10 + (med_sev_count * 10))
-                ovarian_risk = min(35, 10 + (med_sev_count * 8))
-                insight_breast = f"Detected {med_sev_count} variants of unknown or moderate significance in BRCA1. Clinical correlation required for Breast Cancer risk."
-                insight_ovarian = f"Detected {med_sev_count} variants of moderate significance. Clinical correlation required for Ovarian Cancer risk."
-            else:
-                primary_risk = 5
-                ovarian_risk = 5
-                insight_breast = f"High sequence homology ({req.matchPct}%) to the wild-type BRCA1 reference. Standard baseline Breast Cancer risk."
-                insight_ovarian = f"High sequence homology ({req.matchPct}%) to the wild-type BRCA1 reference. Standard baseline Ovarian Cancer risk."
+            # 1. Parse patient profile from request (or use default mock)
+            pp_data = req.patient_profile or {}
+            fh_data = pp_data.get("family_history", {})
+            patient = PatientProfile(
+                age=pp_data.get("age", 40),
+                biological_sex=pp_data.get("biological_sex", "female"),
+                family_history=FamilyHistory(
+                    first_degree_relatives_with_breast_cancer=fh_data.get("first_degree_relatives_with_breast_cancer", 0),
+                    first_degree_relatives_with_ovarian_cancer=fh_data.get("first_degree_relatives_with_ovarian_cancer", 0)
+                )
+            )
+
+            # 2. Determine mutation status
+            has_pathogenic = high_sev_count > 0
+            has_vus = med_sev_count > 0
             
-            primary_sev = "high" if primary_risk >= 75 else "medium" if primary_risk >= 40 else "low"
-            ovarian_sev = "high" if ovarian_risk >= 75 else "medium" if ovarian_risk >= 40 else "low"
+            # 3. Call simulated CanRisk/BOADICEA API
+            boadicea_result = calculate_boadicea_risk(patient, has_pathogenic, has_vus)
 
             predictions.append({
                 "id": "pred-breast",
-                "disease": "Breast Cancer Risk",
+                "disease": "Breast Cancer Risk (Lifetime)",
                 "genes": "BRCA1",
-                "severity": primary_sev,
-                "risk": int(primary_risk),
-                "confidence": 95 if high_sev_count > 0 else 80,
+                "severity": "high" if boadicea_result.breast_cancer_risk_percentage >= 50 else "medium" if boadicea_result.breast_cancer_risk_percentage >= 20 else "low",
+                "risk": int(boadicea_result.breast_cancer_risk_percentage),
+                "confidence": 95 if has_pathogenic else 80,
                 "trend": "stable",
-                "insight": insight_breast
+                "insight": f"CanRisk/BOADICEA: {boadicea_result.clinical_insight}"
             })
 
-            predictions.append({
-                "id": "pred-ovary",
-                "disease": "Ovarian Cancer Risk",
-                "genes": "BRCA1",
-                "severity": ovarian_sev,
-                "risk": int(ovarian_risk),
-                "confidence": 90 if high_sev_count > 0 else 80,
-                "trend": "stable",
-                "insight": insight_ovarian
-            })
-
-            if high_sev_count > 0 or med_sev_count > 0:
-                prostate_risk = min(45, (high_sev_count * 10) + (med_sev_count * 5))
+            if patient.biological_sex == "female":
+                predictions.append({
+                    "id": "pred-ovary",
+                    "disease": "Ovarian Cancer Risk (Lifetime)",
+                    "genes": "BRCA1",
+                    "severity": "high" if boadicea_result.ovarian_cancer_risk_percentage >= 30 else "medium" if boadicea_result.ovarian_cancer_risk_percentage >= 10 else "low",
+                    "risk": int(boadicea_result.ovarian_cancer_risk_percentage),
+                    "confidence": 90 if has_pathogenic else 80,
+                    "trend": "stable",
+                    "insight": f"CanRisk/BOADICEA: {boadicea_result.clinical_insight}"
+                })
+            elif patient.biological_sex == "male":
                 predictions.append({
                     "id": "pred-prostate",
-                    "disease": "Prostate Cancer Risk (Male)",
+                    "disease": "Prostate Cancer Risk (Lifetime)",
                     "genes": "BRCA1",
-                    "severity": "medium" if prostate_risk >= 30 else "low",
-                    "risk": int(prostate_risk),
-                    "confidence": 85,
-                    "trend": "stable",
-                    "insight": "BRCA1 pathogenic variants also increase the lifetime risk of developing aggressive prostate cancer in male carriers."
+                    "severity": "high" if boadicea_result.prostate_cancer_risk_percentage >= 30 else "medium" if boadicea_result.prostate_cancer_risk_percentage >= 15 else "low",
+                    "risk": int(boadicea_result.prostate_cancer_risk_percentage),
+                    "confidence": 85 if has_pathogenic else 80,
+                    "trend": "increasing" if patient.age > 50 else "stable",
+                    "insight": "CanRisk: Pathogenic BRCA1 variants increase the lifetime risk of developing aggressive prostate cancer in male carriers." if has_pathogenic else "Baseline male screening."
                 })
 
-                pancreatic_risk = min(25, (high_sev_count * 8) + (med_sev_count * 2))
+            if has_pathogenic or has_vus:
                 predictions.append({
                     "id": "pred-pancreatic",
-                    "disease": "Pancreatic Cancer Risk",
+                    "disease": "Pancreatic Cancer Risk (Lifetime)",
                     "genes": "BRCA1",
-                    "severity": "low",
-                    "risk": int(pancreatic_risk),
+                    "severity": "medium" if boadicea_result.pancreatic_cancer_risk_percentage >= 10 else "low",
+                    "risk": int(boadicea_result.pancreatic_cancer_risk_percentage),
                     "confidence": 80,
                     "trend": "stable",
-                    "insight": "Pathogenic alterations in BRCA1 confer a modest but clinically significant elevated risk for pancreatic adenocarcinoma."
+                    "insight": "CanRisk: Pathogenic alterations in BRCA1 confer a modest but clinically significant elevated risk for pancreatic adenocarcinoma."
                 })
 
             return {"predictions": predictions}
+
 
         # 1. Primary Disease Profile (Pathogens)
         # The user logically expects that if the sequence matches the pathogenic reference genome 

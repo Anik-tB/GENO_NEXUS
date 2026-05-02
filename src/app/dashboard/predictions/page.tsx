@@ -44,27 +44,52 @@ export default function PredictionsPage() {
     }
   };
 
-  const getPreventionPlan = (diseaseName: string) => {
-    const isCovid = diseaseName.toLowerCase().includes("covid");
-    const isHiv = diseaseName.toLowerCase().includes("hiv");
-    const isBrca = diseaseName.toLowerCase().includes("breast") || diseaseName.toLowerCase().includes("ovarian") || diseaseName.toLowerCase().includes("brca");
+  const getPreventionPlan = (selectedPrediction: any, allPredictions: any[]) => {
+    const diseaseName = selectedPrediction.disease.toLowerCase();
+    const isCovid = diseaseName.includes("covid");
+    const isHiv = diseaseName.includes("hiv");
+    const isBrca = diseaseName.includes("breast") || diseaseName.includes("ovarian") || diseaseName.includes("brca") || diseaseName.includes("prostate") || diseaseName.includes("pancreatic");
+    const isResistance = diseaseName.includes("resistance");
+    const isEvasion = diseaseName.includes("evasion");
+
+    // Determine if the patient has a significant drug resistance profile
+    const hasDrugResistance = allPredictions.some(p => p.disease.toLowerCase().includes("resistance") && p.risk >= 40);
+
+    if (isResistance) {
+      return [
+        { title: "Medication Adjustment", content: "Standard front-line treatments are likely to fail. Consult an infectious disease specialist immediately to select an alternative therapy regimen." },
+        { title: "Transmission Warning", content: "You are carrying a drug-resistant strain. It is critical to isolate to prevent spreading a difficult-to-treat variant to others." },
+        { title: "Continuous Monitoring", content: "Viral load must be closely monitored to ensure the alternative therapy is effective." }
+      ];
+    }
+
+    if (isEvasion) {
+      return [
+        { title: "Vaccine Efficacy Alert", content: "This variant has mutations associated with immune evasion. Previous immunity from past infection or standard vaccines may provide reduced protection." },
+        { title: "Heightened Precautions", content: "Employ strict non-pharmaceutical interventions (e.g., N95 masks, distancing) regardless of your vaccination status." }
+      ];
+    }
     
     if (isCovid) {
       return [
         { title: "Immediate Action", content: "Isolate immediately to prevent transmission. Contact healthcare provider for diagnostic confirmation." },
-        { title: "Medical Intervention", content: "Depending on symptom severity and the specific mutations identified (e.g. drug resistance), antiviral treatments like Paxlovid may be prescribed. Monitor oxygen saturation." },
+        { title: "Medical Intervention", content: hasDrugResistance 
+            ? "⚠️ WARNING: Drug resistance detected. Standard antivirals like Paxlovid may be ineffective. Alternative treatments must be carefully evaluated by your doctor based on this mutation profile."
+            : "No known resistance markers detected. Standard antiviral treatments like Paxlovid may be highly effective if prescribed early. Monitor oxygen saturation." },
         { title: "Prevention Protocol", content: "Wear N95 masks indoors, ensure proper ventilation, and inform recent close contacts." }
       ];
     } else if (isHiv) {
       return [
         { title: "Immediate Action", content: "Schedule an appointment with an infectious disease specialist immediately for confirmatory viral load testing." },
-        { title: "Medical Intervention", content: "Initiate Antiretroviral Therapy (ART) as soon as possible. The mutation profile will guide which specific drug classes will be most effective." },
+        { title: "Medical Intervention", content: hasDrugResistance
+            ? "⚠️ WARNING: Drug resistance detected. Standard first-line Antiretroviral Therapy (ART) may fail. A customized ART regimen must be constructed based on this exact resistance profile."
+            : "No major resistance markers detected. Initiate standard first-line Antiretroviral Therapy (ART) as soon as possible for maximum efficacy." },
         { title: "Prevention Protocol", content: "Practice safe sex, do not share needles, and inform partners so they can seek testing and PEP/PrEP if necessary." }
       ];
     } else if (isBrca) {
       return [
         { title: "Genetic Counseling", content: "Schedule a consultation with a board-certified genetic counselor to discuss these findings and family history implications." },
-        { title: "Enhanced Screening", content: "Discuss initiating early and enhanced screening protocols, such as annual breast MRIs and transvaginal ultrasounds, depending on your age." },
+        { title: "Enhanced Screening", content: "Discuss initiating early and enhanced screening protocols, such as annual MRIs and specialized ultrasounds, depending on your age and risk severity." },
         { title: "Risk-Reducing Strategies", content: "Consult with an oncologist regarding risk-reducing options, which may include chemoprevention or prophylactic surgeries, tailored to your specific mutation profile." }
       ];
     } else {
@@ -272,7 +297,7 @@ export default function PredictionsPage() {
             </div>
 
             <div style={{ maxHeight: "60vh", overflowY: "auto", paddingRight: "0.5rem" }}>
-              {getPreventionPlan(selected.disease).map((section, idx) => (
+              {getPreventionPlan(selected, predictions).map((section: any, idx: number) => (
                 <div key={idx} className={styles.planSection}>
                   <h4>{section.title}</h4>
                   <p>{section.content}</p>
