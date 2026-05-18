@@ -1,0 +1,43 @@
+.timelineSection {
+  background: var(--gn-bg-glass); border: 1px solid var(--gn-border-light);
+  border-radius: 12px; padding: 1.25rem; backdrop-filter: blur(12px);
+  position: relative; overflow: hidden;
+}
+.timelineSection::before {
+  content: ""; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(99,102,241,0.3), transparent);
+}
+.timelineHeader {
+  display: flex; align-items: center; gap: 0.6rem;
+  margin-bottom: 1rem; padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--gn-border-light);
+}
+.timelineHeader h3 { margin: 0; font-size: 0.85rem; font-weight: 600; color: var(--gn-text-primary); text-transform: uppercase; letter-spacing: 0.04em; }
+.timelineScroll {
+  display: flex; gap: 1rem; overflow-x: auto; padding: 0.5rem 0 1rem;
+  position: relative;
+}
+.timelineScroll::-webkit-scrollbar { height: 4px; }
+.timelineScroll::-webkit-scrollbar-track { background: var(--gn-bg-glass-strong); border-radius: 2px; }
+.timelineScroll::-webkit-scrollbar-thumb { background: var(--gn-border-light-strong); border-radius: 2px; }
+.timelineTrack {
+  position: absolute; top: 14px; left: 0; right: 0; height: 2px;
+  background: var(--gn-border-light-strong);
+}
+.timelineEvent { position: relative; min-width: 220px; flex-shrink: 0; padding-top: 24px; }
+.timelineEventDot {
+  position: absolute; top: 8px; left: 16px;
+  width: 12px; height: 12px; border-radius: 50%;
+  border: 2px solid var(--gn-surface); z-index: 2;
+}
+.timelineEventCard {
+  background: var(--gn-bg-glass-light); border: 1px solid var(--gn-border-light-strong);
+  border-radius: 10px; padding: 0.85rem; transition: all 0.2s ease;
+}
+.timelineEventCard:hover { border-color: rgba(99,102,241,0.3); transform: translateY(-2px); box-shadow: 0 4px 15px rgba(0,0,0,0.15); }
+.timelineEventTop { display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.4rem; }
+.timelineEventIcon { font-size: 0.85rem; }
+.timelineEventTitle { flex: 1; font-size: 0.78rem; font-weight: 600; color: var(--gn-white); }
+.timelineEventType { font-size: 0.55rem; font-weight: 700; text-transform: uppercase; padding: 0.08rem 0.3rem; border-radius: 3px; border: 1px solid; }
+.timelineEventDetail { margin: 0 0 0.5rem; font-size: 0.72rem; color: var(--gn-text-primary); line-height: 1.45; }
+.timelineEventMeta { display: flex; justify-content: space-between; font-size: 0.62rem; color: var(--gn-text-muted); }
