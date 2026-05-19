@@ -35,7 +35,7 @@
   transition: background 0.2s;
 }
 .launchBtn:hover { background: #059669; }
-.hypoList { display: flex; flex-direction: column; gap: 0.85rem; overflow-y: auto; }
+.hypoList { display: flex; flex-direction: column; gap: 0.85rem; overflow-y: auto; flex: 1; min-height: 0; }
 .hypoCard {
   background: var(--gn-bg-glass-light); border: 1px solid var(--gn-border-light-strong);
   border-radius: 10px; padding: 1rem; cursor: pointer; transition: all 0.25s ease;

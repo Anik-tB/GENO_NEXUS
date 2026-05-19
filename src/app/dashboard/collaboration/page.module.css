@@ -19,7 +19,7 @@
   gap: 1.25rem;
   align-items: stretch;
   flex: 1;
-  min-height: 0;
+  min-height: 520px;
 }
 .boardCol, .mainFeedCol {
   background: var(--gn-bg-glass);
@@ -32,6 +32,7 @@
   backdrop-filter: blur(12px);
   position: relative;
   overflow: hidden;
+  min-height: 520px;
 }
 .engineCol {
   background: var(--gn-bg-glass);
@@ -45,6 +46,7 @@
   position: relative;
   overflow-y: auto;
   overflow-x: hidden;
+  min-height: 520px;
 }
 .engineCol::-webkit-scrollbar { width: 4px; }
 .engineCol::-webkit-scrollbar-track { background: transparent; }
