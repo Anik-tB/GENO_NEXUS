@@ -1,18 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import styles from "./page.module.css";
 
-const OUTBREAK_PAST   = [12, 18, 25, 32, 45, 58, 65];
-const OUTBREAK_FUTURE = [78, 92, 110, 135];
 const LABELS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov"];
 
-const ALERT_STATS = [
-  { label: "Projected Rise", value: "45%", color: "var(--gn-danger)" },
-  { label: "Active Regions", value: "12", color: "var(--gn-warning)" },
-  { label: "Sequences Tracked", value: "3,421", color: "var(--gn-primary)" },
-  { label: "R₀ Estimate", value: "2.4", color: "var(--gn-warning)" },
-];
+type AlertStat = { label: string; value: string; color: string };
+
+type OutbreakData = {
+  historical_points: number[];
+  future_points: number[];
+  alert_stats: AlertStat[];
+};
 
 function mkPoints(vals: number[], startIdx: number, w: number, h: number, max: number) {
   const pad = 20, uw = w - pad * 2, uh = h - pad * 2, xStep = uw / (LABELS.length - 1);
@@ -25,11 +24,67 @@ export default function OutbreakPage() {
   const [country, setCountry]  = useState("Global");
   const [disease, setDisease]  = useState("Influenza Strain A");
   const [horizon, setHorizon]  = useState("1 Year");
+  
+  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState<OutbreakData>({
+    historical_points: [12, 18, 25, 32, 45, 58, 65],
+    future_points: [78, 92, 110, 135],
+    alert_stats: [
+      { label: "Projected Rise", value: "45%", color: "var(--gn-danger)" },
+      { label: "Active Regions", value: "12", color: "var(--gn-warning)" },
+      { label: "Sequences Tracked", value: "3,421", color: "var(--gn-primary)" },
+      { label: "R₀ Estimate", value: "2.4", color: "var(--gn-warning)" },
+    ]
+  });
+  const [deploying, setDeploying] = useState(false);
+
+  // Fetch AI Prediction Data
+  useEffect(() => {
+    async function fetchData() {
+      setLoading(true);
+      try {
+        const res = await fetch(`/api/outbreak?region=${encodeURIComponent(country)}&pathogen=${encodeURIComponent(disease)}&horizon=${encodeURIComponent(horizon)}`);
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success && json.data) {
+            setData(json.data);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch outbreak data:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchData();
+  }, [country, disease, horizon]);
+
+  const handleDeployProtocol = async () => {
+    if (deploying) return;
+    setDeploying(true);
+    try {
+      const res = await fetch("/api/outbreak/protocol", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ region: country, pathogen: disease })
+      });
+      if (res.ok) {
+        alert("🚨 Response Protocol Deployed! All relevant teams have been notified.");
+      } else {
+        alert("Failed to deploy protocol. Please try again.");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Error deploying protocol.");
+    } finally {
+      setDeploying(false);
+    }
+  };
 
   const W = 800, H = 280, MAX = 150;
-  const pastPts = mkPoints(OUTBREAK_PAST, 0, W, H, MAX);
-  const futPts  = mkPoints(OUTBREAK_FUTURE, OUTBREAK_PAST.length - 1, W, H, MAX);
-  const joinedFuture = [pastPts[pastPts.length - 1], ...futPts.slice(1)];
+  const pastPts = mkPoints(data.historical_points, 0, W, H, MAX);
+  const futPts  = mkPoints(data.future_points, data.historical_points.length - 1, W, H, MAX);
+  const joinedFuture = pastPts.length > 0 ? [pastPts[pastPts.length - 1], ...futPts.slice(1)] : futPts;
 
   const pastStr   = pts(pastPts);
   const futureStr = pts(joinedFuture);
@@ -44,7 +99,9 @@ export default function OutbreakPage() {
           <h1 className={styles.title}>Global Outbreak Prediction</h1>
           <p className={styles.subtitle}>AI-driven transmission forecasting based on genomic surveillance, mobility patterns, and variant tracking.</p>
         </div>
-        <button className={styles.deployBtn}>🚨 Deploy Response Protocol</button>
+        <button className={styles.deployBtn} onClick={handleDeployProtocol} disabled={deploying}>
+          {deploying ? "Deploying..." : "🚨 Deploy Response Protocol"}
+        </button>
       </header>
 
       {/* Alert Banner */}
@@ -59,7 +116,7 @@ export default function OutbreakPage() {
           </div>
         </div>
         <div className={styles.alertStats}>
-          {ALERT_STATS.map((s) => (
+          {data.alert_stats.map((s) => (
             <div key={s.label} className={styles.alertStat}>
               <span style={{ color: s.color, fontWeight: 700, fontSize: "1.15rem" }}>{s.value}</span>
               <span className={styles.alertStatLabel}>{s.label}</span>
@@ -97,7 +154,12 @@ export default function OutbreakPage() {
           </div>
         </div>
 
-        <div className={styles.svgWrapper}>
+        <div className={styles.svgWrapper} style={{ opacity: loading ? 0.5 : 1, transition: "opacity 0.3s" }}>
+          {loading && (
+            <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", color: "var(--gn-primary)" }}>
+              AI Generating Forecast...
+            </div>
+          )}
           <svg viewBox={`0 0 ${W} ${H}`} className={styles.chartSvg}>
             <defs>
               <linearGradient id="pastFill" x1="0" y1="0" x2="0" y2="1">
