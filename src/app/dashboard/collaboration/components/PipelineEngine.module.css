@@ -1,0 +1,85 @@
+.panelHeader {
+  display: flex; align-items: center; gap: 0.75rem;
+  border-bottom: 1px solid var(--gn-border-light); padding-bottom: 0.75rem;
+}
+.panelHeader h2 { flex: 1; margin: 0; font-size: 0.9rem; font-weight: 600; color: var(--gn-text-primary); text-transform: uppercase; letter-spacing: 0.04em; }
+
+.pipelineList { 
+  display: flex; flex-direction: column; gap: 0.85rem;
+}
+.pipelineCard {
+  background: var(--gn-bg-glass-light); border: 1px solid var(--gn-border-light-strong);
+  border-radius: 10px; padding: 0.85rem; transition: all 0.2s ease;
+}
+.pipelineCard:hover { border-color: rgba(16,185,129,0.3); }
+.pipeTop { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
+.pipeName { font-size: 0.78rem; font-weight: 600; color: var(--gn-white); }
+.pipeStatus { font-size: 0.62rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
+.pipeBarTrack { width: 100%; height: 5px; background: var(--gn-bg-glass-strong); border-radius: 3px; overflow: hidden; }
+.pipeBarFill { height: 100%; border-radius: 3px; transition: width 0.8s ease; }
+@keyframes pipeGlow { 0%,100% { opacity: 1; } 50% { opacity: 0.7; } }
+.pipeInfo { display: flex; justify-content: space-between; margin-top: 0.4rem; font-size: 0.65rem; }
+.pipeProgress { color: var(--gn-text-muted); font-weight: 600; }
+.pipeEta { color: #f59e0b; font-weight: 600; }
+.pipeControls { display: flex; gap: 0.35rem; margin-top: 0.5rem; }
+.pipeCtrlBtn {
+  background: var(--gn-bg-glass-strong); border: 1px solid var(--gn-border-light-strong);
+  color: var(--gn-text-muted); width: 28px; height: 24px; border-radius: 5px;
+  font-size: 0.75rem; display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: all 0.2s ease;
+}
+.pipeCtrlBtn:hover { border-color: #10b981; color: var(--gn-white); }
+.pipeCtrlBtnDanger { composes: pipeCtrlBtn; }
+.pipeCtrlBtnDanger:hover { border-color: #f43f5e; color: #f43f5e; }
+.stageDag { 
+  display: flex; align-items: center; gap: 0; margin-top: 0.6rem; 
+  overflow-x: auto; padding-bottom: 1.2rem; 
+}
+.stageDag::-webkit-scrollbar { height: 4px; }
+.stageDag::-webkit-scrollbar-track { background: var(--gn-bg-glass-strong); border-radius: 2px; }
+.stageDag::-webkit-scrollbar-thumb { background: var(--gn-border-light-strong); border-radius: 2px; }
+
+.stageNode { display: flex; align-items: center; flex-direction: row; position: relative; }
+.stageCircle {
+  width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+  border: 2px solid var(--gn-border-light-strong);
+}
+.stage_done { background: #10b981; border-color: #10b981; box-shadow: 0 0 5px rgba(16,185,129,0.4); }
+.stage_active { background: #3b82f6; border-color: #3b82f6; animation: stageActive 1.5s infinite; }
+@keyframes stageActive { 0%,100% { box-shadow: 0 0 4px #3b82f6; } 50% { box-shadow: 0 0 10px #3b82f6; } }
+.stage_pending { background: transparent; }
+.stageConnector {
+  width: 45px; height: 2px; background: var(--gn-border-light-strong);
+  position: relative; overflow: hidden; flex-shrink: 0;
+}
+.connectorDone { background: #10b981; }
+.stageConnector::after {
+  content: ""; position: absolute; top: 0; left: -45px; width: 45px; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(16,185,129,0.6), transparent);
+  animation: flowDash 1.5s infinite linear;
+}
+@keyframes flowDash { to { left: 45px; } }
+.stageLabel {
+  position: absolute; top: 14px; left: 50%; transform: translateX(-50%);
+  font-size: 0.5rem; color: var(--gn-text-muted); white-space: nowrap; font-weight: 600;
+}
+.pipeLogs {
+  margin-top: 0.6rem; background: var(--gn-surface); border: 1px dashed var(--gn-border-light-strong);
+  border-radius: 6px; overflow: hidden; animation: logsIn 0.2s ease;
+}
+@keyframes logsIn { from { opacity: 0; max-height: 0; } to { opacity: 1; max-height: 300px; } }
+.pipeLogsHeader {
+  padding: 0.4rem 0.6rem; font-size: 0.65rem; font-weight: 700;
+  color: var(--gn-text-muted); text-transform: uppercase; background: var(--gn-bg-glass-strong);
+  border-bottom: 1px solid var(--gn-border-light);
+}
+.pipeLogLine { padding: 0.3rem 0.6rem; font-family: monospace; font-size: 0.68rem; color: #10b981; border-bottom: 1px solid rgba(255,255,255,0.02); }
+.logError { color: #f43f5e; }
+.dataNodeMap { margin-top: 1rem; border-top: 1px solid var(--gn-border-light); padding-top: 0.85rem; flex-shrink: 0; }
+.dataNodeMap h3 { margin: 0 0 0.6rem; font-size: 0.75rem; color: var(--gn-text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
+.nodeMapGfx {
+  background: var(--gn-bg-glass-light); border: 1px solid var(--gn-border-light-strong);
+  border-radius: 8px; padding: 0.75rem; display: flex; justify-content: center;
+}
+.flowLine { animation: dashFlow 2s infinite linear; }
+@keyframes dashFlow { to { stroke-dashoffset: -14; } }
