@@ -92,3 +92,9 @@ VALUES
   ('SARS-CoV-2', 614, 'A', 'G', 'medium','S',     'D614G — fitness enhancement',                   false, 'ClinVar'),
   ('SARS-CoV-2', 681, 'C', 'T', 'high', 'S/FCS',  'P681H/R — furin cleavage site (Delta/Omicron)', false, 'ClinVar')
 ON CONFLICT DO NOTHING;
+
+-- ============================================================================
+-- Grant Privileges
+-- ============================================================================
+GRANT ALL PRIVILEGES ON TABLE reference_genomes TO geno;
+GRANT ALL PRIVILEGES ON TABLE known_mutations TO geno;
