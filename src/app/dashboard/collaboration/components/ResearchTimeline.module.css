@@ -26,7 +26,7 @@
   color: var(--gn-white); border-color: #10b981; background: rgba(16,185,129,0.1);
 }
 .timelineScroll {
-  display: flex; gap: 1rem; overflow-x: auto; padding: 0.5rem 0 1rem;
+  display: flex; gap: 1.25rem; overflow-x: auto; padding: 0.5rem 0 1rem;
   position: relative;
 }
 .timelineScroll::-webkit-scrollbar { height: 4px; }
@@ -36,7 +36,7 @@
   position: absolute; top: 14px; left: 0; right: 0; height: 2px;
   background: var(--gn-border-light-strong);
 }
-.timelineEvent { position: relative; min-width: 220px; flex-shrink: 0; padding-top: 24px; }
+.timelineEvent { position: relative; min-width: 300px; max-width: 340px; flex-shrink: 0; padding-top: 24px; }
 .timelineEventDot {
   position: absolute; top: 8px; left: 16px;
   width: 12px; height: 12px; border-radius: 50%;
@@ -44,15 +44,16 @@
 }
 .timelineEventCard {
   background: var(--gn-bg-glass-light); border: 1px solid var(--gn-border-light-strong);
-  border-radius: 10px; padding: 0.85rem; transition: all 0.2s ease;
+  border-radius: 10px; padding: 0.9rem 1rem; transition: all 0.2s ease;
+  min-height: 110px;
 }
 .timelineEventCard:hover { border-color: rgba(99,102,241,0.3); transform: translateY(-2px); box-shadow: 0 4px 15px rgba(0,0,0,0.15); }
-.timelineEventTop { display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.4rem; }
-.timelineEventIcon { font-size: 0.85rem; }
-.timelineEventTitle { flex: 1; font-size: 0.78rem; font-weight: 600; color: var(--gn-white); }
-.timelineEventType { font-size: 0.55rem; font-weight: 700; text-transform: uppercase; padding: 0.08rem 0.3rem; border-radius: 3px; border: 1px solid; }
-.timelineEventDetail { margin: 0 0 0.5rem; font-size: 0.72rem; color: var(--gn-text-primary); line-height: 1.45; }
-.timelineEventMeta { display: flex; justify-content: space-between; font-size: 0.62rem; color: var(--gn-text-muted); }
+.timelineEventTop { display: flex; align-items: flex-start; gap: 0.4rem; margin-bottom: 0.5rem; flex-wrap: wrap; }
+.timelineEventIcon { font-size: 0.85rem; flex-shrink: 0; margin-top: 1px; }
+.timelineEventTitle { flex: 1; font-size: 0.8rem; font-weight: 600; color: var(--gn-white); word-break: break-word; line-height: 1.4; min-width: 0; }
+.timelineEventType { font-size: 0.55rem; font-weight: 700; text-transform: uppercase; padding: 0.1rem 0.35rem; border-radius: 3px; border: 1px solid; flex-shrink: 0; white-space: nowrap; margin-top: 2px; }
+.timelineEventDetail { margin: 0 0 0.6rem; font-size: 0.76rem; color: var(--gn-text-primary); line-height: 1.55; word-break: break-word; white-space: normal; }
+.timelineEventMeta { display: flex; justify-content: space-between; font-size: 0.64rem; color: var(--gn-text-muted); gap: 0.5rem; flex-wrap: wrap; }
 
 .contribGraphContainer {
   background: var(--gn-bg-glass-light);

@@ -5,6 +5,7 @@
   box-shadow: 0 4px 20px rgba(0,0,0,0.1);
   backdrop-filter: blur(12px); position: relative;
   flex-shrink: 0;
+  z-index: 100;
 }
 .presenceHeader::after {
   content: ""; position: absolute; bottom: 0; left: 0; right: 0; height: 1px;

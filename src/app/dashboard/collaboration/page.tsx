@@ -3,6 +3,7 @@
 import { useState } from "react";
 import styles from "./page.module.css";
 import { useCollabWebSocket } from "@/hooks/useCollabWebSocket";
+import { useCollabStats } from "@/hooks/useCollabStats";
 import ImpactStrip from "./components/ImpactStrip";
 import PresenceHeader from "./components/PresenceHeader";
 import AlertsPanel from "./components/AlertsPanel";
@@ -12,9 +13,12 @@ import PipelineEngine from "./components/PipelineEngine";
 import ResearchTimeline from "./components/ResearchTimeline";
 
 export default function CollaborationNexus() {
+  // Real data from the database
+  const { activeUser, impactStats, streams: apiStreams, timeline, contributors, contributions, loading: statsLoading } = useCollabStats();
+
   const {
     members,
-    streams,
+    streams: wsStreams,
     pipelines,
     alerts,
     latestStreamId,
@@ -23,23 +27,34 @@ export default function CollaborationNexus() {
     sendTyping,
     togglePipeline,
     dismissAlert,
-  } = useCollabWebSocket();
+    inviteMember,
+  } = useCollabWebSocket(activeUser);
 
   const [activeHypothesis, setActiveHypothesis] = useState<string | null>(null);
   const [showAlerts, setShowAlerts] = useState(false);
 
   const activeAlertCount = alerts.filter(a => !a.dismissed).length;
 
+  // Merge WS streams (real-time additions) on top of API-fetched history
+  // WS streams have higher priority (newest entries from live collab)
+  const mergedStreams = (() => {
+    if (wsStreams.length === 0) return apiStreams;
+    const apiIds = new Set(apiStreams.map(s => s.id));
+    const wsOnly = wsStreams.filter(s => !apiIds.has(s.id));
+    return [...wsOnly, ...apiStreams].slice(0, 50);
+  })();
+
   return (
     <div className={styles.nexusContainer}>
       {/* ── Research Impact Dashboard Strip ── */}
-      <ImpactStrip />
+      <ImpactStrip stats={impactStats} loading={statsLoading} />
 
       {/* ── Presence Header ── */}
       <PresenceHeader
         members={members}
         alertCount={activeAlertCount}
         onToggleAlerts={() => setShowAlerts(!showAlerts)}
+        onAddMember={inviteMember}
         wsStatus={wsStatus}
       />
 
@@ -63,7 +78,7 @@ export default function CollaborationNexus() {
         {/* Center Column: Live Activity */}
         <section className={styles.mainFeedCol}>
           <ActivityStream
-            streams={streams}
+            streams={mergedStreams}
             members={members}
             latestStreamId={latestStreamId}
             wsStatus={wsStatus}
@@ -79,7 +94,7 @@ export default function CollaborationNexus() {
       </div>
 
       {/* ── Research Timeline ── */}
-      <ResearchTimeline />
+      <ResearchTimeline timeline={timeline} contributors={contributors} contributions={contributions} loading={statsLoading} />
     </div>
   );
 }

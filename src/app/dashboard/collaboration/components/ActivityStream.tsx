@@ -169,7 +169,7 @@ export default function ActivityStream({
         <div className={styles.timelineLine} />
         {streams.map((stream, idx) => (
           <div
-            key={stream.id}
+            key={`${stream.id}-${idx}`}
             className={`${styles.streamItem} ${idx === 0 ? styles.streamItemNew : ""}`}
             onClick={() => setExpandedId(expandedId === stream.id ? null : stream.id)}
           >

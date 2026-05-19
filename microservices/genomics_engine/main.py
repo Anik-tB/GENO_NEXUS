@@ -104,7 +104,7 @@ class CollabState:
         self.pipelines: list = [dict(p) for p in _INITIAL_PIPELINES]
         self.members: list = [
             {"id": m["id"], "name": m["name"], "role": m["role"], "color": m["color"],
-             "status": "online" if m["id"] in ("EH", "MO", "AI") else "offline" if m["id"] == "RV" else "busy",
+             "status": "online" if m["id"] == "AI" else "offline",
              "viewing": _VIEWINGS[i % len(_VIEWINGS)], "typing": False}
             for i, m in enumerate(_MEMBER_POOL)
         ]
@@ -134,18 +134,36 @@ class CollabState:
         return changed
 
     def tick_presence(self):
-        statuses = ["online", "busy", "offline"]
+        # AI is always online, no typing. Humans are managed by WS.
         for m in self.members:
             if m["id"] == "AI":
+                m["status"] = "online"
                 m["typing"] = False
-                continue
-            if random.random() < 0.15:
-                m["status"] = random.choice(statuses)
-                if m["status"] == "offline":
-                    m["typing"] = False
-            if m["status"] != "offline":
-                m["typing"] = random.random() < 0.2
-            else:
+            if m["status"] == "offline":
+                m["typing"] = False
+
+    def set_online(self, member_id: str, member_data: dict = None):
+        found = False
+        for m in self.members:
+            if m["id"] == member_id:
+                m["status"] = "online"
+                found = True
+                break
+        if not found and member_data:
+            self.members.append({
+                "id": member_id,
+                "name": member_data.get("name", "Unknown"),
+                "role": member_data.get("role", "Researcher"),
+                "color": member_data.get("color", "#10b981"),
+                "status": "online",
+                "viewing": "",
+                "typing": False
+            })
+                
+    def set_offline(self, member_id: str):
+        for m in self.members:
+            if m["id"] == member_id:
+                m["status"] = "offline"
                 m["typing"] = False
 
     def add_stream_entry(self) -> dict:
@@ -188,14 +206,16 @@ class CollabState:
 class ConnectionManager:
     def __init__(self):
         self.active: list[WebSocket] = []
+        self.ws_to_member: dict[WebSocket, str] = {}
 
     async def connect(self, ws: WebSocket):
         await ws.accept()
         self.active.append(ws)
 
-    def disconnect(self, ws: WebSocket):
+    def disconnect(self, ws: WebSocket) -> Optional[str]:
         if ws in self.active:
             self.active.remove(ws)
+        return self.ws_to_member.pop(ws, None)
 
     async def broadcast(self, msg: dict):
         data = json.dumps(msg)
@@ -231,6 +251,8 @@ async def _background_ticker():
         presence_tick += 1
         if presence_tick >= 2 and random.random() < 0.6:
             collab_state.tick_presence()
+            # We don't need to broadcast presence_update on a timer anymore unless typing changes
+            # But we can keep it to clear typing states
             await manager.broadcast({"type": "presence_update", "members": collab_state.members})
             presence_tick = 0
 
@@ -262,7 +284,21 @@ async def collab_ws(ws: WebSocket):
 
             mtype = msg.get("type")
 
-            if mtype == "post_note":
+            if mtype == "join":
+                member_id = msg.get("memberId")
+                member_data = msg.get("memberData")
+                if member_id:
+                    manager.ws_to_member[ws] = member_id
+                    collab_state.set_online(member_id, member_data)
+                    await manager.broadcast({"type": "presence_update", "members": collab_state.members})
+
+            elif mtype == "invite_member":
+                member_data = msg.get("memberData")
+                if member_data and "id" in member_data:
+                    collab_state.set_online(member_data["id"], member_data)
+                    await manager.broadcast({"type": "presence_update", "members": collab_state.members})
+
+            elif mtype == "post_note":
                 entry = collab_state.post_note(
                     author=msg.get("author", "You"),
                     text=msg.get("text", ""),
@@ -287,7 +323,10 @@ async def collab_ws(ws: WebSocket):
                 await manager.broadcast({"type": "pipeline_update", "pipelines": collab_state.pipelines})
 
     except WebSocketDisconnect:
-        manager.disconnect(ws)
+        member_id = manager.disconnect(ws)
+        if member_id and not any(m == member_id for m in manager.ws_to_member.values()):
+            collab_state.set_offline(member_id)
+            asyncio.create_task(manager.broadcast({"type": "presence_update", "members": collab_state.members}))
 
 # ===========================================================================
 
