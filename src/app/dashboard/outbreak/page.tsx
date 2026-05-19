@@ -22,8 +22,8 @@ function pts(arr: { x: number; y: number }[]) { return arr.map((p) => `${p.x},${
 
 export default function OutbreakPage() {
   const [country, setCountry]  = useState("Global");
-  const [disease, setDisease]  = useState("Influenza Strain A");
-  const [horizon, setHorizon]  = useState("1 Year");
+  const [disease, setDisease]  = useState("COVID-19");
+  const [horizon, setHorizon]  = useState("6 Months");
   
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<OutbreakData>({
@@ -81,7 +81,13 @@ export default function OutbreakPage() {
     }
   };
 
-  const W = 800, H = 280, MAX = 150;
+  const W = 800, H = 280;
+  const maxVal = Math.max(
+    ...(data.historical_points.length > 0 ? data.historical_points : [0]),
+    ...(data.future_points.length > 0 ? data.future_points : [0])
+  );
+  const MAX = Math.max(150, maxVal * 1.2); // Give 20% headroom above highest point
+
   const pastPts = mkPoints(data.historical_points, 0, W, H, MAX);
   const futPts  = mkPoints(data.future_points, data.historical_points.length - 1, W, H, MAX);
   const joinedFuture = pastPts.length > 0 ? [pastPts[pastPts.length - 1], ...futPts.slice(1)] : futPts;
@@ -128,8 +134,8 @@ export default function OutbreakPage() {
       {/* Filters */}
       <div className={styles.filtersBar}>
         {[
-          { label: "Region", value: country, set: setCountry, opts: ["Global","North America","Europe","Asia Pacific","Africa"] },
-          { label: "Pathogen", value: disease, set: setDisease, opts: ["Influenza Strain A","SARS-CoV-2 Variant X","Ebola Zaire","RSV-B"] },
+          { label: "Region", value: country, set: setCountry, opts: ["Global","USA","UK","India","Brazil","Italy"] },
+          { label: "Pathogen", value: disease, set: setDisease, opts: ["COVID-19"] },
           { label: "Time Horizon", value: horizon, set: setHorizon, opts: ["6 Months","1 Year","5 Years"] },
         ].map((f) => (
           <div key={f.label} className={styles.filterGroup}>
@@ -178,7 +184,9 @@ export default function OutbreakPage() {
             ))}
 
             {/* Forecast zone */}
-            <rect x={pastPts[pastPts.length - 1].x} y={20} width={W - 20 - pastPts[pastPts.length - 1].x} height={H - 40} fill="rgba(244,63,94,0.04)" rx="4"/>
+            {pastPts.length > 0 && (
+              <rect x={pastPts[pastPts.length - 1].x} y={20} width={W - 20 - pastPts[pastPts.length - 1].x} height={H - 40} fill="rgba(244,63,94,0.04)" rx="4"/>
+            )}
 
             {/* Past line */}
             <polyline points={pastStr} fill="none" stroke="var(--gn-primary)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>

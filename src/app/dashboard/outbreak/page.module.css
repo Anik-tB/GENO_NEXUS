@@ -29,6 +29,7 @@
 .filterLabel { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: var(--gn-text-muted); }
 .filterSelect { background: var(--gn-bg-glass-light); border: 1px solid var(--gn-border-light-strong); color: var(--gn-text-primary); padding: 0.4rem 0.8rem; border-radius: 8px; font-size: 0.82rem; outline: none; cursor: pointer; transition: all 0.18s ease; }
 .filterSelect:focus { border-color: var(--gn-primary); }
+.filterSelect option { background-color: #121212; color: #ffffff; }
 
 /* Chart */
 .chartCard { background: var(--gn-bg-glass); border: 1px solid var(--gn-border-light); border-radius: 14px; padding: 1.5rem; box-shadow: var(--gn-shadow-glass); }
