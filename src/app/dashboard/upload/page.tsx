@@ -37,8 +37,6 @@ export default function UploadPage() {
   const [isDragging, setIsDragging] = useState(false);
   const [files, setFiles] = useState<FileEntry[]>([]);
   const [linkUrl, setLinkUrl] = useState("");
-  const [refType, setRefType] = useState<"link" | "file">("link");
-  const [refFile, setRefFile] = useState<File | null>(null);
   const [isLinking, setIsLinking] = useState(false);
   const [dbStats, setDbStats] = useState({ uploaded: 0, passed: 0, failed: 0 });
 
@@ -143,44 +141,30 @@ export default function UploadPage() {
   }, []);
 
   const resolveRefAndQueryIds = async (): Promise<{ queryId: string; refId: string } | null> => {
-    if (refType === "link" && !linkUrl.trim()) return null;
-    if (refType === "file" && !refFile) return null;
+    if (!linkUrl.trim()) return null;
 
     let referenceFileId = "";
 
-    if (refType === "link") {
-      let type = "FASTA";
-      if (linkUrl.toLowerCase().includes(".vcf")) type = "VCF";
-      if (linkUrl.toLowerCase().includes(".fastq")) type = "FASTQ";
-      if (linkUrl.toLowerCase().includes(".bam")) type = "BAM";
+    let type = "FASTA";
+    if (linkUrl.toLowerCase().includes(".vcf")) type = "VCF";
+    if (linkUrl.toLowerCase().includes(".fastq")) type = "FASTQ";
+    if (linkUrl.toLowerCase().includes(".bam")) type = "BAM";
 
-      const urlParts = linkUrl.split("/");
-      let fileName = urlParts[urlParts.length - 1].split("?")[0] || "linked_dataset";
-      if (linkUrl.includes("NC_")) {
-        const match = linkUrl.match(/NC_[A-Za-z0-9.]+/);
-        if (match) fileName = match[0] + ".fasta";
-      }
-
-      const res = await fetch("/api/files", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: linkUrl, fileName, fileType: type }),
-      });
-      if (!res.ok) throw new Error("Failed to link URL");
-      const data = await res.json();
-      referenceFileId = data.id;
-    } else {
-      if (!refFile) return null;
-      const formData = new FormData();
-      formData.append("file", refFile);
-      const type = refFile.name.split(".").pop()?.toUpperCase() || "FASTA";
-      formData.append("fileType", type);
-
-      const res = await fetch("/api/files", { method: "POST", body: formData });
-      if (!res.ok) throw new Error("Failed to upload reference file");
-      const data = await res.json();
-      referenceFileId = data.id;
+    const urlParts = linkUrl.split("/");
+    let fileName = urlParts[urlParts.length - 1].split("?")[0] || "linked_dataset";
+    if (linkUrl.includes("NC_") || linkUrl.includes("NM_")) {
+      const match = linkUrl.match(/(NC|NM)_[A-Za-z0-9.]+/);
+      if (match) fileName = match[0] + ".fasta";
     }
+
+    const res = await fetch("/api/files", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url: linkUrl, fileName, fileType: type }),
+    });
+    if (!res.ok) throw new Error("Failed to link URL");
+    const data = await res.json();
+    referenceFileId = data.id;
 
     const statsRes = await fetch("/api/files/list");
     const statsData = await statsRes.json();
@@ -379,66 +363,50 @@ export default function UploadPage() {
               <span style={{ background: 'rgba(16, 185, 129, 0.1)', padding: '6px', borderRadius: '8px' }}>🧬</span>
               Launch Sequence Alignment
             </h3>
-            <div style={{ display: 'flex', background: '#05080d', padding: '4px', borderRadius: '10px', border: '1px solid #1e293b' }}>
-              <button 
-                onClick={() => setRefType("link")}
-                style={{ 
-                  padding: '6px 12px', borderRadius: '8px', fontSize: '0.85rem', fontWeight: '600', transition: 'all 0.2s',
-                  background: refType === "link" ? "var(--gn-primary)" : "transparent",
-                  color: refType === "link" ? "#000" : "var(--gn-text-muted)",
-                  border: 'none', cursor: 'pointer'
-                }}
-              >NCBI Link</button>
-              <button 
-                onClick={() => setRefType("file")}
-                style={{ 
-                  padding: '6px 12px', borderRadius: '8px', fontSize: '0.85rem', fontWeight: '600', transition: 'all 0.2s',
-                  background: refType === "file" ? "var(--gn-primary)" : "transparent",
-                  color: refType === "file" ? "#000" : "var(--gn-text-muted)",
-                  border: 'none', cursor: 'pointer'
-                }}
-              >Local File</button>
-            </div>
           </div>
 
           <p style={{ color: "var(--gn-text-secondary)", fontSize: "0.9rem", marginBottom: "1.25rem", lineHeight: 1.5 }}>
-            {refType === "link" 
-              ? "Paste the NCBI reference link below. We will instantly compare it against the sequence you uploaded above!"
-              : "Upload a local reference file (FASTA/FASTQ) to compare against your genomic data."}
+            Select an NCBI reference genome below. We will instantly compare it against the sequence you uploaded above!
           </p>
 
           <form onSubmit={handleLinkSubmit} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-            {refType === "link" ? (
-              <input 
-                type="url" 
-                placeholder="e.g. NC_045512.2 (COVID) or NC_001802.1 (HIV-1)" 
-                value={linkUrl}
-                onChange={(e) => setLinkUrl(e.target.value)}
-                style={{ width: "100%", padding: "0.85rem 1.25rem", borderRadius: "10px", border: "1px solid #1e293b", background: "#05080d", color: "var(--gn-white)", outline: "none", fontSize: "0.95rem", transition: 'border-color 0.2s' }}
-                required
-              />
-            ) : (
-              <div 
-                style={{ 
-                  width: "100%", padding: "1.5rem", borderRadius: "12px", border: "2px dashed #1e293b", background: "#05080d", 
-                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.75rem', cursor: 'pointer',
-                  position: 'relative', overflow: 'hidden'
-                }}
-                onClick={() => document.getElementById('ref-file-input')?.click()}
-              >
-                <span style={{ fontSize: '1.5rem' }}>📄</span>
-                <span style={{ color: 'var(--gn-text-secondary)', fontSize: '0.9rem' }}>
-                  {refFile ? refFile.name : "Select or drag reference file"}
-                </span>
-                <input 
-                  id="ref-file-input"
-                  type="file" 
-                  accept=".fasta,.fastq,.vcf,.bam,.fna"
-                  onChange={(e) => setRefFile(e.target.files?.[0] || null)}
-                  style={{ display: 'none' }}
-                />
-              </div>
-            )}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              {[
+                { id: 'covid', name: 'SARS-CoV-2 (COVID-19)', url: 'https://www.ncbi.nlm.nih.gov/nuccore/NC_045512.2?report=fasta', desc: 'NC_045512.2' },
+                { id: 'hiv', name: 'HIV-1', url: 'https://www.ncbi.nlm.nih.gov/nuccore/NC_001802.1?report=fasta', desc: 'NC_001802.1' },
+                { id: 'brca', name: 'Homo sapiens BRCA1', url: 'https://www.ncbi.nlm.nih.gov/nuccore/NM_007294.4?report=fasta', desc: 'NM_007294.4' }
+              ].map(opt => (
+                <div 
+                  key={opt.id}
+                  onClick={() => setLinkUrl(opt.url)}
+                  style={{
+                    padding: '1rem 1.25rem',
+                    borderRadius: '12px',
+                    border: `2px solid ${linkUrl === opt.url ? 'var(--gn-primary)' : '#1e293b'}`,
+                    background: linkUrl === opt.url ? 'rgba(16, 185, 129, 0.05)' : '#05080d',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    transition: 'all 0.2s ease-in-out'
+                  }}
+                >
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                    <span style={{ color: linkUrl === opt.url ? 'var(--gn-primary)' : 'var(--gn-white)', fontWeight: '600', fontSize: '0.95rem' }}>
+                      {opt.name}
+                    </span>
+                    <span style={{ color: 'var(--gn-text-muted)', fontSize: '0.8rem' }}>
+                      {opt.desc}
+                    </span>
+                  </div>
+                  {linkUrl === opt.url && (
+                    <div style={{ width: '20px', height: '20px', borderRadius: '50%', background: 'var(--gn-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
           </form>
         </div>
 
@@ -575,7 +543,7 @@ export default function UploadPage() {
                   </div>
 
                   {file.status === "success" && (() => {
-                    const hasRef = (refType === "link" && linkUrl.trim()) || (refType === "file" && !!refFile);
+                    const hasRef = !!linkUrl.trim();
                     const brcaBlocked = hasOncologyFile && !patientFormSubmitted;
                     return (
                       <div className={styles.nextStep}>
@@ -583,7 +551,7 @@ export default function UploadPage() {
 
                         {!hasRef && (
                           <div style={{ marginBottom: '1rem', padding: '0.75rem 1rem', background: 'rgba(248,113,113,0.08)', border: '1px solid rgba(248,113,113,0.3)', borderRadius: '8px', color: '#f87171', fontSize: '0.85rem', fontWeight: 600 }}>
-                            ⚠ A reference genome is required. Please paste an <strong>NCBI link</strong> or select a <strong>Local File</strong> in the "Launch Sequence Alignment" section above before proceeding.
+                            ⚠ A reference genome is required. Please select an <strong>NCBI link</strong> in the "Launch Sequence Alignment" section above before proceeding.
                           </div>
                         )}
 
@@ -596,7 +564,7 @@ export default function UploadPage() {
                         <div style={{display: 'flex', gap: '1rem', flexWrap: 'wrap'}}>
                           <button
                             onClick={(e) => {
-                              if (!hasRef) { alert("Please provide a reference genome link or file first."); return; }
+                              if (!hasRef) { alert("Please provide a reference genome link first."); return; }
                               handleLinkSubmit(e, "/dashboard/analysis");
                             }}
                             style={{ background: hasRef ? "rgba(16, 185, 129, 0.15)" : 'rgba(100,116,139,0.1)', color: hasRef ? "var(--gn-primary)" : 'var(--gn-text-muted)', border: `1px solid ${hasRef ? 'rgba(16, 185, 129, 0.3)' : '#1e293b'}`, cursor: hasRef ? "pointer" : "not-allowed", padding: "0.6rem 1.2rem", borderRadius: "8px", fontWeight: "600", fontSize: "0.9rem", transition: "all 0.2s" }}
@@ -605,7 +573,7 @@ export default function UploadPage() {
                           </button>
                           <button
                             onClick={async (e) => {
-                              if (!hasRef) { alert("Please provide a reference genome link or file first."); return; }
+                              if (!hasRef) { alert("Please provide a reference genome link first."); return; }
                               if (brcaBlocked) { alert("Please complete the Patient Profile form first. This is required for accurate BRCA cancer risk predictions."); return; }
                               const ids = await resolveRefAndQueryIds();
                               if (ids) {
