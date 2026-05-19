@@ -10,6 +10,14 @@ export interface TeamMember {
   color: string;
 }
 
+export interface ChatMessage {
+  id: number;
+  author: string;
+  text: string;
+  time: string;
+  isAI: boolean;
+}
+
 export interface Hypothesis {
   id: string;
   title: string;
@@ -21,6 +29,7 @@ export interface Hypothesis {
   version: number;
   lastEdited: string;
   annotations: string[];
+  chatMessages: ChatMessage[];
 }
 
 export interface ActivityEntry {
@@ -29,6 +38,8 @@ export interface ActivityEntry {
   author: string;
   desc: string;
   time: string;
+  /** Actual JS timestamp so the UI can show live relative times */
+  ts?: number;
   region?: string;
 }
 
@@ -88,6 +99,12 @@ export const HYPOTHESES: Hypothesis[] = [
     version: 4,
     lastEdited: "12 min ago",
     annotations: ["chr17:7674220 — TP53 splice variant", "Batch 3 shows 2.4x knock-out resilience"],
+    chatMessages: [
+      { id: 1, author: "EH", text: "I've isolated the organoid batches. Seeing high resilience in batch 3.", time: "10:04 AM", isAI: false },
+      { id: 2, author: "AI", text: "Analysis confirmed. Batch 3 exhibits anomalous expression of target gene 4B. Statistical significance: p < 0.001. Recommend expanding sample size to n=200.", time: "10:05 AM", isAI: true },
+      { id: 3, author: "MO", text: "I can set up an automated pipeline to process the expanded batch. Should I use the WGS or targeted panel?", time: "10:12 AM", isAI: false },
+      { id: 4, author: "AI", text: "Recommendation: Use targeted panel for cost efficiency. WGS coverage data from batch 3 suggests 40x depth is sufficient for this variant class.", time: "10:13 AM", isAI: true },
+    ]
   },
   {
     id: "H-401",
@@ -100,6 +117,11 @@ export const HYPOTHESES: Hypothesis[] = [
     version: 8,
     lastEdited: "2 hours ago",
     annotations: ["MDR1 overexpression confirmed in 3/5 isolates"],
+    chatMessages: [
+      { id: 1, author: "RV", text: "The new RNA-seq data from the resistant strains is up. Overexpression of MDR1 is very clear.", time: "08:15 AM", isAI: false },
+      { id: 2, author: "AI", text: "Cross-referencing with previous cohorts: MDR1 overexpression is correlated with 72% reduction in drug efficacy.", time: "08:16 AM", isAI: true },
+      { id: 3, author: "MO", text: "Could there be an upstream regulatory mutation? Let's check the promoter regions.", time: "08:45 AM", isAI: false },
+    ]
   },
   {
     id: "H-399",
@@ -112,6 +134,10 @@ export const HYPOTHESES: Hypothesis[] = [
     version: 2,
     lastEdited: "Yesterday",
     annotations: [],
+    chatMessages: [
+      { id: 1, author: "RV", text: "Noticing a strong batch effect in the PCA plots for batch 12. Anyone else see this?", time: "Yesterday", isAI: false },
+      { id: 2, author: "AI", text: "Running QC diagnostics... Batch 12 samples show varying GC content bias. Suggested action: apply strict GC correction.", time: "Yesterday", isAI: true },
+    ]
   },
   {
     id: "H-398",
@@ -124,16 +150,23 @@ export const HYPOTHESES: Hypothesis[] = [
     version: 6,
     lastEdited: "4 hours ago",
     annotations: ["S:E484K + S:N501Y co-occurrence in 12% of samples"],
+    chatMessages: [
+      { id: 1, author: "SK", text: "We have a new cluster showing E484K and N501Y co-occurrence.", time: "Yesterday", isAI: false },
+      { id: 2, author: "AI", text: "Structural modeling predicts enhanced ACE2 binding affinity by 2.3 kcal/mol.", time: "Yesterday", isAI: true },
+      { id: 3, author: "EH", text: "Are there any neutralizing assay results available for this lineage yet?", time: "4 hours ago", isAI: false },
+    ]
   },
 ];
 
+function minsAgo(m: number) { return Date.now() - m * 60_000; }
+
 export const INITIAL_STREAMS: ActivityEntry[] = [
-  { id: 1, type: "model", author: "Nexus Copilot", desc: "Re-trained BRCA1 pathogenicity model with Cohort #47.", time: "2 min ago" },
-  { id: 2, type: "data", author: "Dr. E. Hayes", desc: "Uploaded 120 new VCF samples to central storage.", time: "18 min ago", region: "chr17:41196312-41277500" },
-  { id: 3, type: "pipeline", author: "Dr. M. Okafor", desc: "Optimized alignment script for Nextflow WGS Phase 3.", time: "1 hour ago" },
-  { id: 4, type: "mutation", author: "Nexus Copilot", desc: "Detected novel missense variant in EGFR exon 21 (L858R) — flagged for clinical review.", time: "1.5 hours ago", region: "chr7:55259515" },
-  { id: 5, type: "note", author: "Dr. R. Vance", desc: "Noted significant deviation in control group telemetry.", time: "3 hours ago" },
-  { id: 6, type: "alert", author: "System", desc: "Pathogen variant calling pipeline completed with 2 warnings.", time: "4 hours ago" },
+  { id: 1, type: "model",    author: "Nexus Copilot",  desc: "Re-trained BRCA1 pathogenicity model with Cohort #47.",                                              time: "2 min ago",    ts: minsAgo(2) },
+  { id: 2, type: "data",     author: "Dr. E. Hayes",   desc: "Uploaded 120 new VCF samples to central storage.",                                                  time: "18 min ago",   ts: minsAgo(18),  region: "chr17:41196312-41277500" },
+  { id: 3, type: "pipeline", author: "Dr. M. Okafor", desc: "Optimized alignment script for Nextflow WGS Phase 3.",                                               time: "1 hour ago",   ts: minsAgo(62) },
+  { id: 4, type: "mutation", author: "Nexus Copilot",  desc: "Detected novel missense variant in EGFR exon 21 (L858R) — flagged for clinical review.",             time: "1.5 hrs ago",  ts: minsAgo(90),  region: "chr7:55259515" },
+  { id: 5, type: "note",     author: "Dr. R. Vance",   desc: "Noted significant deviation in control group telemetry.",                                            time: "3 hours ago",  ts: minsAgo(180) },
+  { id: 6, type: "alert",    author: "System",          desc: "Pathogen variant calling pipeline completed with 2 warnings.",                                      time: "4 hours ago",  ts: minsAgo(240) },
 ];
 
 export const INCOMING_STREAMS: ActivityEntry[] = [

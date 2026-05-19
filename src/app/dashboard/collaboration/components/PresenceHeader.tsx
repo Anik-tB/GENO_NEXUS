@@ -7,10 +7,14 @@ interface Props {
   members: TeamMember[];
   alertCount: number;
   onToggleAlerts: () => void;
+  wsStatus?: "connecting" | "live" | "reconnecting" | "offline";
 }
 
-export default function PresenceHeader({ members, alertCount, onToggleAlerts }: Props) {
+export default function PresenceHeader({ members, alertCount, onToggleAlerts, wsStatus = "live" }: Props) {
   const onlineCount = members.filter(m => m.status !== "offline").length;
+
+  const wsColor = wsStatus === "live" ? "#10b981" : wsStatus === "offline" ? "#ef4444" : "#f59e0b";
+  const wsLabel = wsStatus === "live" ? "WS Live" : wsStatus === "offline" ? "WS Offline" : "WS Syncing";
 
   return (
     <header className={styles.presenceHeader}>
@@ -23,23 +27,41 @@ export default function PresenceHeader({ members, alertCount, onToggleAlerts }: 
         <div className={styles.onlineBadge}>
           <span className={styles.onlineDot} />
           {onlineCount} online
+          <span style={{
+            marginLeft: "0.5rem",
+            fontSize: "0.58rem",
+            fontWeight: 700,
+            padding: "0.1rem 0.4rem",
+            borderRadius: "999px",
+            background: `${wsColor}18`,
+            color: wsColor,
+            border: `1px solid ${wsColor}40`,
+            textTransform: "uppercase" as const,
+            letterSpacing: "0.04em",
+            transition: "all 0.3s ease",
+          }}>{wsLabel}</span>
         </div>
       </div>
 
       <div className={styles.teamPresence}>
         {members.map(member => (
-          <div key={member.id} className={styles.memberNode} title={`${member.name} — ${member.role}`}>
+          <div key={member.id} className={styles.memberNode}>
             <span className={styles.memberAvatar} style={{ borderColor: member.color }}>
               {member.id === "AI" ? "🤖" : member.id}
             </span>
             <span className={`${styles.statusDot} ${styles[`status_${member.status}`]}`} />
             {member.typing && <span className={styles.typingRing} />}
-            {member.viewing && member.status !== "offline" && (
-              <div className={styles.viewingTooltip}>
-                <span className={styles.viewingLabel}>Viewing</span>
-                <span className={styles.viewingDataset}>{member.viewing}</span>
-              </div>
-            )}
+            <div className={styles.viewingTooltip}>
+              <span className={styles.memberName}>{member.name}</span>
+              <span className={styles.memberRole}>{member.role}</span>
+              {member.viewing && member.status !== "offline" && (
+                <>
+                  <div className={styles.tooltipDivider} />
+                  <span className={styles.viewingLabel}>Viewing</span>
+                  <span className={styles.viewingDataset}>{member.viewing}</span>
+                </>
+              )}
+            </div>
           </div>
         ))}
 

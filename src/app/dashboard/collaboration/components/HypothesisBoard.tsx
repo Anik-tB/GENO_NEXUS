@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import styles from "./HypothesisBoard.module.css";
-import { Hypothesis, HYPOTHESES, CHAT_MESSAGES } from "../collab-data";
+import { Hypothesis, HYPOTHESES, TEAM, ChatMessage } from "../collab-data";
 
 interface Props {
   onSelectHypothesis: (id: string | null) => void;
@@ -11,10 +11,35 @@ interface Props {
 
 export default function HypothesisBoard({ onSelectHypothesis, activeHypothesis }: Props) {
   const [showModal, setShowModal] = useState(false);
+  const [localMessages, setLocalMessages] = useState<Record<string, ChatMessage[]>>({});
+  const [inputText, setInputText] = useState("");
+
+  const getMemberColor = (authorId: string) => {
+    const member = TEAM.find(m => m.id === authorId);
+    return member ? member.color : undefined;
+  };
+
+  const handleSend = () => {
+    if (!inputText.trim() || !activeHypothesis) return;
+    const newMessage: ChatMessage = {
+      id: Date.now(),
+      author: "EH",
+      text: inputText,
+      time: "Just now",
+      isAI: false
+    };
+    setLocalMessages(prev => ({
+      ...prev,
+      [activeHypothesis]: [...(prev[activeHypothesis] || []), newMessage]
+    }));
+    setInputText("");
+  };
 
   if (activeHypothesis) {
     const hypo = HYPOTHESES.find(h => h.id === activeHypothesis);
     if (!hypo) return null;
+
+    const displayMessages = [...hypo.chatMessages, ...(localMessages[hypo.id] || [])];
 
     return (
       <div className={styles.deepDivePanel}>
@@ -52,9 +77,12 @@ export default function HypothesisBoard({ onSelectHypothesis, activeHypothesis }
           )}
 
           <div className={styles.chatStream}>
-            {CHAT_MESSAGES.map(msg => (
+            {displayMessages.map(msg => (
               <div key={msg.id} className={styles.chatMsg}>
-                <div className={msg.isAI ? styles.chatAvatarAI : styles.chatAvatar}>
+                <div 
+                  className={msg.isAI ? styles.chatAvatarAI : styles.chatAvatar}
+                  style={!msg.isAI ? { borderColor: getMemberColor(msg.author), color: getMemberColor(msg.author) } : {}}
+                >
                   {msg.isAI ? "🤖" : msg.author}
                 </div>
                 <div className={msg.isAI ? styles.chatBubbleAI : styles.chatBubble}>
@@ -66,8 +94,14 @@ export default function HypothesisBoard({ onSelectHypothesis, activeHypothesis }
           </div>
 
           <div className={styles.chatComposer}>
-            <input type="text" placeholder="Add observation or /command AI..." />
-            <button className={styles.sendBtn}>⮞</button>
+            <input 
+              type="text" 
+              placeholder="Add observation or /command AI..." 
+              value={inputText}
+              onChange={(e) => setInputText(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+            />
+            <button className={styles.sendBtn} onClick={handleSend}>⮞</button>
           </div>
         </div>
       </div>
@@ -127,14 +161,18 @@ export default function HypothesisBoard({ onSelectHypothesis, activeHypothesis }
               </div>
               <div className={styles.hypoAvatars}>
                 {hypo.avatars.map(av => (
-                  <span key={av} className={styles.microAvatar}>
+                  <span 
+                    key={av} 
+                    className={styles.microAvatar}
+                    style={av !== "AI" ? { borderColor: getMemberColor(av), color: getMemberColor(av) } : {}}
+                  >
                     {av === "AI" ? "🤖" : av}
                   </span>
                 ))}
               </div>
             </div>
             <div className={styles.hypoMeta}>
-              <span>💬 {hypo.comments}</span>
+              <span>💬 {hypo.comments + (localMessages[hypo.id]?.length || 0)}</span>
               <span>✏️ {hypo.lastEdited}</span>
             </div>
           </div>

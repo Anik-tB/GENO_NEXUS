@@ -1,9 +1,10 @@
 .presenceHeader {
-  display: flex; justify-content: space-between; align-items: center;
+  display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;
   background: var(--gn-bg-glass); border: 1px solid var(--gn-border-light);
   border-radius: 12px; padding: 1rem 1.5rem;
   box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-  backdrop-filter: blur(12px); position: relative; overflow: hidden;
+  backdrop-filter: blur(12px); position: relative;
+  flex-shrink: 0;
 }
 .presenceHeader::after {
   content: ""; position: absolute; bottom: 0; left: 0; right: 0; height: 1px;
@@ -33,7 +34,7 @@
   border: 1px solid rgba(16,185,129,0.2);
 }
 .onlineDot { width: 6px; height: 6px; border-radius: 50%; background: #10b981; animation: pulse 2s infinite; }
-.teamPresence { display: flex; align-items: center; gap: 0.5rem; }
+.teamPresence { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
 .memberNode {
   position: relative; width: 40px; height: 40px; border-radius: 50%;
   background: var(--gn-bg-glass-strong); border: 2px solid var(--gn-border-light-strong);
@@ -61,10 +62,13 @@
 .viewingTooltip {
   position: absolute; top: 110%; left: 50%; transform: translateX(-50%) translateY(5px);
   background: var(--gn-bg-glass-strong); border: 1px solid var(--gn-border-light-strong);
-  border-radius: 8px; padding: 0.4rem 0.6rem; white-space: nowrap;
+  border-radius: 8px; padding: 0.5rem 0.75rem; white-space: nowrap;
   opacity: 0; pointer-events: none; transition: all 0.2s ease; z-index: 20;
-  backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px); display: flex; flex-direction: column; align-items: center;
 }
+.memberName { font-size: 0.75rem; font-weight: 700; color: var(--gn-white); margin-bottom: 0.1rem; }
+.memberRole { font-size: 0.6rem; color: var(--gn-text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+.tooltipDivider { width: 100%; height: 1px; background: var(--gn-border-light-strong); margin: 0.35rem 0; }
 .viewingLabel { display: block; font-size: 0.55rem; color: var(--gn-text-muted); text-transform: uppercase; margin-bottom: 0.1rem; }
 .viewingDataset { font-size: 0.7rem; color: #06b6d4; font-weight: 600; }
 .inviteBtn {

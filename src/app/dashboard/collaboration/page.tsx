@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import styles from "./page.module.css";
-import { useCollabSimulation } from "./useCollabSimulation";
+import { useCollabWebSocket } from "@/hooks/useCollabWebSocket";
 import ImpactStrip from "./components/ImpactStrip";
 import PresenceHeader from "./components/PresenceHeader";
 import AlertsPanel from "./components/AlertsPanel";
@@ -12,7 +12,19 @@ import PipelineEngine from "./components/PipelineEngine";
 import ResearchTimeline from "./components/ResearchTimeline";
 
 export default function CollaborationNexus() {
-  const { members, streams, pipelines, alerts, dismissAlert, togglePipeline } = useCollabSimulation();
+  const {
+    members,
+    streams,
+    pipelines,
+    alerts,
+    latestStreamId,
+    wsStatus,
+    postNote,
+    sendTyping,
+    togglePipeline,
+    dismissAlert,
+  } = useCollabWebSocket();
+
   const [activeHypothesis, setActiveHypothesis] = useState<string | null>(null);
   const [showAlerts, setShowAlerts] = useState(false);
 
@@ -28,6 +40,7 @@ export default function CollaborationNexus() {
         members={members}
         alertCount={activeAlertCount}
         onToggleAlerts={() => setShowAlerts(!showAlerts)}
+        wsStatus={wsStatus}
       />
 
       {/* ── Scientific Alerts Panel ── */}
@@ -49,7 +62,14 @@ export default function CollaborationNexus() {
 
         {/* Center Column: Live Activity */}
         <section className={styles.mainFeedCol}>
-          <ActivityStream streams={streams} members={members} />
+          <ActivityStream
+            streams={streams}
+            members={members}
+            latestStreamId={latestStreamId}
+            wsStatus={wsStatus}
+            onPostNote={postNote}
+            onTyping={sendTyping}
+          />
         </section>
 
         {/* Right Column: Pipeline Engine */}

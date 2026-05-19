@@ -3,7 +3,10 @@
   border-bottom: 1px solid var(--gn-border-light); padding-bottom: 0.75rem;
 }
 .panelHeader h2 { flex: 1; margin: 0; font-size: 0.9rem; font-weight: 600; color: var(--gn-text-primary); text-transform: uppercase; letter-spacing: 0.04em; }
-.pipelineList { display: flex; flex-direction: column; gap: 0.85rem; }
+
+.pipelineList { 
+  display: flex; flex-direction: column; gap: 0.85rem;
+}
 .pipelineCard {
   background: var(--gn-bg-glass-light); border: 1px solid var(--gn-border-light-strong);
   border-radius: 10px; padding: 0.85rem; transition: all 0.2s ease;
@@ -28,7 +31,14 @@
 .pipeCtrlBtn:hover { border-color: #10b981; color: var(--gn-white); }
 .pipeCtrlBtnDanger { composes: pipeCtrlBtn; }
 .pipeCtrlBtnDanger:hover { border-color: #f43f5e; color: #f43f5e; }
-.stageDag { display: flex; align-items: center; gap: 0; margin-top: 0.6rem; overflow-x: auto; }
+.stageDag { 
+  display: flex; align-items: center; gap: 0; margin-top: 0.6rem; 
+  overflow-x: auto; padding-bottom: 1.2rem; 
+}
+.stageDag::-webkit-scrollbar { height: 4px; }
+.stageDag::-webkit-scrollbar-track { background: var(--gn-bg-glass-strong); border-radius: 2px; }
+.stageDag::-webkit-scrollbar-thumb { background: var(--gn-border-light-strong); border-radius: 2px; }
+
 .stageNode { display: flex; align-items: center; flex-direction: row; position: relative; }
 .stageCircle {
   width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
@@ -39,16 +49,16 @@
 @keyframes stageActive { 0%,100% { box-shadow: 0 0 4px #3b82f6; } 50% { box-shadow: 0 0 10px #3b82f6; } }
 .stage_pending { background: transparent; }
 .stageConnector {
-  width: 20px; height: 2px; background: var(--gn-border-light-strong);
-  position: relative; overflow: hidden;
+  width: 45px; height: 2px; background: var(--gn-border-light-strong);
+  position: relative; overflow: hidden; flex-shrink: 0;
 }
 .connectorDone { background: #10b981; }
 .stageConnector::after {
-  content: ""; position: absolute; top: 0; left: -20px; width: 20px; height: 100%;
+  content: ""; position: absolute; top: 0; left: -45px; width: 45px; height: 100%;
   background: linear-gradient(90deg, transparent, rgba(16,185,129,0.6), transparent);
   animation: flowDash 1.5s infinite linear;
 }
-@keyframes flowDash { to { left: 20px; } }
+@keyframes flowDash { to { left: 45px; } }
 .stageLabel {
   position: absolute; top: 14px; left: 50%; transform: translateX(-50%);
   font-size: 0.5rem; color: var(--gn-text-muted); white-space: nowrap; font-weight: 600;
@@ -65,7 +75,7 @@
 }
 .pipeLogLine { padding: 0.3rem 0.6rem; font-family: monospace; font-size: 0.68rem; color: #10b981; border-bottom: 1px solid rgba(255,255,255,0.02); }
 .logError { color: #f43f5e; }
-.dataNodeMap { margin-top: 1rem; border-top: 1px solid var(--gn-border-light); padding-top: 0.85rem; }
+.dataNodeMap { margin-top: 1rem; border-top: 1px solid var(--gn-border-light); padding-top: 0.85rem; flex-shrink: 0; }
 .dataNodeMap h3 { margin: 0 0 0.6rem; font-size: 0.75rem; color: var(--gn-text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
 .nodeMapGfx {
   background: var(--gn-bg-glass-light); border: 1px solid var(--gn-border-light-strong);

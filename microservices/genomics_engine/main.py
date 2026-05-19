@@ -9,16 +9,22 @@ FastAPI microservice that performs:
   5. SNP + Indel extraction from aligned pair
   6. Random Forest severity scoring (virus_classifier.py)
   7. Enriched mutation JSON returned to Next.js
+  8. Real-time WebSocket hub for collaboration (Live Activity Stream)
 """
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from pydantic import BaseModel, Field
 import requests
 import os
 import io
 import re
+import json
+import asyncio
+import random
+import time
 import psycopg2
-from typing import Optional
+from typing import Optional, List
+from dataclasses import dataclass, field
 from Bio import SeqIO
 from Bio.Align import PairwiseAligner
 
@@ -26,6 +32,264 @@ from virus_classifier import predict_severity, predict_severity_batch
 from canrisk_client import PatientProfile, FamilyHistory, calculate_boadicea_risk
 
 app = FastAPI(title="GenoNexus Engine v2", version="2.0.0")
+
+# ===========================================================================
+# Real-Time Collaboration WebSocket Hub
+# ===========================================================================
+
+_MEMBER_POOL = [
+    {"id": "EH", "name": "Dr. E. Hayes",  "role": "Lead Scientist",       "color": "#10b981"},
+    {"id": "RV", "name": "Dr. R. Vance",  "role": "Epidemiologist",        "color": "#6366f1"},
+    {"id": "MO", "name": "Dr. M. Okafor", "role": "Bioinformatician",       "color": "#f59e0b"},
+    {"id": "AI", "name": "Nexus Copilot", "role": "AI Engine v3.2",         "color": "#06b6d4"},
+    {"id": "SK", "name": "Dr. S. Kim",    "role": "Clinical Geneticist",    "color": "#ec4899"},
+]
+
+_VIEWINGS = [
+    "BRCA1 VCF Cohort", "WGS Pipeline Config", "Global Mutation Index",
+    "Patient Batch 12", "Alignment Report", "Variant Dashboard",
+]
+
+_STREAM_POOL = [
+    {"type": "mutation", "author": "Nexus Copilot",  "desc": "Identified compound heterozygous variants in CFTR gene — cystic fibrosis risk elevated.", "region": "chr7:117120017"},
+    {"type": "data",     "author": "Dr. S. Kim",     "desc": "Pushed annotated BAM file for Patient 7842 to shared workspace."},
+    {"type": "pipeline", "author": "System",          "desc": "Pharmacogenomic Risk Score pipeline restarted with updated reference panel."},
+    {"type": "model",    "author": "Nexus Copilot",  "desc": "Clustering analysis reveals 3 distinct haplotype groups in East Asian cohort."},
+    {"type": "note",     "author": "Dr. E. Hayes",   "desc": "Flagged potential batch effect in samples 401-420. Recommending PCA re-analysis."},
+    {"type": "alert",    "author": "System",          "desc": "Memory threshold reached on compute node 3 — load balancer engaged."},
+    {"type": "mutation", "author": "Nexus Copilot",  "desc": "Rare frameshift deletion detected in BRCA2 c.5946delT — pathogenic classification.", "region": "chr13:32914438"},
+    {"type": "data",     "author": "Dr. M. Okafor",  "desc": "Merged 45 whole-exome sequencing results into Cohort #48 dataset."},
+    {"type": "model",    "author": "Nexus Copilot",  "desc": "Re-trained BRCA1 pathogenicity model with Cohort #47."},
+    {"type": "alert",    "author": "System",          "desc": "Pathogen variant calling pipeline completed with 2 warnings."},
+    {"type": "mutation", "author": "Nexus Copilot",  "desc": "Detected novel missense variant in EGFR exon 21 (L858R) — flagged for clinical review.", "region": "chr7:55259515"},
+    {"type": "pipeline", "author": "Dr. M. Okafor",  "desc": "Optimized alignment script for Nextflow WGS Phase 3."},
+]
+
+_INITIAL_STREAMS = [
+    {"id": 1, "type": "model",    "author": "Nexus Copilot", "desc": "Re-trained BRCA1 pathogenicity model with Cohort #47.",                              "ts": int((time.time() - 120)  * 1000)},
+    {"id": 2, "type": "data",     "author": "Dr. E. Hayes",  "desc": "Uploaded 120 new VCF samples to central storage.",                                  "ts": int((time.time() - 1080) * 1000), "region": "chr17:41196312-41277500"},
+    {"id": 3, "type": "pipeline", "author": "Dr. M. Okafor","desc": "Optimized alignment script for Nextflow WGS Phase 3.",                             "ts": int((time.time() - 3720) * 1000)},
+    {"id": 4, "type": "mutation", "author": "Nexus Copilot", "desc": "Detected novel missense variant in EGFR exon 21 (L858R) — flagged for clinical review.", "ts": int((time.time() - 5400) * 1000), "region": "chr7:55259515"},
+    {"id": 5, "type": "note",     "author": "Dr. R. Vance",  "desc": "Noted significant deviation in control group telemetry.",                          "ts": int((time.time() - 10800)* 1000)},
+    {"id": 6, "type": "alert",    "author": "System",         "desc": "Pathogen variant calling pipeline completed with 2 warnings.",                     "ts": int((time.time() - 14400)* 1000)},
+]
+
+_INITIAL_PIPELINES = [
+    {"id": "pipe-1", "name": "Genomic Alignment (WGS)",       "status": "running",   "progress": 68, "eta": "12 min",
+     "stages": [{"name": "FastQC","status":"done"},{"name":"Trimming","status":"done"},{"name":"BWA-MEM2","status":"active"},{"name":"MarkDup","status":"pending"},{"name":"BQSR","status":"pending"}],
+     "logs": ["[14:22:01] FastQC completed — 98.2% reads passed","[14:28:33] Trimmomatic: 2.1M reads trimmed","[14:35:12] BWA-MEM2 alignment in progress... 68% mapped"]},
+    {"id": "pipe-2", "name": "Pathogen Variant Calling",       "status": "completed", "progress": 100,
+     "stages": [{"name":"Align","status":"done"},{"name":"Call Variants","status":"done"},{"name":"Annotate","status":"done"}],
+     "logs": ["[13:01:00] Pipeline completed successfully","[13:00:45] 847 variants annotated via ClinVar","[12:58:22] GATK HaplotypeCaller finished — 1,204 variants called"]},
+    {"id": "pipe-3", "name": "Pharmacogenomic Risk Score",     "status": "failed",    "progress": 42,
+     "stages": [{"name":"Ingest","status":"done"},{"name":"PGx Lookup","status":"done"},{"name":"Risk Model","status":"active"},{"name":"Report","status":"pending"}],
+     "logs": ["[ERROR] Risk model inference failed — CUDA OOM on batch 7","[12:44:10] PGx lookup completed for 12 pharmacogenes","[12:40:01] Data ingestion: 340 samples loaded"]},
+    {"id": "pipe-4", "name": "Structural Variant Detection",   "status": "queued",    "progress": 0, "eta": "~25 min",
+     "stages": [{"name":"Pre-filter","status":"pending"},{"name":"Manta SV","status":"pending"},{"name":"SURVIVOR Merge","status":"pending"}],
+     "logs": ["[Queued] Waiting for compute resources..."]},
+]
+
+_uid_counter = 2000
+def _next_id() -> int:
+    global _uid_counter
+    _uid_counter += 1
+    return _uid_counter
+
+
+class CollabState:
+    """In-process shared collaboration state (single-server, in-memory)."""
+    def __init__(self):
+        import copy
+        self.streams: list = list(_INITIAL_STREAMS)
+        self.pipelines: list = [dict(p) for p in _INITIAL_PIPELINES]
+        self.members: list = [
+            {"id": m["id"], "name": m["name"], "role": m["role"], "color": m["color"],
+             "status": "online" if m["id"] in ("EH", "MO", "AI") else "offline" if m["id"] == "RV" else "busy",
+             "viewing": _VIEWINGS[i % len(_VIEWINGS)], "typing": False}
+            for i, m in enumerate(_MEMBER_POOL)
+        ]
+        self._stream_pool_idx = 0
+
+    def tick_pipelines(self):
+        changed = False
+        for pipe in self.pipelines:
+            if pipe["status"] == "running" and pipe["progress"] < 100:
+                inc = random.randint(1, 3)
+                pipe["progress"] = min(100, pipe["progress"] + inc)
+                if pipe["progress"] >= 100:
+                    pipe["status"] = "completed"
+                    pipe["eta"] = None
+                else:
+                    eta_min = max(0, (100 - pipe["progress"]) // 2)
+                    pipe["eta"] = f"{eta_min} min"
+                # Update stages
+                n = len(pipe["stages"])
+                for i, stage in enumerate(pipe["stages"]):
+                    threshold = ((i + 1) / n) * 100
+                    if pipe["progress"] >= threshold:
+                        stage["status"] = "done"
+                    elif pipe["progress"] >= threshold - (100 / n):
+                        stage["status"] = "active"
+                changed = True
+        return changed
+
+    def tick_presence(self):
+        statuses = ["online", "busy", "offline"]
+        for m in self.members:
+            if m["id"] == "AI":
+                m["typing"] = False
+                continue
+            if random.random() < 0.15:
+                m["status"] = random.choice(statuses)
+                if m["status"] == "offline":
+                    m["typing"] = False
+            if m["status"] != "offline":
+                m["typing"] = random.random() < 0.2
+            else:
+                m["typing"] = False
+
+    def add_stream_entry(self) -> dict:
+        src = _STREAM_POOL[self._stream_pool_idx % len(_STREAM_POOL)]
+        self._stream_pool_idx += 1
+        entry = {"id": _next_id(), "ts": int(time.time() * 1000), **src}
+        self.streams = [entry] + self.streams[:49]
+        return entry
+
+    def post_note(self, author: str, text: str, note_type: str) -> dict:
+        entry = {
+            "id": _next_id(),
+            "ts": int(time.time() * 1000),
+            "type": note_type,
+            "author": author,
+            "desc": text,
+        }
+        self.streams = [entry] + self.streams[:49]
+        return entry
+
+    def apply_pipeline_action(self, pipeline_id: str, action: str):
+        for pipe in self.pipelines:
+            if pipe["id"] == pipeline_id:
+                if action == "pause":
+                    pipe["status"] = "paused"
+                elif action == "resume":
+                    pipe["status"] = "running"
+                elif action == "stop":
+                    pipe["status"] = "failed"
+                break
+
+    def snapshot(self) -> dict:
+        return {
+            "streams": self.streams,
+            "pipelines": self.pipelines,
+            "members": self.members,
+        }
+
+
+class ConnectionManager:
+    def __init__(self):
+        self.active: list[WebSocket] = []
+
+    async def connect(self, ws: WebSocket):
+        await ws.accept()
+        self.active.append(ws)
+
+    def disconnect(self, ws: WebSocket):
+        if ws in self.active:
+            self.active.remove(ws)
+
+    async def broadcast(self, msg: dict):
+        data = json.dumps(msg)
+        dead = []
+        for ws in self.active:
+            try:
+                await ws.send_text(data)
+            except Exception:
+                dead.append(ws)
+        for ws in dead:
+            self.disconnect(ws)
+
+    async def send(self, ws: WebSocket, msg: dict):
+        await ws.send_text(json.dumps(msg))
+
+
+collab_state = CollabState()
+manager = ConnectionManager()
+
+
+async def _background_ticker():
+    """Server-driven ticks — pushes presence, pipeline, and stream updates to all clients."""
+    stream_tick = 0
+    presence_tick = 0
+    while True:
+        await asyncio.sleep(3)
+
+        # Pipeline progress every 3s
+        if collab_state.tick_pipelines():
+            await manager.broadcast({"type": "pipeline_update", "pipelines": collab_state.pipelines})
+
+        # Presence/typing every ~4s (every other 3s tick, randomised)
+        presence_tick += 1
+        if presence_tick >= 2 and random.random() < 0.6:
+            collab_state.tick_presence()
+            await manager.broadcast({"type": "presence_update", "members": collab_state.members})
+            presence_tick = 0
+
+        # New stream entry every 8–14s
+        stream_tick += 3
+        if stream_tick >= random.randint(8, 14):
+            entry = collab_state.add_stream_entry()
+            await manager.broadcast({"type": "stream_add", "entry": entry})
+            stream_tick = 0
+
+
+@app.on_event("startup")
+async def startup_event():
+    asyncio.create_task(_background_ticker())
+
+
+@app.websocket("/ws/collab")
+async def collab_ws(ws: WebSocket):
+    await manager.connect(ws)
+    # Send full snapshot to the new client immediately
+    await manager.send(ws, {"type": "snapshot", "state": collab_state.snapshot()})
+    try:
+        while True:
+            raw = await ws.receive_text()
+            try:
+                msg = json.loads(raw)
+            except json.JSONDecodeError:
+                continue
+
+            mtype = msg.get("type")
+
+            if mtype == "post_note":
+                entry = collab_state.post_note(
+                    author=msg.get("author", "You"),
+                    text=msg.get("text", ""),
+                    note_type=msg.get("noteType", "note"),
+                )
+                await manager.broadcast({"type": "stream_add", "entry": entry})
+
+            elif mtype == "typing":
+                member_id = msg.get("memberId", "")
+                typing = bool(msg.get("typing", False))
+                for m in collab_state.members:
+                    if m["id"] == member_id:
+                        m["typing"] = typing
+                        break
+                await manager.broadcast({"type": "presence_update", "members": collab_state.members})
+
+            elif mtype == "pipeline_action":
+                collab_state.apply_pipeline_action(
+                    pipeline_id=msg.get("pipelineId", ""),
+                    action=msg.get("action", ""),
+                )
+                await manager.broadcast({"type": "pipeline_update", "pipelines": collab_state.pipelines})
+
+    except WebSocketDisconnect:
+        manager.disconnect(ws)
+
+# ===========================================================================
 
 # ---------------------------------------------------------------------------
 # DB helpers (reads from ENV same as Next.js)

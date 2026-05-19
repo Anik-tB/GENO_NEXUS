@@ -27,15 +27,17 @@ export default function ImpactStrip() {
     <div className={styles.impactStrip}>
       {IMPACT_STATS.map((stat, i) => (
         <div key={i} className={styles.impactCard}>
-          <div className={styles.impactIcon} style={{ background: `${stat.color}15`, color: stat.color }}>
-            {stat.icon}
-          </div>
-          <div className={styles.impactInfo}>
+          {/* Icon + Value centered in a row */}
+          <div className={styles.impactTopRow}>
+            <div className={styles.impactIcon} style={{ background: `${stat.color}15`, color: stat.color }}>
+              {stat.icon}
+            </div>
             <span className={styles.impactValue} style={{ color: stat.color }}>
               <AnimatedCounter target={stat.value} suffix={stat.suffix} />
             </span>
-            <span className={styles.impactLabel}>{stat.label}</span>
           </div>
+          {/* Label centered below */}
+          <span className={styles.impactLabel}>{stat.label}</span>
           <div className={styles.impactPulse} style={{ background: stat.color }} />
         </div>
       ))}

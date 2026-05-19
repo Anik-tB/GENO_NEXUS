@@ -1,27 +1,52 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   TeamMember, ActivityEntry, Pipeline, SciAlert,
   TEAM, INITIAL_STREAMS, INCOMING_STREAMS,
   PIPELINES, INITIAL_ALERTS, INCOMING_ALERTS,
 } from "./collab-data";
 
+// Monotonically increasing counter — no collisions possible
+let _uid = 1000;
+function nextId() { return ++_uid; }
+
+/** Schedule a callback at a random interval between [minMs, maxMs], then reschedule */
+function useRandomInterval(callback: () => void, minMs: number, maxMs: number) {
+  const savedCallback = useRef(callback);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => { savedCallback.current = callback; }, [callback]);
+
+  useEffect(() => {
+    function tick() {
+      savedCallback.current();
+      const delay = minMs + Math.random() * (maxMs - minMs);
+      timeoutRef.current = setTimeout(tick, delay);
+    }
+    const delay = minMs + Math.random() * (maxMs - minMs);
+    timeoutRef.current = setTimeout(tick, delay);
+    return () => { if (timeoutRef.current) clearTimeout(timeoutRef.current); };
+  }, [minMs, maxMs]);
+}
+
 export function useCollabSimulation() {
   const [members, setMembers] = useState<TeamMember[]>(TEAM);
   const [streams, setStreams] = useState<ActivityEntry[]>(INITIAL_STREAMS);
   const [pipelines, setPipelines] = useState<Pipeline[]>(PIPELINES);
   const [alerts, setAlerts] = useState<SciAlert[]>(INITIAL_ALERTS);
-  const [streamIndex, setStreamIndex] = useState(0);
-  const [alertIndex, setAlertIndex] = useState(0);
+  // tracks the latest entry id so the UI can flash the dot
+  const [latestStreamId, setLatestStreamId] = useState<number | null>(null);
+  const streamIndexRef = useRef(0);
+  const alertIndexRef = useRef(0);
 
-  // ── Presence simulation: toggle member status ──
+  // ── Presence simulation: toggle member status every ~8s ──
   useEffect(() => {
     const interval = setInterval(() => {
       setMembers(prev => prev.map(m => {
-        if (m.id === "AI") return m; // AI always active
+        if (m.id === "AI") return m;
         const rand = Math.random();
-        if (rand < 0.15) {
+        if (rand < 0.25) {
           const statuses: TeamMember["status"][] = ["online", "busy", "offline"];
           const newStatus = statuses[Math.floor(Math.random() * statuses.length)];
           return { ...m, status: newStatus, typing: false };
@@ -32,33 +57,33 @@ export function useCollabSimulation() {
     return () => clearInterval(interval);
   }, []);
 
-  // ── Typing indicator simulation ──
+  // ── Typing indicator simulation: flip every ~3s ──
   useEffect(() => {
     const interval = setInterval(() => {
       setMembers(prev => prev.map(m => {
         if (m.status === "offline" || m.id === "AI") return { ...m, typing: false };
-        return { ...m, typing: Math.random() < 0.2 };
+        return { ...m, typing: Math.random() < 0.28 };
       }));
     }, 3000);
     return () => clearInterval(interval);
   }, []);
 
-  // ── Activity stream: add new entries ──
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setStreamIndex(prev => {
-        const next = prev + 1;
-        if (next <= INCOMING_STREAMS.length) {
-          const newEntry = { ...INCOMING_STREAMS[prev], id: Date.now(), time: "just now" };
-          setStreams(s => [newEntry, ...s].slice(0, 15));
-        }
-        return next >= INCOMING_STREAMS.length ? 0 : next;
-      });
-    }, 12000);
-    return () => clearInterval(interval);
-  }, []);
+  // ── Activity stream: new entry every 6–12s (randomised) ──
+  useRandomInterval(
+    useCallback(() => {
+      const idx = streamIndexRef.current;
+      const source = INCOMING_STREAMS[idx % INCOMING_STREAMS.length];
+      const id = nextId();
+      const newEntry: ActivityEntry = { ...source, id, time: "just now", ts: Date.now() };
+      setStreams(s => [newEntry, ...s].slice(0, 20));
+      setLatestStreamId(id);
+      streamIndexRef.current = (idx + 1) % INCOMING_STREAMS.length;
+    }, []),
+    6000,
+    12000
+  );
 
-  // ── Pipeline progress simulation ──
+  // ── Pipeline progress simulation every 3s ──
   useEffect(() => {
     const interval = setInterval(() => {
       setPipelines(prev => prev.map(pipe => {
@@ -82,22 +107,19 @@ export function useCollabSimulation() {
         }
         return pipe;
       }));
-    }, 2500);
+    }, 3000);
     return () => clearInterval(interval);
   }, []);
 
-  // ── Alert simulation ──
+  // ── Alert simulation every ~30s ──
   useEffect(() => {
     const interval = setInterval(() => {
-      setAlertIndex(prev => {
-        const next = prev + 1;
-        if (next <= INCOMING_ALERTS.length) {
-          const newAlert = { ...INCOMING_ALERTS[prev], id: Date.now(), time: "just now" };
-          setAlerts(a => [newAlert, ...a.filter(x => !x.dismissed)].slice(0, 8));
-        }
-        return next >= INCOMING_ALERTS.length ? 0 : next;
-      });
-    }, 20000);
+      const idx = alertIndexRef.current;
+      const source = INCOMING_ALERTS[idx % INCOMING_ALERTS.length];
+      const newAlert: SciAlert = { ...source, id: nextId(), time: "just now" };
+      setAlerts(a => [newAlert, ...a.filter(x => !x.dismissed)].slice(0, 8));
+      alertIndexRef.current = (idx + 1) % INCOMING_ALERTS.length;
+    }, 30000);
     return () => clearInterval(interval);
   }, []);
 
@@ -122,6 +144,7 @@ export function useCollabSimulation() {
     streams,
     pipelines,
     alerts,
+    latestStreamId,
     dismissAlert,
     togglePipeline,
   };

@@ -2,17 +2,29 @@
   background: var(--gn-bg-glass); border: 1px solid var(--gn-border-light);
   border-radius: 12px; padding: 1.25rem; backdrop-filter: blur(12px);
   position: relative; overflow: hidden;
+  flex-shrink: 0;
 }
 .timelineSection::before {
   content: ""; position: absolute; top: 0; left: 0; right: 0; height: 1px;
   background: linear-gradient(90deg, transparent, rgba(99,102,241,0.3), transparent);
 }
 .timelineHeader {
-  display: flex; align-items: center; gap: 0.6rem;
+  display: flex; align-items: center; justify-content: space-between;
   margin-bottom: 1rem; padding-bottom: 0.75rem;
   border-bottom: 1px solid var(--gn-border-light);
 }
+.headerLeft { display: flex; align-items: center; gap: 0.6rem; }
 .timelineHeader h3 { margin: 0; font-size: 0.85rem; font-weight: 600; color: var(--gn-text-primary); text-transform: uppercase; letter-spacing: 0.04em; }
+
+.contribBtn {
+  display: flex; align-items: center; gap: 0.5rem;
+  background: var(--gn-bg-glass-light); border: 1px solid var(--gn-border-light-strong);
+  color: var(--gn-text-primary); font-size: 0.75rem; font-weight: 600;
+  padding: 0.35rem 0.75rem; border-radius: 6px; cursor: pointer; transition: all 0.2s;
+}
+.contribBtn:hover {
+  color: var(--gn-white); border-color: #10b981; background: rgba(16,185,129,0.1);
+}
 .timelineScroll {
   display: flex; gap: 1rem; overflow-x: auto; padding: 0.5rem 0 1rem;
   position: relative;
@@ -41,3 +53,70 @@
 .timelineEventType { font-size: 0.55rem; font-weight: 700; text-transform: uppercase; padding: 0.08rem 0.3rem; border-radius: 3px; border: 1px solid; }
 .timelineEventDetail { margin: 0 0 0.5rem; font-size: 0.72rem; color: var(--gn-text-primary); line-height: 1.45; }
 .timelineEventMeta { display: flex; justify-content: space-between; font-size: 0.62rem; color: var(--gn-text-muted); }
+
+.contribGraphContainer {
+  background: var(--gn-bg-glass-light);
+  border: 1px solid var(--gn-border-light-strong);
+  border-radius: 10px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  animation: slideDown 0.3s ease;
+}
+.contribHeader {
+  display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;
+}
+.contribTabs { display: flex; gap: 0.5rem; }
+.contribTab {
+  background: var(--gn-bg-glass-strong); border: 1px solid var(--gn-border-light-strong);
+  color: var(--gn-text-muted); padding: 0.25rem 0.6rem; border-radius: 6px;
+  font-size: 0.7rem; font-weight: 600; cursor: pointer; transition: all 0.2s ease;
+}
+.contribTab:hover { border-color: #10b981; color: var(--gn-white); }
+.activeTab { background: rgba(16,185,129,0.15); border-color: #10b981; color: #10b981; }
+.contribTitle { font-size: 0.75rem; color: var(--gn-white); font-weight: 600; }
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.contribGraphScroll {
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
+}
+.contribGraphScroll::-webkit-scrollbar { height: 4px; }
+.contribGraphScroll::-webkit-scrollbar-track { background: var(--gn-bg-glass-strong); border-radius: 2px; }
+.contribGraphScroll::-webkit-scrollbar-thumb { background: var(--gn-border-light-strong); border-radius: 2px; }
+
+.contribGrid {
+  display: flex;
+  gap: 3px;
+  width: max-content;
+}
+.contribWeek {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.contribDay {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  background: var(--gn-bg-glass-strong);
+  transition: all 0.2s ease;
+}
+.contribDay:hover { transform: scale(1.2); box-shadow: 0 0 5px rgba(0,0,0,0.5); z-index: 10; position: relative; }
+.level_0 { background: var(--gn-bg-glass-strong); }
+.level_1 { background: #064e3b; }
+.level_2 { background: #047857; }
+.level_3 { background: #10b981; }
+.level_4 { background: #34d399; }
+
+.contribLegend {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  justify-content: flex-end;
+  margin-top: 0.5rem;
+  font-size: 0.65rem;
+  color: var(--gn-text-muted);
+}
+.contribLegend span { margin: 0 0.2rem; }
