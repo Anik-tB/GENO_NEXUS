@@ -11,8 +11,9 @@ type CopilotHistoryMessage = {
 };
 
 type AskGeminiCopilotOptions = {
-  context: CopilotContext;
-  message: string;
+  context?: CopilotContext;
+  message?: string;
+  prompt?: string;
   history?: CopilotHistoryMessage[];
   systemInstruction?: string;
   responseMimeType?: string;
@@ -134,6 +135,9 @@ function buildSystemInstruction() {
 }
 
 function buildPrompt(options: AskGeminiCopilotOptions) {
+  if (options.prompt) return options.prompt;
+  if (!options.context || !options.message) return "";
+
   const history = (options.history ?? []).slice(-8).map((entry) => ({
     role: entry.role === "user" ? "user" : "assistant",
     text: entry.text.slice(0, 1500),
@@ -141,7 +145,7 @@ function buildPrompt(options: AskGeminiCopilotOptions) {
 
   return [
     "Application context:",
-    JSON.stringify(buildCompactContext(options.context), null, 2),
+    JSON.stringify(buildCompactContext(options.context!), null, 2),
     "",
     "Recent conversation:",
     JSON.stringify(history, null, 2),
@@ -193,7 +197,7 @@ export async function askGeminiCopilot(options: AskGeminiCopilotOptions) {
     throw new CopilotApiConfigurationError();
   }
 
-  const response = await fetch(
+  let response = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/${getGeminiModelPath(env.geminiModel)}:generateContent`,
     {
       method: "POST",
@@ -221,7 +225,43 @@ export async function askGeminiCopilot(options: AskGeminiCopilotOptions) {
     },
   );
 
-  const payload = await response.json().catch(() => null);
+  let payload = await response.json().catch(() => null);
+
+  // Automatically retry once if the model is experiencing high demand (503)
+  if (response.status === 503 || (payload && payload.error && payload.error.code === 503)) {
+    console.warn("Gemini API returned 503 High Demand. Retrying in 1.5 seconds...");
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+    
+    response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${getGeminiModelPath(env.geminiModel)}:generateContent`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-goog-api-key": env.geminiApiKey,
+        },
+        body: JSON.stringify({
+          system_instruction: {
+            parts: [{ text: options.systemInstruction || buildSystemInstruction() }],
+          },
+          contents: [
+            {
+              role: "user",
+              parts: [{ text: buildPrompt(options) }],
+            },
+          ],
+          generationConfig: {
+            maxOutputTokens: options.maxOutputTokens || 700,
+            temperature: 0.2,
+            topP: 0.9,
+            responseMimeType: options.responseMimeType || "text/plain",
+          },
+        }),
+      },
+    );
+    payload = await response.json().catch(() => null);
+  }
+
   if (!response.ok) {
     throw new CopilotApiRequestError(extractGeminiErrorMessage(payload, response.status));
   }
