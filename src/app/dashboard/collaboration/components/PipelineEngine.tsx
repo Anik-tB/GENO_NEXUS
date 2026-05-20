@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRouter } from "next/navigation";
 import styles from "./PipelineEngine.module.css";
 import { Pipeline } from "../collab-data";
 
@@ -18,10 +18,10 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 export default function PipelineEngine({ pipelines, onToggle }: Props) {
-  const [expandedPipe, setExpandedPipe] = useState<string | null>(null);
+  const router = useRouter();
 
   return (
-    <>
+    <div style={{ display: "contents" }}>
       <div className={styles.panelHeader}>
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2">
           <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
@@ -31,7 +31,12 @@ export default function PipelineEngine({ pipelines, onToggle }: Props) {
 
       <div className={styles.pipelineList}>
         {pipelines.map(pipe => (
-          <div key={pipe.id} className={styles.pipelineCard}>
+          <div
+            key={pipe.id}
+            className={styles.pipelineCard}
+            style={{ cursor: "pointer" }}
+            onClick={() => router.push(`/dashboard/collaboration/pipeline/${pipe.id}`)}
+          >
             <div className={styles.pipeTop}>
               <span className={styles.pipeName}>{pipe.name}</span>
               <span className={styles.pipeStatus} style={{ color: STATUS_COLORS[pipe.status] }}>
@@ -55,8 +60,8 @@ export default function PipelineEngine({ pipelines, onToggle }: Props) {
               {pipe.eta && <span className={styles.pipeEta}>ETA: {pipe.eta}</span>}
             </div>
 
-            {/* Controls */}
-            <div className={styles.pipeControls}>
+            {/* Controls — stop propagation so they don't navigate */}
+            <div className={styles.pipeControls} onClick={e => e.stopPropagation()}>
               {pipe.status === "running" && (
                 <>
                   <button className={styles.pipeCtrlBtn} onClick={() => onToggle(pipe.id, "pause")} title="Pause">⏸</button>
@@ -68,8 +73,8 @@ export default function PipelineEngine({ pipelines, onToggle }: Props) {
               )}
               <button
                 className={styles.pipeCtrlBtn}
-                onClick={() => setExpandedPipe(expandedPipe === pipe.id ? null : pipe.id)}
-                title="Logs"
+                onClick={() => router.push(`/dashboard/collaboration/pipeline/${pipe.id}`)}
+                title="View Logs"
               >
                 📋
               </button>
@@ -87,21 +92,6 @@ export default function PipelineEngine({ pipelines, onToggle }: Props) {
                 </div>
               ))}
             </div>
-
-            {/* Logs accordion */}
-            {expandedPipe === pipe.id && (
-              <div className={styles.pipeLogs}>
-                <div className={styles.pipeLogsHeader}>Execution Logs</div>
-                {pipe.logs.map((log, i) => (
-                  <div
-                    key={i}
-                    className={`${styles.pipeLogLine} ${log.includes("ERROR") ? styles.logError : ""}`}
-                  >
-                    {log}
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
         ))}
       </div>
@@ -141,6 +131,6 @@ export default function PipelineEngine({ pipelines, onToggle }: Props) {
           </svg>
         </div>
       </div>
-    </>
+    </div>
   );
 }

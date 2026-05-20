@@ -34,7 +34,7 @@ export interface Hypothesis {
 }
 
 export interface ActivityEntry {
-  id: number;
+  id: number | string;
   type: "model" | "data" | "pipeline" | "note" | "alert" | "mutation";
   author: string;
   desc: string;
@@ -81,11 +81,7 @@ export interface TimelineEvent {
 // ─── Mock Data ───────────────────────────────────────────────────────────────
 
 export const TEAM: TeamMember[] = [
-  { id: "EH", name: "Dr. E. Hayes", role: "Lead Scientist", status: "online", viewing: "BRCA1 VCF Cohort", color: "#10b981" },
-  { id: "RV", name: "Dr. R. Vance", role: "Epidemiologist", status: "offline", color: "#6366f1" },
-  { id: "MO", name: "Dr. M. Okafor", role: "Bioinformatician", status: "online", viewing: "WGS Pipeline Config", color: "#f59e0b" },
   { id: "AI", name: "Nexus Copilot", role: "AI Engine v3.2", status: "active", viewing: "Global Mutation Index", color: "#06b6d4" },
-  { id: "SK", name: "Dr. S. Kim", role: "Clinical Geneticist", status: "busy", viewing: "Patient Batch 12", color: "#ec4899" },
 ];
 
 export const HYPOTHESES: Hypothesis[] = [
@@ -162,24 +158,23 @@ export const HYPOTHESES: Hypothesis[] = [
 function minsAgo(m: number) { return Date.now() - m * 60_000; }
 
 export const INITIAL_STREAMS: ActivityEntry[] = [
-  { id: 1, type: "model",    author: "Nexus Copilot",  desc: "Re-trained BRCA1 pathogenicity model with Cohort #47.",                                              time: "2 min ago",    ts: minsAgo(2) },
-  { id: 2, type: "data",     author: "Dr. E. Hayes",   desc: "Uploaded 120 new VCF samples to central storage.",                                                  time: "18 min ago",   ts: minsAgo(18),  region: "chr17:41196312-41277500" },
-  { id: 3, type: "pipeline", author: "Dr. M. Okafor", desc: "Optimized alignment script for Nextflow WGS Phase 3.",                                               time: "1 hour ago",   ts: minsAgo(62) },
-  { id: 4, type: "mutation", author: "Nexus Copilot",  desc: "Detected novel missense variant in EGFR exon 21 (L858R) — flagged for clinical review.",             time: "1.5 hrs ago",  ts: minsAgo(90),  region: "chr7:55259515" },
-  { id: 5, type: "note",     author: "Dr. R. Vance",   desc: "Noted significant deviation in control group telemetry.",                                            time: "3 hours ago",  ts: minsAgo(180) },
-  { id: 6, type: "alert",    author: "System",          desc: "Pathogen variant calling pipeline completed with 2 warnings.",                                      time: "4 hours ago",  ts: minsAgo(240) },
+  { id: 1001, type: "mutation", author: "mdabusayumanik123", desc: "Detected 40 high-severity variants in covid1.fasta (SARS-CoV-2). Annotation complete.", time: "Yesterday", region: "chr17:7674220" },
+  { id: 1002, type: "model",    author: "AI",                desc: "BRCA1 variant classifier retrained — new accuracy: 94.2%. Deployed to staging environment.", time: "Yesterday" },
+  { id: 1003, type: "data",     author: "Dr. E. Hayes",      desc: "Cohort #47 dataset v3.1 uploaded — 120 VCF samples added. Metadata schema updated.", time: "Yesterday", region: "chr13:32315086" },
+  { id: 1004, type: "pipeline", author: "Dr. M. Okafor",     desc: "Genomic Alignment (WGS) pipeline started for batch 14. BWA-MEM2 at 68% progress.", time: "2 hours ago" },
+  { id: 1005, type: "alert",    author: "System",             desc: "Structural variant detection exceeded 30-minute SLA for batch 14. Manual review required.", time: "2 hours ago" },
+  { id: 1006, type: "note",     author: "Dr. R. Vance",       desc: "Noticing a strong batch effect in the PCA plots for batch 12. GC correction recommended.", time: "3 hours ago" },
+  { id: 1007, type: "mutation", author: "AI",                desc: "S:E484K + S:N501Y co-occurrence detected in 12% of samples. Enhanced ACE2 binding predicted.", time: "4 hours ago", region: "chrX:153701185" },
+  { id: 1008, type: "model",    author: "Dr. S. Kim",         desc: "Pharmacogenomic risk score model failed at batch 7 due to CUDA OOM. Retrying with reduced batch size.", time: "5 hours ago" },
 ];
 
 export const INCOMING_STREAMS: ActivityEntry[] = [
-  { id: 100, type: "mutation", author: "Nexus Copilot", desc: "Identified compound heterozygous variants in CFTR gene — cystic fibrosis risk elevated.", time: "just now", region: "chr7:117120017" },
-  { id: 101, type: "data", author: "Dr. S. Kim", desc: "Pushed annotated BAM file for Patient 7842 to shared workspace.", time: "just now" },
-  { id: 102, type: "pipeline", author: "System", desc: "Pharmacogenomic Risk Score pipeline restarted with updated reference panel.", time: "just now" },
-  { id: 103, type: "model", author: "Nexus Copilot", desc: "Clustering analysis reveals 3 distinct haplotype groups in East Asian cohort.", time: "just now" },
-  { id: 104, type: "note", author: "Dr. E. Hayes", desc: "Flagged potential batch effect in samples 401-420. Recommending PCA re-analysis.", time: "just now" },
-  { id: 105, type: "alert", author: "System", desc: "Memory threshold reached on compute node 3 — load balancer engaged.", time: "just now" },
-  { id: 106, type: "mutation", author: "Nexus Copilot", desc: "Rare frameshift deletion detected in BRCA2 c.5946delT — pathogenic classification.", time: "just now", region: "chr13:32914438" },
-  { id: 107, type: "data", author: "Dr. M. Okafor", desc: "Merged 45 whole-exome sequencing results into Cohort #48 dataset.", time: "just now" },
+  { id: 2001, type: "mutation", author: "mdabusayumanik123", desc: "Novel TP53 splice-site mutation c.672+1G>A detected — predicted loss of tumor suppressor function.", time: "just now", region: "chr17:7674220" },
+  { id: 2002, type: "alert",    author: "System",             desc: "HLA-B*5701 positive — Patient #7843 at risk for abacavir hypersensitivity. Immediate review required.", time: "just now" },
+  { id: 2003, type: "pipeline", author: "AI",                desc: "Pathogen Variant Calling pipeline completed successfully. 1,204 variants called, 847 annotated via ClinVar.", time: "1 min ago" },
+  { id: 2004, type: "data",     author: "Dr. E. Hayes",       desc: "Reference Panel v2.8 loaded — ClinVar and gnomAD databases updated to latest release.", time: "2 min ago" },
 ];
+
 
 export const PIPELINES: Pipeline[] = [
   {

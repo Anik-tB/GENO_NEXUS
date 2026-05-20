@@ -58,11 +58,12 @@ export default function CollaborationNexus() {
         wsStatus={wsStatus}
       />
 
-      {/* ── Scientific Alerts Panel ── */}
+      {/* ── Scientific Alerts Side Drawer ── */}
       <AlertsPanel
         alerts={alerts}
         onDismiss={dismissAlert}
         visible={showAlerts}
+        onClose={() => setShowAlerts(false)}
       />
 
       {/* ── Main Grid ── */}
@@ -76,7 +77,7 @@ export default function CollaborationNexus() {
         </section>
 
         {/* Center Column: Live Activity */}
-        <section className={styles.mainFeedCol}>
+        <section id="history" className={styles.mainFeedCol}>
           <ActivityStream
             streams={mergedStreams}
             members={members}
@@ -94,7 +95,9 @@ export default function CollaborationNexus() {
       </div>
 
       {/* ── Research Timeline ── */}
-      <ResearchTimeline timeline={timeline} contributors={contributors} contributions={contributions} loading={statsLoading} />
+      <div id="history">
+        <ResearchTimeline timeline={timeline} contributors={contributors} contributions={contributions} loading={statsLoading} />
+      </div>
     </div>
   );
 }

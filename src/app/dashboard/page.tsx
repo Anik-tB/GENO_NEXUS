@@ -113,10 +113,14 @@ export default function DashboardPage() {
   
   const currentGraph = generateGraphData(healthTrendData[timeframe], graphLabels[timeframe]);
 
-  const now = new Date().toLocaleString("en-US", {
-    weekday: "long", year: "numeric", month: "long", day: "numeric",
-    hour: "2-digit", minute: "2-digit",
-  });
+  const [now, setNow] = useState<string>("");
+
+  useEffect(() => {
+    setNow(new Date().toLocaleString("en-US", {
+      weekday: "long", year: "numeric", month: "long", day: "numeric",
+      hour: "2-digit", minute: "2-digit",
+    }));
+  }, []);
 
   return (
     <div className={styles.container}>
@@ -326,7 +330,7 @@ export default function DashboardPage() {
               <h2 className={styles.cardTitle}>Recent Activity</h2>
               <p className={styles.cardSubtitle}>{stats?.recentActivity?.length || 0} events in the last 48 hours</p>
             </div>
-            <Link href="/dashboard/collaboration" className={styles.viewAll}>View History →</Link>
+            <Link href="/dashboard/history" className={styles.viewAll}>View History →</Link>
           </div>
           <ul className={styles.activityList}>
             {loading ? (

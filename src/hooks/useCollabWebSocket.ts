@@ -30,17 +30,12 @@ import {
   Pipeline,
   SciAlert,
   TEAM,
-  PIPELINES,
-  INITIAL_ALERTS,
-  INCOMING_ALERTS,
 } from "../app/dashboard/collaboration/collab-data";
 
 const WS_URL = "ws://localhost:8000/ws/collab";
 const MAX_RETRIES = 3; // Fewer retries — fail fast to real-data offline mode
 
-// Alert simulation stays client-side
-let _alertUid = 3000;
-function nextAlertId() { return ++_alertUid; }
+// No client-side alert simulation anymore
 
 // Local note counter (avoids collisions with server IDs)
 let _localNoteId = 9000;
@@ -51,7 +46,7 @@ export interface CollabWebSocketReturn {
   streams: ActivityEntry[];
   pipelines: Pipeline[];
   alerts: SciAlert[];
-  latestStreamId: number | null;
+  latestStreamId: number | string | null;
   wsStatus: "connecting" | "live" | "reconnecting" | "offline";
   postNote: (text: string, noteType: ActivityEntry["type"], author?: string) => void;
   sendTyping: (memberId: string, typing: boolean) => void;
@@ -61,45 +56,54 @@ export interface CollabWebSocketReturn {
 }
 
 export function useCollabWebSocket(activeUser: TeamMember | null = null): CollabWebSocketReturn {
-  const [members, setMembers] = useState<TeamMember[]>([]);
+  const [members, setMembers] = useState<TeamMember[]>(TEAM);
   const [streams, setStreams] = useState<ActivityEntry[]>([]);
-  const [pipelines, setPipelines] = useState<Pipeline[]>(PIPELINES);
-  const [alerts, setAlerts] = useState<SciAlert[]>(INITIAL_ALERTS);
-  const [latestStreamId, setLatestStreamId] = useState<number | null>(null);
+  const [pipelines, setPipelines] = useState<Pipeline[]>([]);
+  const [alerts, setAlerts] = useState<SciAlert[]>([]);
+  const [latestStreamId, setLatestStreamId] = useState<number | string | null>(null);
   const [wsStatus, setWsStatus] = useState<"connecting" | "live" | "reconnecting" | "offline">("connecting");
 
   const wsRef = useRef<WebSocket | null>(null);
   const retriesRef = useRef(0);
   const retryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const alertIndexRef = useRef(0);
   // Track whether we've already seeded from the API
   const seededRef = useRef(false);
 
-  // ── Seed streams from real API data ────────────────────────────────────────
+  // ── Seed streams + pipelines + alerts from real API ──────────────────────
   const seedFromApi = useCallback(() => {
     if (seededRef.current) return;
     seededRef.current = true;
 
+    // 1. Activity streams from analysis history
     fetch("/api/collaboration/stats")
-      .then((r) => {
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
-        return r.json();
-      })
-      .then((json) => {
-        if (json.success && json.data?.streams?.length > 0) {
+      .then(r => r.ok ? r.json() : null)
+      .then(json => {
+        if (json?.success && json.data?.streams?.length > 0) {
           setStreams(json.data.streams.slice(0, 30));
           setLatestStreamId(json.data.streams[0]?.id ?? null);
         }
-        // Also update pipeline running count from API if available
-        if (json.data?.runningCount != null && json.data.runningCount > 0) {
-          setPipelines(prev => prev.map((p, i) =>
-            i === 0 ? { ...p, status: "running" } : p
-          ));
+      })
+      .catch(() => {});
+
+    // 2. Real pipelines from DB
+    fetch("/api/collaboration/pipelines")
+      .then(r => r.ok ? r.json() : null)
+      .then(json => {
+        if (json?.success && json.data?.length > 0) {
+          setPipelines(json.data);
         }
       })
-      .catch(() => {
-        // Silently ignore — streams will stay empty, user can still post notes
-      });
+      .catch(() => {});
+
+    // 3. Real alerts from DB (auto-generated from high-severity variants)
+    fetch("/api/collaboration/alerts")
+      .then(r => r.ok ? r.json() : null)
+      .then(json => {
+        if (json?.success && json.data?.length > 0) {
+          setAlerts(json.data);
+        }
+      })
+      .catch(() => {});
   }, []);
 
   // ── Helper: send JSON over WS if open ──────────────────────────────────────
@@ -174,7 +178,7 @@ export function useCollabWebSocket(activeUser: TeamMember | null = null): Collab
           ];
           return merged.sort((a, b) => (b.ts ?? 0) - (a.ts ?? 0)).slice(0, 50);
         });
-        setPipelines(state.pipelines?.length ? state.pipelines : PIPELINES);
+        setPipelines(state.pipelines?.length ? state.pipelines : []);
         break;
       }
       case "stream_add": {
@@ -207,17 +211,6 @@ export function useCollabWebSocket(activeUser: TeamMember | null = null): Collab
     };
   }, [connect, activeUser]);
 
-  // ── Alert simulation (client-side; not a multi-user concern) ──────────────
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const idx = alertIndexRef.current;
-      const source = INCOMING_ALERTS[idx % INCOMING_ALERTS.length];
-      const newAlert: SciAlert = { ...source, id: nextAlertId(), time: "just now" };
-      setAlerts(a => [newAlert, ...a.filter(x => !x.dismissed)].slice(0, 8));
-      alertIndexRef.current = (idx + 1) % INCOMING_ALERTS.length;
-    }, 45_000);
-    return () => clearInterval(interval);
-  }, []);
 
   // ── Outbound API ───────────────────────────────────────────────────────────
   const postNote = useCallback((text: string, noteType: ActivityEntry["type"], author = "You") => {
@@ -244,11 +237,31 @@ export function useCollabWebSocket(activeUser: TeamMember | null = null): Collab
   }, [wsSend]);
 
   const togglePipeline = useCallback((id: string, action: "pause" | "resume" | "stop") => {
+    // Optimistic local update
+    const statusMap: Record<string, Pipeline["status"]> = {
+      pause: "paused", resume: "running", stop: "failed"
+    };
+    setPipelines(prev => prev.map(p =>
+      p.id === id ? { ...p, status: statusMap[action] ?? p.status } : p
+    ));
+    // Persist to DB (REST)
+    fetch("/api/collaboration/pipelines", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, action }),
+    }).catch(() => {});
+    // Also broadcast via WS if connected
     wsSend({ type: "pipeline_action", pipelineId: id, action });
   }, [wsSend]);
 
   const dismissAlert = useCallback((id: number) => {
     setAlerts(prev => prev.map(a => a.id === id ? { ...a, dismissed: true } : a));
+    // Persist dismiss to DB
+    fetch("/api/collaboration/alerts", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id }),
+    }).catch(() => {});
   }, []);
 
   const inviteMember = useCallback((member: TeamMember) => {

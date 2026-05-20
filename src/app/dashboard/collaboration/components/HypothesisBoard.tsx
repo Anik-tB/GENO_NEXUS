@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useState, useRef } from "react";
 import styles from "./HypothesisBoard.module.css";
-import { Hypothesis, HYPOTHESES, TEAM, ChatMessage } from "../collab-data";
+import { useHypotheses } from "@/hooks/useHypotheses";
+import { TEAM } from "../collab-data";
 
 interface Props {
   onSelectHypothesis: (id: string | null) => void;
@@ -10,106 +12,42 @@ interface Props {
 }
 
 export default function HypothesisBoard({ onSelectHypothesis, activeHypothesis }: Props) {
+  const router = useRouter();
+  const { hypotheses, loading, createHypothesis } = useHypotheses();
+
   const [showModal, setShowModal] = useState(false);
-  const [localMessages, setLocalMessages] = useState<Record<string, ChatMessage[]>>({});
-  const [inputText, setInputText] = useState("");
+  const [creating, setCreating]   = useState(false);
+  const titleRef = useRef<HTMLInputElement>(null);
+  const tagsRef  = useRef<HTMLInputElement>(null);
+  const descRef  = useRef<HTMLTextAreaElement>(null);
 
   const getMemberColor = (authorId: string) => {
     const member = TEAM.find(m => m.id === authorId);
-    return member ? member.color : undefined;
+    return member?.color;
   };
 
-  const handleSend = () => {
-    if (!inputText.trim() || !activeHypothesis) return;
-    const newMessage: ChatMessage = {
-      id: Date.now(),
-      author: "EH",
-      text: inputText,
-      time: "Just now",
-      isAI: false
-    };
-    setLocalMessages(prev => ({
-      ...prev,
-      [activeHypothesis]: [...(prev[activeHypothesis] || []), newMessage]
-    }));
-    setInputText("");
+  const handleCardClick = (hypoId: string) => {
+    router.push(`/dashboard/collaboration/hypothesis/${hypoId}`);
   };
 
-  if (activeHypothesis) {
-    const hypo = HYPOTHESES.find(h => h.id === activeHypothesis);
-    if (!hypo) return null;
-
-    const displayMessages = [...hypo.chatMessages, ...(localMessages[hypo.id] || [])];
-
-    return (
-      <div className={styles.deepDivePanel}>
-        <div className={styles.deepDiveHeader}>
-          <button className={styles.closeBtn} onClick={() => onSelectHypothesis(null)}>
-            ← Back
-          </button>
-          <span className={styles.hypoIdBadge}>{hypo.id}</span>
-          <span className={styles.versionBadge}>v{hypo.version}</span>
-        </div>
-
-        <div className={styles.deepDiveBody}>
-          <h2>{hypo.title}</h2>
-          <div className={styles.hypoTagRow}>
-            {hypo.tags.map(tag => (
-              <span key={tag} className={styles.hypoTag}>{tag}</span>
-            ))}
-          </div>
-
-          {hypo.annotations.length > 0 && (
-            <div className={styles.annotationsSection}>
-              <h4 className={styles.sectionSubTitle}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#06b6d4" strokeWidth="2">
-                  <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
-                </svg>
-                Mutation Annotations
-              </h4>
-              {hypo.annotations.map((ann, i) => (
-                <div key={i} className={styles.annotationItem}>
-                  <span className={styles.annotationDot} />
-                  <span>{ann}</span>
-                </div>
-              ))}
-            </div>
-          )}
-
-          <div className={styles.chatStream}>
-            {displayMessages.map(msg => (
-              <div key={msg.id} className={styles.chatMsg}>
-                <div 
-                  className={msg.isAI ? styles.chatAvatarAI : styles.chatAvatar}
-                  style={!msg.isAI ? { borderColor: getMemberColor(msg.author), color: getMemberColor(msg.author) } : {}}
-                >
-                  {msg.isAI ? "🤖" : msg.author}
-                </div>
-                <div className={msg.isAI ? styles.chatBubbleAI : styles.chatBubble}>
-                  <p>{msg.text}</p>
-                  <span className={styles.chatTime}>{msg.time}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className={styles.chatComposer}>
-            <input 
-              type="text" 
-              placeholder="Add observation or /command AI..." 
-              value={inputText}
-              onChange={(e) => setInputText(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-            />
-            <button className={styles.sendBtn} onClick={handleSend}>⮞</button>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const handleCreate = async () => {
+    const title = titleRef.current?.value?.trim();
+    if (!title) return;
+    setCreating(true);
+    const tags = tagsRef.current?.value
+      ? tagsRef.current.value.split(",").map(t => t.trim()).filter(Boolean)
+      : [];
+    await createHypothesis(title, tags);
+    setCreating(false);
+    setShowModal(false);
+    if (titleRef.current) titleRef.current.value = "";
+    if (tagsRef.current)  tagsRef.current.value  = "";
+    if (descRef.current)  descRef.current.value  = "";
+  };
 
   return (
-    <>
+    <div style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0, height: "100%" }}>
+      {/* ── New Hypothesis Modal ── */}
       {showModal && (
         <div className={styles.modalOverlay}>
           <div className={styles.modalContent}>
@@ -118,17 +56,40 @@ export default function HypothesisBoard({ onSelectHypothesis, activeHypothesis }
               <button onClick={() => setShowModal(false)} className={styles.iconActionBtn}>×</button>
             </div>
             <div className={styles.modalBody}>
-              <input type="text" placeholder="Hypothesis Title" className={styles.composeInput} />
-              <textarea placeholder="Describe biological targets or data parameters..." className={styles.composeInput} rows={3} />
+              <input
+                ref={titleRef}
+                type="text"
+                placeholder="Hypothesis Title"
+                className={styles.composeInput}
+                onKeyDown={e => e.key === "Enter" && handleCreate()}
+              />
+              <textarea
+                ref={descRef}
+                placeholder="Describe biological targets or data parameters..."
+                className={styles.composeInput}
+                rows={3}
+              />
               <div className={styles.modalTagRow}>
-                <input type="text" placeholder="Tags (comma-separated)" className={styles.composeInput} />
+                <input
+                  ref={tagsRef}
+                  type="text"
+                  placeholder="Tags (comma-separated): BRCA1, SNP, oncology"
+                  className={styles.composeInput}
+                />
               </div>
-              <button className={styles.launchBtn}>Launch Protocol</button>
+              <button
+                className={styles.launchBtn}
+                onClick={handleCreate}
+                disabled={creating}
+              >
+                {creating ? "Creating…" : "Launch Protocol"}
+              </button>
             </div>
           </div>
         </div>
       )}
 
+      {/* ── Panel Header ── */}
       <div className={styles.panelHeader}>
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2">
           <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
@@ -137,47 +98,73 @@ export default function HypothesisBoard({ onSelectHypothesis, activeHypothesis }
         <button className={styles.iconActionBtn} onClick={() => setShowModal(true)}>+</button>
       </div>
 
+      {/* ── Hypothesis List ── */}
       <div className={styles.hypoList}>
-        {HYPOTHESES.map(hypo => (
-          <div
-            key={hypo.id}
-            className={styles.hypoCard}
-            onClick={() => onSelectHypothesis(hypo.id)}
-          >
-            <div className={styles.hypoCardTop}>
-              <span className={styles.hypoId}>{hypo.id}</span>
-              <span className={styles.versionBadge}>v{hypo.version}</span>
-            </div>
-            <h3 className={styles.hypoTitle}>{hypo.title}</h3>
-            <div className={styles.hypoTagRow}>
-              {hypo.tags.map(tag => (
-                <span key={tag} className={styles.hypoTagSmall}>{tag}</span>
-              ))}
-            </div>
-            <div className={styles.hypoBottom}>
-              <div className={styles.confidenceGauge}>
-                <div className={styles.gaugeFill} style={{ width: `${hypo.confidence}%` }} />
-                <span>{hypo.confidence}% Confidence</span>
+        {loading ? (
+          /* Skeleton loader */
+          Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className={styles.hypoCard} style={{ opacity: 0.4, pointerEvents: "none" }}>
+              <div className={styles.hypoCardTop}>
+                <span className={styles.hypoId} style={{ background: "rgba(255,255,255,0.1)", color: "transparent" }}>H-000</span>
               </div>
-              <div className={styles.hypoAvatars}>
-                {hypo.avatars.map(av => (
-                  <span 
-                    key={av} 
-                    className={styles.microAvatar}
-                    style={av !== "AI" ? { borderColor: getMemberColor(av), color: getMemberColor(av) } : {}}
-                  >
-                    {av === "AI" ? "🤖" : av}
-                  </span>
+              <div style={{ height: "14px", background: "rgba(255,255,255,0.07)", borderRadius: "4px", marginBottom: "0.5rem" }} />
+              <div style={{ height: "10px", width: "60%", background: "rgba(255,255,255,0.05)", borderRadius: "4px" }} />
+            </div>
+          ))
+        ) : hypotheses.length === 0 ? (
+          <div style={{ padding: "2rem 1rem", textAlign: "center", color: "#475569", fontSize: "0.82rem" }}>
+            <div style={{ fontSize: "2rem", marginBottom: "0.5rem" }}>🧬</div>
+            No hypotheses yet.
+            <br />
+            <button
+              onClick={() => setShowModal(true)}
+              style={{ marginTop: "0.75rem", background: "rgba(16,185,129,0.1)", border: "1px solid rgba(16,185,129,0.3)", color: "#10b981", padding: "0.4rem 0.9rem", borderRadius: "8px", cursor: "pointer", fontSize: "0.78rem", fontWeight: 600 }}
+            >
+              + Start First Hypothesis
+            </button>
+          </div>
+        ) : (
+          hypotheses.map(hypo => (
+            <div
+              key={hypo.id}
+              className={styles.hypoCard}
+              onClick={() => handleCardClick(hypo.id)}
+            >
+              <div className={styles.hypoCardTop}>
+                <span className={styles.hypoId}>{hypo.id}</span>
+                <span className={styles.versionBadge}>v{hypo.version}</span>
+              </div>
+              <h3 className={styles.hypoTitle}>{hypo.title}</h3>
+              <div className={styles.hypoTagRow}>
+                {hypo.tags.map(tag => (
+                  <span key={tag} className={styles.hypoTagSmall}>{tag}</span>
                 ))}
               </div>
+              <div className={styles.hypoBottom}>
+                <div className={styles.confidenceGauge}>
+                  <div className={styles.gaugeFill} style={{ width: `${hypo.confidence}%` }} />
+                  <span>{hypo.confidence}% Confidence</span>
+                </div>
+                <div className={styles.hypoAvatars}>
+                  {hypo.avatars.map(av => (
+                    <span
+                      key={av}
+                      className={styles.microAvatar}
+                      style={av !== "AI" ? { borderColor: getMemberColor(av), color: getMemberColor(av) } : {}}
+                    >
+                      {av === "AI" ? "🤖" : av}
+                    </span>
+                  ))}
+                </div>
+              </div>
+              <div className={styles.hypoMeta}>
+                <span>💬 {hypo.comments}</span>
+                <span>✏️ {hypo.lastEdited}</span>
+              </div>
             </div>
-            <div className={styles.hypoMeta}>
-              <span>💬 {hypo.comments + (localMessages[hypo.id]?.length || 0)}</span>
-              <span>✏️ {hypo.lastEdited}</span>
-            </div>
-          </div>
-        ))}
+          ))
+        )}
       </div>
-    </>
+    </div>
   );
 }

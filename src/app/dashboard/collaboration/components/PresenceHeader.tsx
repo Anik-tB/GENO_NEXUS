@@ -120,19 +120,21 @@ export default function PresenceHeader({ members, alertCount, onToggleAlerts, on
                 <label style={{ display: "block", fontSize: "0.75rem", color: "#94a3b8", marginBottom: "8px" }}>
                   Invite via GitHub Username
                 </label>
-                <input
-                  type="text"
-                  value={inviteUsername}
-                  onChange={(e) => setInviteUsername(e.target.value)}
-                  placeholder="e.g. octocat"
-                  disabled={isInviting}
-                  style={{
-                    width: "100%", padding: "6px 8px", background: "#0f172a",
-                    border: "1px solid #334155", borderRadius: "4px",
-                    color: "#f8fafc", fontSize: "0.875rem", marginBottom: "8px"
-                  }}
-                  autoFocus
-                />
+                <div style={{ position: "relative", width: "100%" }}>
+                  <input
+                    type="text"
+                    value={inviteUsername}
+                    onChange={(e) => setInviteUsername(e.target.value)}
+                    placeholder="e.g. octocat"
+                    disabled={isInviting}
+                    style={{
+                      width: "100%", padding: "6px 8px", background: "#0f172a",
+                      border: "1px solid #334155", borderRadius: "4px",
+                      color: "#f8fafc", fontSize: "0.875rem", marginBottom: "8px"
+                    }}
+                    autoFocus
+                  />
+                </div>
                 {inviteError && (
                   <div style={{ color: "#ef4444", fontSize: "0.7rem", marginBottom: "8px" }}>{inviteError}</div>
                 )}
