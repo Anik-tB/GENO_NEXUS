@@ -1,6 +1,33 @@
-import json
-from http.server import BaseHTTPRequestHandler, HTTPServer
+import os
+from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 from typing import List
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
+
+app = FastAPI(title="Epidemiology Engine", description="Outbreak prediction service")
+
+# Configure CORS
+allowed_origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000").split(",")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=allowed_origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+class ForecastRequest(BaseModel):
+    historical_points: List[float]
+    horizon_periods: int = 4
+
+class ForecastResponse(BaseModel):
+    historical_points: List[float]
+    future_points: List[int]
 
 def double_exponential_smoothing(series: List[float], alpha: float, beta: float, n_preds: int) -> List[int]:
     """
@@ -26,47 +53,32 @@ def double_exponential_smoothing(series: List[float], alpha: float, beta: float,
         
     return result
 
-class ForecastHandler(BaseHTTPRequestHandler):
-    def do_POST(self):
-        if self.path == '/forecast':
-            # Read request body
-            content_length = int(self.headers.get('Content-Length', 0))
-            post_data = self.rfile.read(content_length)
-            
-            try:
-                data = json.loads(post_data.decode('utf-8'))
-                historical_points = data.get('historical_points', [])
-                horizon_periods = data.get('horizon_periods', 4)
-                
-                # Math Logic
-                float_series = [float(x) for x in historical_points]
-                alpha, beta = 0.6, 0.4 
-                future = double_exponential_smoothing(float_series, alpha, beta, horizon_periods)
-                
-                # Send Response
-                response_data = {
-                    "historical_points": historical_points,
-                    "future_points": future
-                }
-                
-                self.send_response(200)
-                self.send_header('Content-Type', 'application/json')
-                self.end_headers()
-                self.wfile.write(json.dumps(response_data).encode('utf-8'))
-                
-            except Exception as e:
-                self.send_response(400)
-                self.end_headers()
-                self.wfile.write(json.dumps({"error": str(e)}).encode('utf-8'))
-        else:
-            self.send_response(404)
-            self.end_headers()
-
-def run(server_class=HTTPServer, handler_class=ForecastHandler, port=8000):
-    server_address = ('127.0.0.1', port)
-    httpd = server_class(server_address, handler_class)
-    print(f"Epidemiology Engine running on http://127.0.0.1:{port}...")
-    httpd.serve_forever()
+@app.post("/forecast", response_model=ForecastResponse)
+async def forecast(request: ForecastRequest):
+    try:
+        # Load configurable alpha and beta or use defaults
+        alpha = float(os.getenv("FORECAST_ALPHA", "0.6"))
+        beta = float(os.getenv("FORECAST_BETA", "0.4"))
+        
+        future = double_exponential_smoothing(
+            request.historical_points, 
+            alpha, 
+            beta, 
+            request.horizon_periods
+        )
+        return ForecastResponse(
+            historical_points=request.historical_points,
+            future_points=future
+        )
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 if __name__ == '__main__':
-    run()
+    import uvicorn
+    # For local testing only. In production, run via gunicorn.
+    port = int(os.getenv("PORT", 8000))
+    host = os.getenv("HOST", "127.0.0.1")
+    is_dev = os.getenv("APP_ENV", "development").lower() == "development"
+    
+    print(f"Starting Epidemiology Engine on {host}:{port}...")
+    uvicorn.run("main:app", host=host, port=port, reload=is_dev)
