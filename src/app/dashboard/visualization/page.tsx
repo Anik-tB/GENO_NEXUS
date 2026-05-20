@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import styles from "./page.module.css";
 import { GenomeBrowser } from "@/components/visualization/GenomeBrowser";
 
@@ -13,9 +14,14 @@ const TABS = [
   }
 ];
 
-export default function VisualizationPage() {
+function VisualizationContent() {
   const [activeTab, setActiveTab] = useState("chromosome");
   const [analysisData, setAnalysisData] = useState<any>(null);
+  const [showAllPins, setShowAllPins] = useState(false);
+  
+  const searchParams = useSearchParams();
+  const searchPosition = searchParams.get("position");
+  const highlightPosition = searchPosition ? parseInt(searchPosition, 10) : undefined;
 
   useEffect(() => {
     fetch("/api/visualization/analysis-data")
@@ -36,20 +42,6 @@ export default function VisualizationPage() {
           <p className={styles.subtitle}>{activeTabData.sub}</p>
         </div>
       </header>
-
-      {/* Module Tabs - Hidden since there's only one tab now, but kept for future real expansions */}
-      <nav className={styles.moduleTabs} style={{ display: 'none' }}>
-        {TABS.map((tab) => (
-          <button
-            key={tab.id}
-            className={`${styles.moduleTab} ${activeTab === tab.id ? styles.moduleTabActive : ""}`}
-            onClick={() => setActiveTab(tab.id)}
-          >
-            <span className={styles.tabIcon}>{tab.icon}</span>
-            <span className={styles.tabLabel}>{tab.label}</span>
-          </button>
-        ))}
-      </nav>
 
       {/* Content Area */}
       <div className={styles.contentArea}>
@@ -94,22 +86,114 @@ export default function VisualizationPage() {
             </aside>
 
             {/* Render Area */}
-            <div className={styles.renderArea}>
-              <div className={styles.renderOverlay} style={{ display: 'flex', gap: '1rem' }}>
-                <span className={styles.overlayBadge}>
-                  <span className={styles.blinkDot}>●</span> Analysis Data Rendered
-                </span>
-                <span className={styles.overlayBadge} style={{ background: 'var(--gn-bg)', border: '1px solid var(--gn-primary)', color: 'var(--gn-primary)' }}>
-                  👆 Click on any chromosome strand to view Sequence Alignments
-                </span>
+            {/* Render Area */}
+            <div className={styles.renderArea} style={{ display: 'flex', flexDirection: 'column', alignItems: 'stretch', justifyContent: 'stretch' }}>
+              
+              {/* Sci-Fi Top Toolbar */}
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                background: 'rgba(5, 10, 20, 0.65)',
+                borderBottom: '1px solid rgba(0, 229, 255, 0.15)',
+                padding: '0.75rem 1.25rem',
+                zIndex: 20,
+                backdropFilter: 'blur(8px)',
+                flexWrap: 'wrap',
+                gap: '0.75rem',
+                width: '100%'
+              }}>
+                {/* Left Side: Status / System Info */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', flexWrap: 'wrap' }}>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
+                    <span className={styles.blinkDot} style={{ color: 'var(--gn-success)', textShadow: '0 0 8px var(--gn-success)' }}>●</span>
+                    <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--gn-text-secondary)', letterSpacing: '0.05em' }}>SYSTEM ACTIVE</span>
+                  </span>
+                  <div style={{ width: '1px', height: '12px', background: 'rgba(255,255,255,0.15)' }} />
+                  <span style={{ fontSize: '0.72rem', color: 'var(--gn-text-muted)', fontWeight: 500 }}>
+                    💡 Click on any chromosome strand to view alignments
+                  </span>
+                </div>
+
+                {/* Right Side: Dynamic Filter Controls */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                  {highlightPosition !== undefined ? (
+                    <>
+                      <div style={{ display: 'flex', alignItems: 'center', background: 'rgba(16, 185, 129, 0.08)', border: '1px solid rgba(16, 185, 129, 0.3)', borderRadius: '6px', padding: '0.35rem 0.75rem', gap: '8px' }}>
+                        <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--gn-success)', letterSpacing: '0.05em' }}>
+                          FOCUS: POS {highlightPosition}
+                        </span>
+                        <button 
+                          onClick={() => {
+                            window.history.replaceState(null, "", "/dashboard/visualization");
+                            window.location.reload();
+                          }} 
+                          style={{ 
+                            background: 'transparent', 
+                            border: 'none', 
+                            color: 'var(--gn-danger)', 
+                            fontWeight: 'bold', 
+                            cursor: 'pointer', 
+                            padding: '0 2px', 
+                            fontSize: '0.85rem',
+                            display: 'flex',
+                            alignItems: 'center'
+                          }}
+                          title="Reset Focus Filter"
+                        >
+                          ✕
+                        </button>
+                      </div>
+
+                      <button 
+                        onClick={() => setShowAllPins(!showAllPins)}
+                        style={{ 
+                          background: showAllPins ? 'var(--gn-primary)' : 'rgba(0, 229, 255, 0.05)', 
+                          border: '1px solid var(--gn-primary)', 
+                          color: showAllPins ? '#000000' : 'var(--gn-primary)',
+                          cursor: 'pointer',
+                          fontWeight: 700,
+                          fontSize: '0.72rem',
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.05em',
+                          padding: '0.35rem 0.85rem',
+                          borderRadius: '6px',
+                          transition: 'all 0.2s ease',
+                        }}
+                      >
+                        {showAllPins ? "🌐 Hide Overall Map" : "🔍 Show Overall Map"}
+                      </button>
+                    </>
+                  ) : (
+                    <span style={{ fontSize: '0.72rem', color: 'var(--gn-primary)', fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+                      🌐 Overall Genome View
+                    </span>
+                  )}
+                </div>
               </div>
-              <div className={styles.helixContainer}>
-                <GenomeBrowser chromosomes={analysisData?.chromosomes} />
+
+              {/* Chromatid Canvas */}
+              <div style={{ flex: 1, position: 'relative', width: '100%', minHeight: 0 }}>
+                <GenomeBrowser chromosomes={analysisData?.chromosomes} highlightPosition={highlightPosition} showAllPins={showAllPins} />
               </div>
             </div>
           </div>
         )}
       </div>
     </div>
+  );
+}
+
+export default function VisualizationPage() {
+  return (
+    <Suspense fallback={
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '80vh' }}>
+        <div style={{ width: 60, height: 60, border: '4px solid rgba(16, 185, 129, 0.1)', borderLeftColor: '#10b981', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+        <h2 style={{ marginTop: '2rem', color: '#10b981', letterSpacing: '0.1em' }}>LOADING VISUALIZATION...</h2>
+        <style>{`@keyframes spin { 100% { transform: rotate(360deg); } }`}</style>
+      </div>
+    }>
+      <VisualizationContent />
+    </Suspense>
   );
 }

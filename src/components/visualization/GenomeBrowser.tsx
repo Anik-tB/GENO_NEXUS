@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import styles from "./GenomeBrowser.module.css";
 
 export interface ChromosomeVariant {
@@ -41,8 +41,20 @@ const SEVERITY_COLORS: Record<string, string> = {
   benign: "var(--gn-success)",
 };
 
-export function GenomeBrowser({ chromosomes }: { chromosomes?: ChromosomeData[] }) {
+export function GenomeBrowser({ chromosomes, highlightPosition, showAllPins }: { chromosomes?: ChromosomeData[]; highlightPosition?: number; showAllPins?: boolean }) {
   const [selectedChrom, setSelectedChrom] = useState<ChromosomeData | null>(null);
+
+  // Automatically select the chromosome containing the highlighted position
+  useEffect(() => {
+    if (highlightPosition !== undefined && chromosomes) {
+      const foundChrom = chromosomes.find((ch) =>
+        ch.mutations.some((m) => m.position === highlightPosition)
+      );
+      if (foundChrom) {
+        setSelectedChrom(foundChrom);
+      }
+    }
+  }, [highlightPosition, chromosomes]);
 
   if (!chromosomes || chromosomes.length === 0) {
     return (
@@ -68,19 +80,24 @@ export function GenomeBrowser({ chromosomes }: { chromosomes?: ChromosomeData[] 
               className={`${styles.chromatid} ${selectedChrom?.id === ch.id ? styles.selected : ""}`}
               style={{ height: `${ch.height}%` }}
             >
-              {ch.mutations && ch.mutations.map((mut, idx) => (
-                <span
-                  key={idx}
-                  className={styles.mutPin}
-                  style={{
-                    top: `${mut.relativePosPct}%`,
-                    background: SEVERITY_COLORS[mut.severity] || "var(--gn-text-muted)",
-                    boxShadow: `0 0 8px ${SEVERITY_COLORS[mut.severity]}`,
-                    height: mut.severity === "pathogenic" ? '4px' : '2px', // Make severe variants slightly thicker
-                  }}
-                  title={`${mut.gene} (${mut.variant})`}
-                />
-              ))}
+              {ch.mutations && ch.mutations
+                .filter(mut => showAllPins || highlightPosition === undefined || mut.position === highlightPosition)
+                .map((mut, idx) => {
+                  const isHighlighted = highlightPosition !== undefined && mut.position === highlightPosition;
+                  return (
+                    <span
+                      key={idx}
+                      className={`${styles.mutPin} ${isHighlighted ? styles.highlightedPin : ""}`}
+                      style={{
+                        top: `${mut.relativePosPct}%`,
+                        background: isHighlighted ? "var(--gn-primary)" : (SEVERITY_COLORS[mut.severity] || "var(--gn-text-muted)"),
+                        boxShadow: isHighlighted ? "0 0 12px var(--gn-primary)" : `0 0 8px ${SEVERITY_COLORS[mut.severity]}`,
+                        height: isHighlighted ? '6px' : (mut.severity === "pathogenic" ? '4px' : '2px'), // Make severe variants slightly thicker
+                      }}
+                      title={`${mut.gene} (${mut.variant})`}
+                    />
+                  );
+                })}
             </div>
             <span className={styles.chromLabel}>{ch.label}</span>
           </div>
@@ -101,58 +118,71 @@ export function GenomeBrowser({ chromosomes }: { chromosomes?: ChromosomeData[] 
             </p>
 
             <div className={styles.variantList} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', maxHeight: '400px', overflowY: 'auto', paddingRight: '0.5rem' }}>
-              {selectedChrom.mutations.map((mut) => (
-                <div key={mut.id} style={{ background: 'var(--gn-bg)', border: `1px solid ${SEVERITY_COLORS[mut.severity]}44`, borderRadius: '8px', padding: '0.8rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
-                    <h4 style={{ margin: 0, fontSize: '0.9rem', color: 'var(--gn-white)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                      <span style={{ width: 8, height: 8, borderRadius: '50%', background: SEVERITY_COLORS[mut.severity], boxShadow: `0 0 6px ${SEVERITY_COLORS[mut.severity]}` }} />
-                      {mut.gene}
-                    </h4>
-                    <span style={{ fontSize: '0.7rem', padding: '2px 6px', borderRadius: '4px', background: `${SEVERITY_COLORS[mut.severity]}22`, color: SEVERITY_COLORS[mut.severity], border: `1px solid ${SEVERITY_COLORS[mut.severity]}44` }}>
-                      {mut.severity.toUpperCase()}
-                    </span>
-                  </div>
-                  
-                  <div style={{ fontFamily: 'monospace', fontSize: '0.85rem', color: 'var(--gn-primary)', marginBottom: '0.5rem', background: 'rgba(0,0,0,0.2)', padding: '0.3rem 0.5rem', borderRadius: '4px' }}>
-                    {mut.variant}
-                  </div>
-                  
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', fontSize: '0.75rem' }}>
-                    <div style={{ display: 'flex', flexDirection: 'column' }}>
-                      <span style={{ color: 'var(--gn-text-muted)' }}>Location</span>
-                      <span style={{ color: 'var(--gn-text-secondary)' }}>Pos: {mut.position}</span>
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column' }}>
-                      <span style={{ color: 'var(--gn-text-muted)' }}>AI Confidence</span>
-                      <span style={{ color: 'var(--gn-text-secondary)' }}>{Math.round(mut.ai_confidence * 100)}%</span>
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gridColumn: '1 / -1' }}>
-                      <span style={{ color: 'var(--gn-text-muted)' }}>Clinical Impact</span>
-                      <span style={{ color: SEVERITY_COLORS[mut.severity] }}>{mut.impact}</span>
-                    </div>
-                  </div>
-
-                  {mut.reference && mut.query && (
-                    <div style={{ marginTop: '0.75rem', background: '#050505', border: '1px solid #222', borderRadius: '4px', padding: '0.5rem', overflowX: 'auto' }}>
-                      <div style={{ fontSize: '0.65rem', color: 'var(--gn-text-muted)', marginBottom: '0.3rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Sequence Alignment Viewer</div>
-                      <div style={{ display: 'flex', flexDirection: 'column', fontFamily: 'monospace', fontSize: '0.8rem', whiteSpace: 'nowrap', gap: '0.2rem' }}>
-                        <div style={{ display: 'flex', color: '#888' }}>
-                          <span style={{ width: '35px', color: '#555' }}>REF:</span>
-                          <span>{generateContext(mut.position).left}</span>
-                          <span style={{ color: 'var(--gn-blue)', fontWeight: 'bold', background: 'rgba(59,130,246,0.15)', padding: '0 2px' }}>{mut.reference}</span>
-                          <span>{generateContext(mut.position).right}</span>
+              {selectedChrom.mutations
+                .filter(mut => showAllPins || highlightPosition === undefined || mut.position === highlightPosition)
+                .map((mut) => {
+                  const isHighlighted = highlightPosition !== undefined && mut.position === highlightPosition;
+                  return (
+                    <div 
+                      key={mut.id} 
+                      style={{ 
+                        background: isHighlighted ? 'rgba(0, 229, 255, 0.08)' : 'var(--gn-bg)', 
+                        border: `1px solid ${isHighlighted ? 'var(--gn-primary)' : `${SEVERITY_COLORS[mut.severity]}44`}`, 
+                        borderRadius: '8px', 
+                        padding: '0.8rem' 
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
+                        <h4 style={{ margin: 0, fontSize: '0.9rem', color: 'var(--gn-white)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                          <span style={{ width: 8, height: 8, borderRadius: '50%', background: SEVERITY_COLORS[mut.severity], boxShadow: `0 0 6px ${SEVERITY_COLORS[mut.severity]}` }} />
+                          {mut.gene}
+                        </h4>
+                        <span style={{ fontSize: '0.7rem', padding: '2px 6px', borderRadius: '4px', background: `${SEVERITY_COLORS[mut.severity]}22`, color: SEVERITY_COLORS[mut.severity], border: `1px solid ${SEVERITY_COLORS[mut.severity]}44` }}>
+                          {mut.severity.toUpperCase()}
+                        </span>
+                      </div>
+                      
+                      <div style={{ fontFamily: 'monospace', fontSize: '0.85rem', color: 'var(--gn-primary)', marginBottom: '0.5rem', background: 'rgba(0,0,0,0.2)', padding: '0.3rem 0.5rem', borderRadius: '4px' }}>
+                        {mut.variant}
+                      </div>
+                      
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', fontSize: '0.75rem' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                          <span style={{ color: 'var(--gn-text-muted)' }}>Location</span>
+                          <span style={{ color: 'var(--gn-text-secondary)' }}>Pos: {mut.position}</span>
                         </div>
-                        <div style={{ display: 'flex', color: '#888' }}>
-                          <span style={{ width: '35px', color: '#555' }}>QRY:</span>
-                          <span>{generateContext(mut.position).left}</span>
-                          <span style={{ color: mut.severity === 'pathogenic' ? 'var(--gn-danger)' : mut.severity === 'uncertain' ? 'var(--gn-warning)' : 'var(--gn-success)', fontWeight: 'bold', background: mut.severity === 'pathogenic' ? 'rgba(244,63,94,0.15)' : 'rgba(16,185,129,0.15)', padding: '0 2px' }}>{mut.query}</span>
-                          <span>{generateContext(mut.position).right}</span>
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                          <span style={{ color: 'var(--gn-text-muted)' }}>AI Confidence</span>
+                          <span style={{ color: 'var(--gn-text-secondary)' }}>{Math.round(mut.ai_confidence * 100)}%</span>
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gridColumn: '1 / -1' }}>
+                          <span style={{ color: 'var(--gn-text-muted)' }}>Clinical Impact</span>
+                          <span style={{ color: SEVERITY_COLORS[mut.severity] }}>{mut.impact}</span>
                         </div>
                       </div>
+
+                      {mut.reference && mut.query && (
+                        <div style={{ marginTop: '0.75rem', background: '#050505', border: '1px solid #222', borderRadius: '4px', padding: '0.5rem', overflowX: 'auto' }}>
+                          <div style={{ fontSize: '0.65rem', color: 'var(--gn-text-muted)', marginBottom: '0.3rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Sequence Alignment Viewer</div>
+                          <div style={{ display: 'flex', flexDirection: 'column', fontFamily: 'monospace', fontSize: '0.8rem', whiteSpace: 'nowrap', gap: '0.2rem' }}>
+                            <div style={{ display: 'flex', color: '#888' }}>
+                              <span style={{ width: '35px', color: '#555' }}>REF:</span>
+                              <span>{generateContext(mut.position).left}</span>
+                              <span style={{ color: 'var(--gn-blue)', fontWeight: 'bold', background: 'rgba(59,130,246,0.15)', padding: '0 2px' }}>{mut.reference}</span>
+                              <span>{generateContext(mut.position).right}</span>
+                            </div>
+                            <div style={{ display: 'flex', color: '#888' }}>
+                              <span style={{ width: '35px', color: '#555' }}>QRY:</span>
+                              <span>{generateContext(mut.position).left}</span>
+                              <span style={{ color: mut.severity === 'pathogenic' ? 'var(--gn-danger)' : mut.severity === 'uncertain' ? 'var(--gn-warning)' : 'var(--gn-success)', fontWeight: 'bold', background: mut.severity === 'pathogenic' ? 'rgba(244,63,94,0.15)' : 'rgba(16,185,129,0.15)', padding: '0 2px' }}>{mut.query}</span>
+                              <span>{generateContext(mut.position).right}</span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
-              ))}
+                  );
+                })}
             </div>
           </div>
         </div>

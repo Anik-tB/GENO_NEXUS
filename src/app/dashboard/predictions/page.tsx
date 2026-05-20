@@ -21,6 +21,111 @@ export default function PredictionsPage() {
   const [showPreventionPlan, setShowPreventionPlan] = useState(false);
   const [exporting, setExporting] = useState(false);
 
+  const [loadingPlan, setLoadingPlan] = useState(false);
+  const [customPlan, setCustomPlan] = useState<any[] | null>(null);
+  const [planError, setPlanError] = useState<string | null>(null);
+
+  const handleGeneratePreventionPlan = async (prediction: any) => {
+    setShowPreventionPlan(true);
+    setLoadingPlan(true);
+    setPlanError(null);
+    setCustomPlan(null);
+
+    try {
+      const prompt = `Generate a clinical prevention plan for the prediction: "${prediction.disease}" with contributing genes: "${prediction.genes}". Severity: ${prediction.severity}, Risk: ${prediction.risk}%, Confidence: ${prediction.confidence}%, Clinical Insight: "${prediction.insight}". Provide exactly 2 to 4 actionable sections in raw JSON format.`;
+      
+      const res = await fetch("/api/copilot", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: prompt,
+          mode: "prevention_plan",
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error(`Failed to generate prevention plan: ${res.statusText}`);
+      }
+
+      const data = await res.json();
+      if (!data.success || !data.reply) {
+        throw new Error(data.error || "Failed to generate prevention plan.");
+      }
+
+      // Robust parsing of reply (JSON or markdown fallback)
+      let cleaned = data.reply.trim();
+      if (cleaned.startsWith("```")) {
+        cleaned = cleaned.replace(/^```(json)?\n/, "").replace(/\n```$/, "").trim();
+      }
+
+      let parsedSections: any[] = [];
+      try {
+        const parsed = JSON.parse(cleaned);
+        if (Array.isArray(parsed)) {
+          parsedSections = parsed;
+        } else if (parsed && typeof parsed === "object") {
+          // If Gemini wrapped the array in an object key (e.g. { "sections": [...] })
+          const arrayKey = Object.keys(parsed).find(key => Array.isArray((parsed as any)[key]));
+          if (arrayKey) {
+            parsedSections = (parsed as any)[arrayKey];
+          } else if (parsed.title && parsed.content) {
+            // Single section object
+            parsedSections = [parsed];
+          }
+        }
+        if (parsedSections.length === 0) {
+          throw new Error("Parsed JSON did not contain any valid section list");
+        }
+      } catch (err) {
+        console.warn("Failed to parse reply as JSON, falling back to line parsing:", err);
+        // Fallback markdown parsing
+        const lines = data.reply.split("\n");
+        let currentTitle = "";
+        let currentContent: string[] = [];
+        
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (!trimmed) continue;
+          
+          const headingMatch = trimmed.match(/^(?:#+\s*|\d+\.\s+|\*\*)(.*?)(?:\*\*|:)?$/);
+          if (headingMatch && trimmed.length < 100) {
+            if (currentTitle) {
+              parsedSections.push({ title: currentTitle, content: currentContent.join(" ") });
+            }
+            currentTitle = headingMatch[1].replace(/[*#:]/g, "").trim();
+            currentContent = [];
+          } else {
+            if (currentTitle) {
+              currentContent.push(trimmed);
+            } else {
+              currentTitle = "Recommendation";
+              currentContent.push(trimmed);
+            }
+          }
+        }
+        if (currentTitle) {
+          parsedSections.push({ title: currentTitle, content: currentContent.join(" ") });
+        }
+      }
+
+      if (parsedSections.length === 0) {
+        parsedSections = [
+          {
+            title: "General Prevention Advice",
+            content: data.reply,
+          },
+        ];
+      }
+
+      setCustomPlan(parsedSections);
+    } catch (err: any) {
+      console.warn("Copilot prevention plan error:", err);
+      setPlanError(err.message || "Failed to connect to the clinical genomics copilot API. Please try again.");
+    } finally {
+      setLoadingPlan(false);
+    }
+  };
+
   const exportToReport = async () => {
     if (!selected || exporting) return;
     setExporting(true);
@@ -268,7 +373,7 @@ export default function PredictionsPage() {
           </div>
 
           <div className={styles.insightActions}>
-            <button className={styles.primaryAction} onClick={() => setShowPreventionPlan(true)}>Generate Prevention Plan</button>
+            <button className={styles.primaryAction} onClick={() => handleGeneratePreventionPlan(selected)}>Generate Prevention Plan</button>
             <button 
               className={styles.secondaryAction} 
               onClick={exportToReport} 
@@ -297,7 +402,42 @@ export default function PredictionsPage() {
             </div>
 
             <div style={{ maxHeight: "60vh", overflowY: "auto", paddingRight: "0.5rem" }}>
-              {getPreventionPlan(selected, predictions).map((section: any, idx: number) => (
+              {loadingPlan && (
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "2rem 0" }}>
+                  <div style={{ width: 40, height: 40, border: '3px solid rgba(16, 185, 129, 0.1)', borderLeftColor: '#10b981', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+                  <p style={{ color: "var(--gn-text-secondary)", marginTop: "1rem", fontSize: "0.9rem", textAlign: "center" }}>
+                    Querying Genome Copilot for clinical recommendations...
+                  </p>
+                  <style>{`@keyframes spin { 100% { transform: rotate(360deg); } }`}</style>
+                </div>
+              )}
+
+              {planError && (
+                <div style={{ textAlign: "center", padding: "1rem 0" }}>
+                  <p style={{ color: "var(--gn-danger)", fontSize: "0.9rem", marginBottom: "1.5rem" }}>
+                    {planError}
+                  </p>
+                  <div style={{ display: "flex", gap: "1rem", justifyContent: "center" }}>
+                    <button
+                      onClick={() => handleGeneratePreventionPlan(selected)}
+                      style={{ background: "transparent", border: "1px solid var(--gn-border-light-strong)", color: "var(--gn-white)", padding: "0.5rem 1rem", borderRadius: "6px", cursor: "pointer", fontSize: "0.85rem" }}
+                    >
+                      Retry Copilot
+                    </button>
+                    <button
+                      onClick={() => {
+                        setPlanError(null);
+                        setCustomPlan(getPreventionPlan(selected, predictions));
+                      }}
+                      style={{ background: "var(--gn-primary)", border: "none", color: "#000", padding: "0.5rem 1rem", borderRadius: "6px", cursor: "pointer", fontWeight: "bold", fontSize: "0.85rem" }}
+                    >
+                      Use Standard Plan
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {customPlan && customPlan.map((section: any, idx: number) => (
                 <div key={idx} className={styles.planSection}>
                   <h4>{section.title}</h4>
                   <p>{section.content}</p>
