@@ -833,7 +833,7 @@ export default function AnalysisPage() {
 
                 <button 
                   className={styles.actionButton}
-                  onClick={() => window.location.href = "/dashboard/visualization"}
+                  onClick={() => window.location.href = `/dashboard/visualization?position=${selectedGene.raw.position}`}
                 >
                   Explore in Chromosome Map →
                 </button>

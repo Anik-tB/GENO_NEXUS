@@ -14,6 +14,9 @@ type AskGeminiCopilotOptions = {
   context: CopilotContext;
   message: string;
   history?: CopilotHistoryMessage[];
+  systemInstruction?: string;
+  responseMimeType?: string;
+  maxOutputTokens?: number;
 };
 
 export class CopilotApiConfigurationError extends Error {
@@ -200,7 +203,7 @@ export async function askGeminiCopilot(options: AskGeminiCopilotOptions) {
       },
       body: JSON.stringify({
         system_instruction: {
-          parts: [{ text: buildSystemInstruction() }],
+          parts: [{ text: options.systemInstruction || buildSystemInstruction() }],
         },
         contents: [
           {
@@ -209,10 +212,10 @@ export async function askGeminiCopilot(options: AskGeminiCopilotOptions) {
           },
         ],
         generationConfig: {
-          maxOutputTokens: 700,
+          maxOutputTokens: options.maxOutputTokens || 700,
           temperature: 0.2,
           topP: 0.9,
-          responseMimeType: "text/plain",
+          responseMimeType: options.responseMimeType || "text/plain",
         },
       }),
     },

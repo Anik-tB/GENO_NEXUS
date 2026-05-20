@@ -16,6 +16,7 @@ export const runtime = "nodejs";
 
 const copilotRequestSchema = z.object({
   message: z.string().trim().min(1).max(1500),
+  mode: z.enum(["chat", "prevention_plan"]).optional(),
   history: z
     .array(
       z.object({
@@ -159,10 +160,31 @@ export async function POST(req: NextRequest) {
     const db = assertDatabase();
     const context = await getCopilotContext(user.id, db);
     const greeting = buildGreeting(context);
+
+    let systemInstruction: string | undefined;
+    if (parsed.data.mode === "prevention_plan") {
+      systemInstruction = [
+        "You are Genome Copilot, an expert clinical genomics assistant inside GenoNexus.",
+        "Your task is to generate a personalized, evidence-grounded clinical prevention plan for the patient based on their predicted disease risk and contributing genes.",
+        "Use the provided GenoNexus project context and the user's genomic analysis context as your clinical grounding.",
+        "Return the prevention plan in standard JSON format as a list of sections containing 'title' and 'content' keys.",
+        "Example format:",
+        "[",
+        "  { \"title\": \"Medication Adjustment\", \"content\": \"Standard treatments may fail...\" },",
+        "  { \"title\": \"Enhanced Screening\", \"content\": \"Given the BRCA1 mutation, initiate annual MRIs starting at age 25...\" }",
+        "]",
+        "Provide exactly 2 to 4 actionable, highly-specific sections. Avoid generic advice where possible; customize it to the specific disease, genes, and risk context.",
+        "Do not output markdown code blocks (e.g. ```json), do not output any other text or headers. Just return raw, valid JSON."
+      ].join("\n");
+    }
+
     const reply = await askGeminiCopilot({
       context,
       message: parsed.data.message,
       history: parsed.data.history,
+      systemInstruction,
+      responseMimeType: parsed.data.mode === "prevention_plan" ? "application/json" : "text/plain",
+      maxOutputTokens: parsed.data.mode === "prevention_plan" ? 1500 : 700,
     });
 
     return NextResponse.json({
