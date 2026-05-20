@@ -35,7 +35,10 @@
   transition: background 0.2s;
 }
 .launchBtn:hover { background: #059669; }
-.hypoList { display: flex; flex-direction: column; gap: 0.85rem; overflow-y: auto; flex: 1; min-height: 0; }
+.hypoList { display: flex; flex-direction: column; gap: 0.85rem; overflow-y: auto; flex: 1; min-height: 0; padding-right: 4px; }
+.hypoList::-webkit-scrollbar { width: 4px; }
+.hypoList::-webkit-scrollbar-track { background: transparent; }
+.hypoList::-webkit-scrollbar-thumb { background: var(--gn-border-light-strong); border-radius: 2px; }
 .hypoCard {
   background: var(--gn-bg-glass-light); border: 1px solid var(--gn-border-light-strong);
   border-radius: 10px; padding: 1rem; cursor: pointer; transition: all 0.25s ease;
@@ -66,7 +69,7 @@
 .microAvatar:first-child { margin-left: 0; }
 .hypoMeta { display: flex; gap: 0.75rem; font-size: 0.62rem; color: var(--gn-text-muted); }
 /* Deep Dive */
-.deepDivePanel { display: flex; flex-direction: column; flex: 1; min-height: 0; overflow: hidden; }
+.deepDivePanel { display: flex; flex-direction: column; flex: 1; min-height: 0; overflow: hidden; padding-bottom: 0; }
 .deepDiveHeader { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem; flex-shrink: 0; }
 .closeBtn {
   background: var(--gn-bg-glass-light); border: 1px solid var(--gn-border-light-strong);
@@ -79,7 +82,19 @@
   color: #10b981; padding: 0.15rem 0.5rem; border-radius: 6px;
   font-size: 0.72rem; font-weight: 700;
 }
-.deepDiveBody { display: flex; flex-direction: column; flex: 1; min-height: 0; overflow-y: auto; padding-right: 4px; }
+.deepDiveBody {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 6px;
+  padding-bottom: 0.5rem;
+  gap: 0;
+}
+.deepDiveBody::-webkit-scrollbar { width: 4px; }
+.deepDiveBody::-webkit-scrollbar-track { background: transparent; }
+.deepDiveBody::-webkit-scrollbar-thumb { background: var(--gn-border-light-strong); border-radius: 2px; }
 .deepDiveBody h2 { margin: 0 0 0.6rem; font-size: 1rem; color: var(--gn-white); flex-shrink: 0; }
 .sectionSubTitle { display: flex; align-items: center; gap: 0.4rem; margin: 0.75rem 0 0.4rem; font-size: 0.78rem; font-weight: 600; color: var(--gn-text-primary); flex-shrink: 0; }
 .annotationsSection { margin-bottom: 0.75rem; flex-shrink: 0; }
@@ -105,12 +120,47 @@
 .chatBubbleAI { border-color: rgba(16,185,129,0.3); background: rgba(16,185,129,0.03); }
 .chatBubble p, .chatBubbleAI p { margin: 0 0 0.3rem; font-size: 0.8rem; color: var(--gn-white); line-height: 1.5; }
 .chatTime { font-size: 0.6rem; color: var(--gn-text-muted); display: block; text-align: right; }
-.chatComposer { margin-top: 0.75rem; display: flex; gap: 0.4rem; flex-shrink: 0; }
+.chatComposer {
+  margin-top: 0.6rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+  border-top: 1px solid var(--gn-border-light);
+  padding-top: 0.6rem;
+  padding-right: 0.15rem;
+  width: 100%;
+  box-sizing: border-box;
+}
 .chatComposer input {
-  flex: 1; background: var(--gn-bg-glass); border: 1px solid var(--gn-border-light-strong);
-  padding: 0.65rem 0.85rem; border-radius: 8px; color: var(--gn-white);
-  font-family: var(--font-body); outline: none; font-size: 0.82rem;
+  flex: 1;
+  min-width: 0;
+  background: var(--gn-bg-glass);
+  border: 1px solid var(--gn-border-light-strong);
+  padding: 0.65rem 0.85rem;
+  border-radius: 8px;
+  color: var(--gn-white);
+  font-family: var(--font-body);
+  outline: none;
+  font-size: 0.82rem;
+  width: 100%;
+  box-sizing: border-box;
 }
 .chatComposer input:focus { border-color: #10b981; }
-.sendBtn { background: #10b981; color: #fff; border: none; font-weight: 700; width: 40px; border-radius: 8px; cursor: pointer; }
+.sendBtn {
+  background: #10b981;
+  color: #fff;
+  border: none;
+  font-weight: 700;
+  font-size: 1rem;
+  width: 40px;
+  min-width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  cursor: pointer;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 .sendBtn:hover { background: #059669; }

@@ -127,6 +127,7 @@ GENO_NEXUS/
 │       ├── (auth)/                  # Login, register, password reset
 │       ├── api/
 │       │   ├── files/               # File upload & listing routes
+│       │   ├── collaboration/       # Collaboration APIs (Pipelines, Stats, WebSockets, Hypotheses)
 │       │   └── analysis/
 │       │       ├── auto/            # Auto-pair latest query + reference
 │       │       ├── compare/         # Explicit file-pair comparison
@@ -136,7 +137,8 @@ GENO_NEXUS/
 │       └── dashboard/
 │           ├── analysis/            # AI mutation analysis dashboard
 │           ├── upload/              # Dual-source sequence upload station
-│           ├── collaboration/       # Research Collaboration Hub
+│           ├── collaboration/       # Research Collaboration Hub (Hypotheses, Activity Stream, Pipelines)
+│           ├── history/             # Dedicated Analysis History Page
 │           ├── drugs/               # Drug-Gene interaction predictions
 │           ├── outbreak/            # Epidemic & Viral trackers
 │           ├── predictions/         # ncRNA and Health Trajectories
@@ -147,15 +149,16 @@ GENO_NEXUS/
 │
 ├── microservices/
 │   └── genomics_engine/
-│       ├── main.py                  # FastAPI v2 engine (Biopython + NW + RF)
+│       ├── main.py                  # FastAPI v2 engine with WebSocket Collaboration broadcasting
 │       ├── virus_classifier.py      # Random Forest severity classifier module
-│       └── requirements.txt        # Python dependencies
+│       └── requirements.txt         # Python dependencies
 │
 └── database/
     ├── schema.sql                   # Core PostgreSQL schema
     └── migrations/
         ├── 001_create_notifications.sql
-        └── 002_genomics_engine_v2.sql   # reference_genomes, known_mutations + comparison_results v2
+        ├── 002_genomics_engine_v2.sql   # reference_genomes, known_mutations + comparison_results v2
+        └── collab_schema.sql            # WebSockets, Collaboration, Hypotheses, Pipeline Runs
 ```
 
 ---
@@ -309,9 +312,24 @@ FROM known_mutations WHERE severity = 'high';
 | `comparison_results` | Analysis results with mutations, indels, organism, AI metadata |
 | `reference_genomes` | Seeded viral reference genome library with gene maps |
 | `known_mutations` | HIVDB / ClinVar known high-severity mutation catalog |
+| `collab_alerts` | Real-time global alerts for the research network |
+| `pipeline_runs` | Logs of all genomic analysis pipelines and their execution status |
+| `hypotheses` | Interactive hypothesis board for researchers to track hunches |
 | `audit_logs` | Compliance event logging |
 | `rate_limit_attempts` | Brute-force protection |
 | `csrf_tokens` | CSRF token storage |
+
+---
+
+## 🤝 Real-Time Collaboration Hub
+
+The `dashboard/collaboration` interface is powered by a real-time WebSocket connection managed by the FastAPI Python server. When new analyses are triggered, files uploaded, or mutations detected, the engine broadcasts real-time events to all connected clients.
+
+Features include:
+1. **Live Activity Stream:** See file uploads, pipeline executions, and AI alerts exactly when they happen.
+2. **Hypothesis Board:** Track active scientific hunches, link them to specific genes or mutations, and update their confidence levels dynamically.
+3. **Pipeline Engine Tracker:** Watch the background processing of your genome analysis tools in real-time.
+4. **Historical Analytics:** Dedicated History pages with dynamic metrics derived from database analytics.
 
 ---
 

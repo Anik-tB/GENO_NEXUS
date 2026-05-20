@@ -1,0 +1,202 @@
+.container {
+  padding: 3rem 2rem;
+  max-width: 900px;
+  margin: 0 auto;
+  color: var(--gn-text-primary);
+  animation: fadeIn 0.4s ease-out forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.header {
+  margin-bottom: 3rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 1.5rem;
+}
+
+.headerIcon {
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(6, 182, 212, 0.2));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #10b981;
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.1);
+}
+
+.title {
+  font-size: 2.2rem;
+  font-weight: 800;
+  margin-bottom: 0.25rem;
+  background: linear-gradient(to right, #ffffff, #94a3b8);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.subtitle {
+  color: var(--gn-text-muted);
+  font-size: 1.05rem;
+}
+
+.historyList {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  padding-left: 2rem;
+  gap: 1.5rem;
+}
+
+.historyList::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 2px;
+  background: linear-gradient(to bottom, rgba(16, 185, 129, 0.5), rgba(16, 185, 129, 0.05));
+  border-radius: 2px;
+}
+
+.historyCard {
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  padding: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  cursor: pointer;
+}
+
+.historyCard::before {
+  content: '';
+  position: absolute;
+  left: -2.05rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #10b981;
+  border: 3px solid var(--gn-bg);
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+  z-index: 1;
+  transition: all 0.3s ease;
+}
+
+.historyCard:hover {
+  transform: translateX(8px);
+  background: rgba(30, 41, 59, 0.8);
+  border-color: rgba(16, 185, 129, 0.4);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.3), 0 0 20px rgba(16, 185, 129, 0.1);
+}
+
+.historyCard:hover::before {
+  background: #06b6d4;
+  box-shadow: 0 0 15px rgba(6, 182, 212, 0.8);
+}
+
+.iconWrapper {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.6rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.iconUpload { background: rgba(59, 130, 246, 0.15); color: #3b82f6; border-color: rgba(59, 130, 246, 0.3); }
+.iconAnalysis { background: rgba(16, 185, 129, 0.15); color: #10b981; border-color: rgba(16, 185, 129, 0.3); }
+.iconPipeline { background: rgba(217, 70, 239, 0.15); color: #d946ef; border-color: rgba(217, 70, 239, 0.3); }
+.iconAlert { background: rgba(245, 158, 11, 0.15); color: #f59e0b; border-color: rgba(245, 158, 11, 0.3); }
+.iconNote { background: rgba(148, 163, 184, 0.15); color: #94a3b8; border-color: rgba(148, 163, 184, 0.3); }
+
+.content {
+  flex: 1;
+}
+
+.action {
+  font-weight: 700;
+  font-size: 1.15rem;
+  margin-bottom: 0.3rem;
+  color: #f8fafc;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.badge {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.2rem 0.5rem;
+  border-radius: 6px;
+  font-weight: 800;
+}
+
+.badgeUpload { background: rgba(59, 130, 246, 0.2); color: #60a5fa; }
+.badgeAnalysis { background: rgba(16, 185, 129, 0.2); color: #34d399; }
+.badgeAlert { background: rgba(239, 68, 68, 0.2); color: #f87171; }
+
+.desc {
+  color: #94a3b8;
+  font-size: 0.95rem;
+  line-height: 1.4;
+}
+
+.meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.75rem;
+  min-width: 120px;
+}
+
+.time {
+  color: #64748b;
+  font-size: 0.85rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.statusComplete {
+  background: rgba(16, 185, 129, 0.1);
+  color: #10b981;
+  padding: 0.3rem 0.8rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.statusPending {
+  background: rgba(59, 130, 246, 0.1);
+  color: #3b82f6;
+  border-color: rgba(59, 130, 246, 0.3);
+}
+
+.emptyState {
+  padding: 4rem 2rem;
+  text-align: center;
+  background: rgba(15, 23, 42, 0.4);
+  border: 1px dashed rgba(255,255,255,0.1);
+  border-radius: 16px;
+  color: var(--gn-text-muted);
+}
