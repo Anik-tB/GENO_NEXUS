@@ -3,6 +3,7 @@ import { buildSessionCookie, createSession } from "@/lib/auth/sessions";
 import { verifyPassword } from "@/lib/auth/password";
 import { findUserByEmail } from "@/lib/auth/users";
 import { loginSchema } from "@/lib/validation/auth";
+import { getRedirectPathForCategory } from "@/lib/auth/portal";
 import {
   checkRateLimit,
   recordAttempt,
@@ -235,7 +236,8 @@ export async function POST(request: NextRequest) {
       userAgent,
     );
 
-    const response = redirectTo(request, "/dashboard");
+    const redirectPath = getRedirectPathForCategory(user.accountCategory);
+    const response = redirectTo(request, redirectPath);
     response.cookies.set(buildSessionCookie(session.token, session.expiresAt));
     return response;
   } catch (error) {

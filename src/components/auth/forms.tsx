@@ -100,12 +100,12 @@ function ErrorText({ id, message }: { id: string; message?: string }) {
   ) : null;
 }
 
-function StatusMessage({ error, status }: { error?: string; status?: string }) {
+function StatusMessage({ error, status, message }: { error?: string; status?: string; message?: string }) {
   if (error === "invalid_credentials") {
     return <div className={styles.errorBanner}>The email and password combination did not match our records.</div>;
   }
 
-  if (error === "social_account") {
+  if (error === "social_account" || error === "social_account_only") {
     return <div className={styles.statusBanner}>This account uses Google or GitHub sign-in. Use one of the provider buttons above.</div>;
   }
 
@@ -131,6 +131,15 @@ function StatusMessage({ error, status }: { error?: string; status?: string }) {
 
   if (error === "invalid_token") {
     return <div className={styles.errorBanner}>This password reset link is invalid or has expired.</div>;
+  }
+
+  // Fallback: show the decoded server message for any unrecognised error code
+  if (error && message) {
+    return <div className={styles.errorBanner}>{decodeURIComponent(message)}</div>;
+  }
+
+  if (error) {
+    return <div className={styles.errorBanner}>Something went wrong. Please try again.</div>;
   }
 
   if (status === "sent") {
@@ -355,6 +364,10 @@ function GoogleButton({ onError }: { onError: (error?: string) => void }) {
         router.refresh();
       });
     } catch (error) {
+      if (error && typeof error === "object" && "code" in error && error.code === "auth/popup-closed-by-user") {
+        console.log("Google sign-in popup was closed by the user.");
+        return;
+      }
       console.error("Google sign-in failed:", error);
       onError("google_sign_in_failed");
     } finally {
@@ -387,12 +400,14 @@ function GithubButton() {
 interface FormMessageProps {
   error?: string;
   status?: string;
+  message?: string;
 }
 
 export function LoginForm({
   attempts,
   error,
-  status
+  status,
+  message
 }: {
   attempts: number;
 } & FormMessageProps) {
@@ -438,7 +453,7 @@ export function LoginForm({
       </div>
 
       <div className={styles.statusStack}>
-        <StatusMessage error={socialError ?? error} status={status} />
+        <StatusMessage error={socialError ?? error} status={status} message={message} />
       </div>
 
       <div className={styles.socialGrid}>
@@ -522,7 +537,7 @@ export function LoginForm({
   );
 }
 
-export function RegisterForm({ error, status }: FormMessageProps) {
+export function RegisterForm({ error, status, message }: FormMessageProps) {
   const [socialError, setSocialError] = useState<string | undefined>();
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -595,7 +610,7 @@ export function RegisterForm({ error, status }: FormMessageProps) {
 
       <form className={styles.form} action="/api/auth/register" method="post" onSubmit={handleSubmit} noValidate>
         <div className={styles.statusStack}>
-          <StatusMessage error={socialError ?? error} status={status} />
+          <StatusMessage error={socialError ?? error} status={status} message={message} />
         </div>
 
         <div className={styles.noticeCard}>

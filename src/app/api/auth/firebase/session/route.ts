@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { buildSessionCookie, createSession } from "@/lib/auth/sessions";
 import { findOrCreateFirebaseGoogleUser } from "@/lib/auth/users";
 import { getFirebaseAdminAuth, isFirebaseAdminConfigured } from "@/lib/firebase/admin";
+import { getRedirectPathForCategory } from "@/lib/auth/portal";
 
 function getClientIp(request: NextRequest) {
   return request.headers.get("x-forwarded-for")?.split(",")[0] || request.headers.get("x-real-ip") || "unknown";
@@ -69,7 +70,8 @@ export async function POST(request: NextRequest) {
       userAgent: request.headers.get("user-agent") || "unknown",
       isTrusted: true,
     });
-    const response = NextResponse.json({ ok: true, redirectTo: "/dashboard" });
+    const redirectTo = getRedirectPathForCategory(user.accountCategory);
+    const response = NextResponse.json({ ok: true, redirectTo });
     response.cookies.set(buildSessionCookie(session.token, session.expiresAt));
     return response;
   } catch (error) {

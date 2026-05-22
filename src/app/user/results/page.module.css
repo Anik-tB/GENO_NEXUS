@@ -1,0 +1,376 @@
+/* ─── Results Page ───────────────────────────────────────────────────────── */
+
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+/* ─── Header ─────────────────────────────────────────────────────────────── */
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.back {
+  font-size: 0.85rem;
+  color: var(--gn-text-muted);
+  text-decoration: none;
+  transition: color 150ms;
+  width: fit-content;
+}
+
+.back:hover {
+  color: var(--gn-primary);
+}
+
+.title {
+  font-size: clamp(1.6rem, 4vw, 2.1rem);
+  font-weight: 800;
+  color: var(--gn-text-primary);
+  margin: 0;
+}
+
+.subtitle {
+  font-size: 0.85rem;
+  color: var(--gn-text-muted);
+  margin: 0;
+}
+
+.separator {
+  margin: 0 0.5rem;
+}
+
+/* ─── Overall Card ───────────────────────────────────────────────────────── */
+.overallCard {
+  display: flex;
+  align-items: flex-start;
+  gap: 1.25rem;
+  padding: 1.75rem;
+  border-radius: var(--border-radius-xl);
+  border: 1px solid;
+}
+
+.overallEmoji {
+  font-size: 2.5rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.overallLabel {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--gn-text-primary);
+  margin: 0 0 0.4rem;
+}
+
+.overallSummary {
+  font-size: 0.92rem;
+  color: var(--gn-text-secondary);
+  margin: 0;
+  line-height: 1.7;
+}
+
+/* ─── Section Headers ────────────────────────────────────────────────────── */
+.sectionTitle {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--gn-text-primary);
+  margin: 0 0 0.4rem;
+}
+
+.sectionHint {
+  font-size: 0.85rem;
+  color: var(--gn-text-muted);
+  margin: 0 0 1.25rem;
+}
+
+/* ─── Risk Grid ──────────────────────────────────────────────────────────── */
+.riskGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.riskCard {
+  padding: 1.5rem;
+  border-radius: var(--border-radius-lg);
+  background: var(--gn-surface);
+  border: 1px solid var(--gn-surface-border);
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  transition: border-color 200ms, transform 200ms;
+}
+
+.riskCard:hover {
+  transform: translateY(-2px);
+}
+
+.riskCard_low { border-left: 3px solid #10b981; }
+.riskCard_moderate { border-left: 3px solid #eab308; }
+.riskCard_high { border-left: 3px solid #f43f5e; }
+
+.riskHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.riskEmoji {
+  font-size: 1.6rem;
+  flex-shrink: 0;
+}
+
+.riskName {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--gn-text-primary);
+  margin: 0 0 0.2rem;
+}
+
+.riskBadge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.riskPercent {
+  margin-left: auto;
+  font-size: 1.5rem;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.riskBar {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--gn-surface-border-strong);
+  overflow: hidden;
+}
+
+.riskBarFill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 600ms ease;
+}
+
+.riskDesc {
+  font-size: 0.86rem;
+  color: var(--gn-text-secondary);
+  margin: 0;
+  line-height: 1.65;
+}
+
+.riskAction {
+  font-size: 0.82rem;
+  color: var(--gn-text-secondary);
+  padding: 0.6rem 0.85rem;
+  background: var(--gn-bg-glass-light);
+  border-radius: var(--border-radius-sm);
+  border: 1px solid var(--gn-surface-border);
+  line-height: 1.6;
+}
+
+.riskActionLabel {
+  font-weight: 700;
+  color: var(--gn-text-primary);
+  margin-right: 0.3rem;
+}
+
+/* ─── Ancestry Card ──────────────────────────────────────────────────────── */
+.ancestryCard {
+  padding: 2rem;
+  border-radius: var(--border-radius-xl);
+  background: var(--gn-surface);
+  border: 1px solid var(--gn-surface-border);
+}
+
+.ancestryBars {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.ancestryRow {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.ancestryMeta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.ancestryName {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--gn-text-primary);
+}
+
+.ancestryPct {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--gn-primary);
+}
+
+.ancestryTrack {
+  height: 10px;
+  border-radius: 999px;
+  background: var(--gn-surface-border-strong);
+  overflow: hidden;
+}
+
+.ancestryFill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--gn-primary) 0%, var(--gn-blue) 100%);
+  transition: width 600ms ease;
+}
+
+/* ─── Report Actions ─────────────────────────────────────────────────────── */
+.reportActions {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.btnDownload {
+  padding: 0.85rem 1.6rem;
+  border-radius: 999px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: white;
+  background: linear-gradient(135deg, var(--gn-primary) 0%, var(--gn-blue) 100%);
+  border: none;
+  cursor: pointer;
+  transition: transform 180ms;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  box-shadow: 0 8px 24px rgba(16, 185, 129, 0.25);
+}
+
+.btnDownload:hover {
+  transform: translateY(-2px);
+}
+
+.btnPrimary {
+  padding: 0.85rem 1.6rem;
+  border-radius: 999px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: white;
+  background: linear-gradient(135deg, var(--gn-primary) 0%, var(--gn-blue) 100%);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  transition: transform 180ms;
+}
+
+.btnPrimary:hover {
+  transform: translateY(-2px);
+}
+
+.btnSecondary {
+  padding: 0.85rem 1.6rem;
+  border-radius: 999px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--gn-text-primary);
+  background: transparent;
+  border: 1px solid var(--gn-surface-border-strong);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  transition: background 150ms, border-color 150ms;
+}
+
+.btnSecondary:hover {
+  background: var(--gn-surface-hover);
+  border-color: var(--gn-primary);
+}
+
+/* ─── Empty State ────────────────────────────────────────────────────────── */
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 1rem;
+  padding: 4rem 2rem;
+  border-radius: var(--border-radius-xl);
+  background: var(--gn-surface);
+  border: 1px solid var(--gn-surface-border);
+}
+
+.emptyIcon {
+  font-size: 4rem;
+}
+
+.emptyTitle {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--gn-text-primary);
+  margin: 0;
+}
+
+.emptyDesc {
+  font-size: 0.95rem;
+  color: var(--gn-text-secondary);
+  margin: 0;
+  max-width: 440px;
+  line-height: 1.7;
+}
+
+/* ─── Disclaimer ─────────────────────────────────────────────────────────── */
+.disclaimer {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 1.1rem 1.4rem;
+  border-radius: var(--border-radius-md);
+  background: rgba(234, 179, 8, 0.06);
+  border: 1px solid rgba(234, 179, 8, 0.2);
+  font-size: 0.84rem;
+  color: var(--gn-text-secondary);
+  line-height: 1.7;
+}
+
+.disclaimer span {
+  font-size: 1.2rem;
+  flex-shrink: 0;
+}
+
+.disclaimer p {
+  margin: 0;
+}
+
+.disclaimer strong {
+  color: var(--gn-text-primary);
+}
+
+@media (max-width: 640px) {
+  .riskGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .reportActions {
+    flex-direction: column;
+  }
+
+  .btnDownload,
+  .btnSecondary {
+    width: 100%;
+    justify-content: center;
+  }
+}

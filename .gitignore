@@ -19,3 +19,8 @@ public/uploads/
 *.fasta
 scratch/
 *.pdf
+
+# Firebase credentials and service accounts
+*-adminsdk-*.json
+*-firebase-adminsdk-*.json
+genonexus-bce40-firebase-adminsdk-fbsvc-e583ede8cc.json

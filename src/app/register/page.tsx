@@ -17,6 +17,7 @@ export default async function RegisterPage({ searchParams }: RegisterPageProps) 
       <RegisterForm
         error={getSingleParam(params.error)}
         status={getSingleParam(params.status)}
+        message={getSingleParam(params.message)}
       />
     </AuthShell>
   );

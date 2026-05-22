@@ -1,0 +1,425 @@
+/* ─── Upload DNA Page ────────────────────────────────────────────────────── */
+
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+/* ─── Header ─────────────────────────────────────────────────────────────── */
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.back {
+  font-size: 0.85rem;
+  color: var(--gn-text-muted);
+  text-decoration: none;
+  transition: color 150ms;
+  width: fit-content;
+}
+
+.back:hover {
+  color: var(--gn-primary);
+}
+
+.title {
+  font-size: clamp(1.6rem, 4vw, 2.1rem);
+  font-weight: 800;
+  color: var(--gn-text-primary);
+  margin: 0;
+}
+
+.subtitle {
+  font-size: 1rem;
+  color: var(--gn-text-secondary);
+  margin: 0;
+  line-height: 1.7;
+}
+
+/* ─── Drop Zone ──────────────────────────────────────────────────────────── */
+.dropZone {
+  border: 2px dashed var(--gn-surface-border-strong);
+  border-radius: var(--border-radius-xl);
+  padding: 3rem 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: border-color 200ms, background 200ms;
+  background: var(--gn-surface);
+  min-height: 240px;
+}
+
+.dropZone:hover {
+  border-color: var(--gn-primary);
+  background: var(--gn-primary-glow);
+}
+
+.dropZoneActive {
+  border-color: var(--gn-primary);
+  background: var(--gn-primary-glow);
+  transform: scale(1.01);
+}
+
+.dropZoneHasFile {
+  border-color: var(--gn-primary);
+  border-style: solid;
+  cursor: default;
+}
+
+.hiddenInput {
+  display: none;
+}
+
+/* ─── Drop Content ───────────────────────────────────────────────────────── */
+.dropContent {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+  text-align: center;
+}
+
+.dropIcon {
+  font-size: 3rem;
+  line-height: 1;
+}
+
+.dropTitle {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--gn-text-primary);
+  margin: 0;
+}
+
+.dropHint {
+  font-size: 0.88rem;
+  color: var(--gn-text-secondary);
+  margin: 0;
+}
+
+.browseLink {
+  color: var(--gn-primary);
+  font-weight: 600;
+}
+
+.formatBadges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  justify-content: center;
+  margin-top: 0.5rem;
+}
+
+.formatBadge {
+  padding: 0.25rem 0.6rem;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  font-family: monospace;
+  background: var(--gn-bg-glass-light);
+  border: 1px solid var(--gn-surface-border);
+  color: var(--gn-text-muted);
+  letter-spacing: 0.04em;
+}
+
+.sizeLimit {
+  font-size: 0.78rem;
+  color: var(--gn-text-muted);
+  margin: 0.25rem 0 0;
+}
+
+/* ─── File Preview ───────────────────────────────────────────────────────── */
+.filePreview {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  width: 100%;
+  max-width: 420px;
+}
+
+.fileIcon {
+  font-size: 2.5rem;
+  flex-shrink: 0;
+}
+
+.fileInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.fileName {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--gn-text-primary);
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fileSize {
+  font-size: 0.82rem;
+  color: var(--gn-text-muted);
+  margin: 0.2rem 0 0;
+}
+
+.removeBtn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--gn-surface-border-strong);
+  background: transparent;
+  color: var(--gn-text-muted);
+  font-size: 0.8rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 150ms, color 150ms, border-color 150ms;
+  flex-shrink: 0;
+}
+
+.removeBtn:hover {
+  background: rgba(244, 63, 94, 0.1);
+  color: var(--gn-danger);
+  border-color: var(--gn-danger);
+}
+
+/* ─── Error ──────────────────────────────────────────────────────────────── */
+.errorBanner {
+  padding: 1rem 1.25rem;
+  border-radius: var(--border-radius-md);
+  background: rgba(244, 63, 94, 0.1);
+  border: 1px solid rgba(244, 63, 94, 0.2);
+  color: #f43f5e;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+/* ─── Progress ───────────────────────────────────────────────────────────── */
+.progressCard {
+  padding: 1.5rem;
+  border-radius: var(--border-radius-lg);
+  background: var(--gn-surface);
+  border: 1px solid var(--gn-surface-border);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.progressHeader {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--gn-text-primary);
+}
+
+.progressTrack {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--gn-surface-border-strong);
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--gn-primary) 0%, var(--gn-blue) 100%);
+  transition: width 300ms ease;
+}
+
+.progressHint {
+  font-size: 0.78rem;
+  color: var(--gn-text-muted);
+  margin: 0;
+}
+
+/* ─── Upload Button ──────────────────────────────────────────────────────── */
+.uploadBtn {
+  width: 100%;
+  padding: 1.1rem;
+  border-radius: 999px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: white;
+  background: linear-gradient(135deg, var(--gn-primary) 0%, var(--gn-blue) 100%);
+  border: none;
+  cursor: pointer;
+  transition: transform 180ms, box-shadow 180ms, opacity 180ms;
+  box-shadow: 0 8px 24px rgba(16, 185, 129, 0.3);
+}
+
+.uploadBtn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 32px rgba(16, 185, 129, 0.4);
+}
+
+.uploadBtn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ─── Success Card ───────────────────────────────────────────────────────── */
+.successCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 1rem;
+  padding: 3rem 2rem;
+  border-radius: var(--border-radius-xl);
+  background: rgba(16, 185, 129, 0.08);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.successIcon {
+  font-size: 3.5rem;
+}
+
+.successTitle {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: var(--gn-text-primary);
+  margin: 0;
+}
+
+.successDesc {
+  font-size: 1rem;
+  color: var(--gn-text-secondary);
+  margin: 0;
+  max-width: 460px;
+  line-height: 1.7;
+}
+
+.successActions {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 0.5rem;
+}
+
+.btnPrimary {
+  padding: 0.85rem 1.6rem;
+  border-radius: 999px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: white;
+  background: linear-gradient(135deg, var(--gn-primary) 0%, var(--gn-blue) 100%);
+  text-decoration: none;
+  transition: transform 180ms;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.btnPrimary:hover {
+  transform: translateY(-2px);
+}
+
+.btnSecondary {
+  padding: 0.85rem 1.6rem;
+  border-radius: 999px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--gn-text-primary);
+  background: transparent;
+  border: 1px solid var(--gn-surface-border-strong);
+  cursor: pointer;
+  transition: background 150ms, border-color 150ms;
+}
+
+.btnSecondary:hover {
+  background: var(--gn-surface-hover);
+  border-color: var(--gn-primary);
+}
+
+/* ─── Format Guide ───────────────────────────────────────────────────────── */
+.formatGuide {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.guideTitle {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--gn-text-primary);
+  margin: 0;
+}
+
+.guideGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.guideCard {
+  padding: 1.4rem;
+  border-radius: var(--border-radius-lg);
+  background: var(--gn-surface);
+  border: 1px solid var(--gn-surface-border);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.guideIcon {
+  font-size: 1.6rem;
+}
+
+.guideName {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--gn-text-primary);
+  margin: 0;
+}
+
+.guideDesc {
+  font-size: 0.82rem;
+  color: var(--gn-text-secondary);
+  margin: 0;
+  line-height: 1.65;
+}
+
+/* ─── Privacy Note ───────────────────────────────────────────────────────── */
+.privacyNote {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  border-radius: var(--border-radius-md);
+  background: var(--gn-blue-pale);
+  border: 1px solid rgba(14, 165, 233, 0.2);
+  font-size: 0.85rem;
+  color: var(--gn-text-secondary);
+  line-height: 1.7;
+}
+
+.privacyNote span {
+  flex-shrink: 0;
+  font-size: 1.1rem;
+}
+
+.privacyNote p {
+  margin: 0;
+}
+
+.privacyNote strong {
+  color: var(--gn-blue);
+}
+
+@media (max-width: 640px) {
+  .dropZone {
+    padding: 2rem 1rem;
+    min-height: 200px;
+  }
+}

@@ -1,0 +1,335 @@
+/* ─── User Profile Page ──────────────────────────────────────────────────── */
+
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  max-width: 780px;
+  margin: 0 auto;
+}
+
+/* ─── Header ─────────────────────────────────────────────────────────────── */
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.back {
+  font-size: 0.85rem;
+  color: var(--gn-text-muted);
+  text-decoration: none;
+  transition: color 150ms;
+  width: fit-content;
+}
+
+.back:hover {
+  color: var(--gn-primary);
+}
+
+.title {
+  font-size: clamp(1.6rem, 4vw, 2.1rem);
+  font-weight: 800;
+  color: var(--gn-text-primary);
+  margin: 0;
+}
+
+.subtitle {
+  font-size: 0.95rem;
+  color: var(--gn-text-secondary);
+  margin: 0;
+}
+
+/* ─── Identity Card ──────────────────────────────────────────────────────── */
+.identityCard {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 2rem;
+  border-radius: var(--border-radius-xl);
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(14, 165, 233, 0.06) 100%);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.avatarLarge {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--gn-primary) 0%, var(--gn-blue) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: white;
+  flex-shrink: 0;
+  border: 3px solid rgba(16, 185, 129, 0.3);
+}
+
+.identityName {
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: var(--gn-text-primary);
+  margin: 0 0 0.2rem;
+}
+
+.identityEmail {
+  font-size: 0.9rem;
+  color: var(--gn-text-secondary);
+  margin: 0 0 0.2rem;
+}
+
+.identityMeta {
+  font-size: 0.8rem;
+  color: var(--gn-text-muted);
+  margin: 0;
+}
+
+/* ─── Sections ───────────────────────────────────────────────────────────── */
+.section {
+  padding: 1.75rem;
+  border-radius: var(--border-radius-xl);
+  background: var(--gn-surface);
+  border: 1px solid var(--gn-surface-border);
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.sectionHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sectionTitle {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--gn-text-primary);
+  margin: 0;
+}
+
+.editBtn {
+  padding: 0.4rem 0.9rem;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--gn-primary);
+  background: var(--gn-primary-glow);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  cursor: pointer;
+  transition: background 150ms;
+}
+
+.editBtn:hover {
+  background: rgba(16, 185, 129, 0.2);
+}
+
+/* ─── Info Grid ──────────────────────────────────────────────────────────── */
+.infoGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+}
+
+.infoItem {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.infoLabel {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--gn-text-muted);
+}
+
+.infoValue {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--gn-text-primary);
+}
+
+/* ─── Empty History ──────────────────────────────────────────────────────── */
+.emptyHistory {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 2rem;
+  border-radius: var(--border-radius-lg);
+  background: var(--gn-bg-glass-light);
+  border: 1px dashed var(--gn-surface-border-strong);
+  text-align: center;
+}
+
+.emptyIcon {
+  font-size: 2rem;
+}
+
+.emptyText {
+  font-size: 0.9rem;
+  color: var(--gn-text-muted);
+  margin: 0;
+}
+
+.uploadLink {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--gn-primary);
+  text-decoration: none;
+  transition: opacity 150ms;
+}
+
+.uploadLink:hover {
+  opacity: 0.8;
+}
+
+/* ─── Privacy List ───────────────────────────────────────────────────────── */
+.privacyList {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.privacyRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 0;
+  border-bottom: 1px solid var(--gn-surface-border);
+}
+
+.privacyRow:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.privacyRow:first-child {
+  padding-top: 0;
+}
+
+.privacyName {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--gn-text-primary);
+  margin: 0 0 0.25rem;
+}
+
+.privacyDesc {
+  font-size: 0.82rem;
+  color: var(--gn-text-secondary);
+  margin: 0;
+  line-height: 1.6;
+}
+
+.privacyBadge {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--gn-primary);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.privacyBadgeOff {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--gn-text-muted);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.toggleBtn {
+  padding: 0.4rem 0.9rem;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--gn-text-secondary);
+  background: transparent;
+  border: 1px solid var(--gn-surface-border-strong);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color 150ms, color 150ms;
+  flex-shrink: 0;
+}
+
+.toggleBtn:hover {
+  border-color: var(--gn-primary);
+  color: var(--gn-primary);
+}
+
+/* ─── Danger Section ─────────────────────────────────────────────────────── */
+.dangerSection {
+  padding: 1.75rem;
+  border-radius: var(--border-radius-xl);
+  background: rgba(244, 63, 94, 0.04);
+  border: 1px solid rgba(244, 63, 94, 0.15);
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.dangerCard {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.dangerTitle {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--gn-text-primary);
+  margin: 0 0 0.3rem;
+}
+
+.dangerDesc {
+  font-size: 0.84rem;
+  color: var(--gn-text-secondary);
+  margin: 0;
+  line-height: 1.65;
+  max-width: 440px;
+}
+
+.deleteBtn {
+  padding: 0.6rem 1.2rem;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--gn-danger);
+  background: rgba(244, 63, 94, 0.08);
+  border: 1px solid rgba(244, 63, 94, 0.3);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 150ms, border-color 150ms;
+  flex-shrink: 0;
+}
+
+.deleteBtn:hover {
+  background: rgba(244, 63, 94, 0.15);
+  border-color: rgba(244, 63, 94, 0.5);
+}
+
+@media (max-width: 640px) {
+  .identityCard {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .infoGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .dangerCard {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .deleteBtn {
+    width: 100%;
+  }
+}

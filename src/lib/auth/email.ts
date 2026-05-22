@@ -36,6 +36,14 @@ export async function generateVerificationToken(
 export async function sendVerificationEmail(email: string, token: string) {
   const verificationUrl = new URL(`/api/auth/verify?token=${encodeURIComponent(token)}`, env.appUrl).toString();
   
+  if (!process.env.EMAIL_SERVER_HOST) {
+    console.log("\n==================================================");
+    console.log(`[DEV] Verification Email for: ${email}`);
+    console.log(`Verification URL: ${verificationUrl}`);
+    console.log("==================================================\n");
+    return;
+  }
+
   await transporter.sendMail({
     from: process.env.EMAIL_FROM || '"GenoNexus" <noreply@genonexus.com>',
     to: email,
@@ -51,6 +59,14 @@ export async function sendVerificationEmail(email: string, token: string) {
 
 export async function sendPasswordResetEmail(email: string, token: string) {
   const resetUrl = new URL(`/reset-password?token=${encodeURIComponent(token)}`, env.appUrl).toString();
+
+  if (!process.env.EMAIL_SERVER_HOST) {
+    console.log("\n==================================================");
+    console.log(`[DEV] Password Reset Email for: ${email}`);
+    console.log(`Reset URL: ${resetUrl}`);
+    console.log("==================================================\n");
+    return;
+  }
 
   await transporter.sendMail({
     from: process.env.EMAIL_FROM || '"GenoNexus" <noreply@genonexus.com>',

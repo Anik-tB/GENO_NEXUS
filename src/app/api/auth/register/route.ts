@@ -3,6 +3,7 @@ import { buildSessionCookie, createSession } from "@/lib/auth/sessions";
 import { hashPassword } from "@/lib/auth/password";
 import { createUser, findUserByEmail } from "@/lib/auth/users";
 import { registerSchema } from "@/lib/validation/auth";
+import { getRedirectPathForCategory } from "@/lib/auth/portal";
 import {
   generateVerificationToken,
   sendVerificationEmail,
@@ -163,7 +164,8 @@ export async function POST(request: NextRequest) {
         userAgent,
       );
 
-      const response = redirectTo(request, "/dashboard");
+      const redirectPath = getRedirectPathForCategory(user.accountCategory);
+      const response = redirectTo(request, redirectPath);
       response.cookies.set(
         buildSessionCookie(session.token, session.expiresAt),
       );

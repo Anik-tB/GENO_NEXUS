@@ -21,6 +21,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
         attempts={attempts}
         error={getSingleParam(params.error)}
         status={getSingleParam(params.status)}
+        message={getSingleParam(params.message)}
       />
     </AuthShell>
   );
