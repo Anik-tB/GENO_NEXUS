@@ -157,16 +157,7 @@ export const HYPOTHESES: Hypothesis[] = [
 
 function minsAgo(m: number) { return Date.now() - m * 60_000; }
 
-export const INITIAL_STREAMS: ActivityEntry[] = [
-  { id: 1001, type: "mutation", author: "mdabusayumanik123", desc: "Detected 40 high-severity variants in covid1.fasta (SARS-CoV-2). Annotation complete.", time: "Yesterday", region: "chr17:7674220" },
-  { id: 1002, type: "model",    author: "AI",                desc: "BRCA1 variant classifier retrained — new accuracy: 94.2%. Deployed to staging environment.", time: "Yesterday" },
-  { id: 1003, type: "data",     author: "Dr. E. Hayes",      desc: "Cohort #47 dataset v3.1 uploaded — 120 VCF samples added. Metadata schema updated.", time: "Yesterday", region: "chr13:32315086" },
-  { id: 1004, type: "pipeline", author: "Dr. M. Okafor",     desc: "Genomic Alignment (WGS) pipeline started for batch 14. BWA-MEM2 at 68% progress.", time: "2 hours ago" },
-  { id: 1005, type: "alert",    author: "System",             desc: "Structural variant detection exceeded 30-minute SLA for batch 14. Manual review required.", time: "2 hours ago" },
-  { id: 1006, type: "note",     author: "Dr. R. Vance",       desc: "Noticing a strong batch effect in the PCA plots for batch 12. GC correction recommended.", time: "3 hours ago" },
-  { id: 1007, type: "mutation", author: "AI",                desc: "S:E484K + S:N501Y co-occurrence detected in 12% of samples. Enhanced ACE2 binding predicted.", time: "4 hours ago", region: "chrX:153701185" },
-  { id: 1008, type: "model",    author: "Dr. S. Kim",         desc: "Pharmacogenomic risk score model failed at batch 7 due to CUDA OOM. Retrying with reduced batch size.", time: "5 hours ago" },
-];
+export const INITIAL_STREAMS: ActivityEntry[] = [];
 
 export const INCOMING_STREAMS: ActivityEntry[] = [
   { id: 2001, type: "mutation", author: "mdabusayumanik123", desc: "Novel TP53 splice-site mutation c.672+1G>A detected — predicted loss of tumor suppressor function.", time: "just now", region: "chr17:7674220" },

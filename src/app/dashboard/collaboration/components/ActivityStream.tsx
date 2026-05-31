@@ -28,8 +28,15 @@ const TYPE_COLORS: Record<string, string> = {
 const ENTRY_TYPES: ActivityEntry["type"][] = ["note", "alert", "data", "pipeline", "model", "mutation"];
 
 /** Convert a ms timestamp to a live relative string */
-function relativeTime(ts: number): string {
+function relativeTime(ts: number, serverTimeStr?: string): string {
   const diffMs = Date.now() - ts;
+  
+  // If the client clock is massively out of sync or the event is > 1 hour old, 
+  // trust the server's time string to avoid displaying "Yesterday" for recent events.
+  if (diffMs < -60000 || diffMs > 3600_000) {
+    return serverTimeStr || "Yesterday";
+  }
+
   const secs = Math.floor(diffMs / 1000);
   if (secs < 10) return "just now";
   if (secs < 60) return `${secs}s ago`;
@@ -188,7 +195,7 @@ export default function ActivityStream({
                   {formatAuthorName(stream.author)}
                 </span>
                 <span className={styles.streamTime}>
-                  {stream.ts ? relativeTime(stream.ts) : stream.time}
+                  {stream.ts ? relativeTime(stream.ts, stream.time) : stream.time}
                 </span>
               </div>
               <p className={styles.streamDesc}>{stream.desc}</p>

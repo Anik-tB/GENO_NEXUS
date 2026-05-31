@@ -68,9 +68,11 @@ export default async function UserPortalLayout({
           <div className={styles.navAvatar} title={fullName || firstName}>
             {initials}
           </div>
-          <Link href="/api/auth/logout" className={styles.logoutBtn} id="nav-logout">
-            Sign out
-          </Link>
+          <form action="/api/auth/logout" method="POST" style={{ margin: 0 }}>
+            <button type="submit" className={styles.logoutBtn} id="nav-logout">
+              Sign out
+            </button>
+          </form>
         </div>
       </nav>
 

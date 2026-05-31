@@ -150,6 +150,25 @@ class CollabState:
         return entry
 
     def apply_pipeline_action(self, pipeline_id: str, action: str):
+        if action == "spawn":
+            new_pipe = {
+                "id": f"pipe-{_next_id()}",
+                "name": "WGS Variant Calling",
+                "status": "running",
+                "progress": 0,
+                "eta": "15 min",
+                "logs": ["Initializing pipeline...", "Starting Quality Control..."],
+                "stages": [
+                    {"name": "QC", "status": "active"},
+                    {"name": "Align", "status": "pending"},
+                    {"name": "Call", "status": "pending"},
+                    {"name": "Filter", "status": "pending"},
+                    {"name": "Annotate", "status": "pending"},
+                ]
+            }
+            self.pipelines.insert(0, new_pipe)
+            return
+
         for pipe in self.pipelines:
             if pipe["id"] == pipeline_id:
                 if action == "pause":

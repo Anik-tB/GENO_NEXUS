@@ -26,6 +26,7 @@ export default function CollaborationNexus() {
     postNote,
     sendTyping,
     togglePipeline,
+    spawnPipeline,
     dismissAlert,
     inviteMember,
   } = useCollabWebSocket(activeUser);
@@ -90,7 +91,7 @@ export default function CollaborationNexus() {
 
         {/* Right Column: Pipeline Engine */}
         <section className={styles.engineCol}>
-          <PipelineEngine pipelines={pipelines} onToggle={togglePipeline} />
+          <PipelineEngine pipelines={pipelines} onToggle={togglePipeline} onSpawn={spawnPipeline} />
         </section>
       </div>
 

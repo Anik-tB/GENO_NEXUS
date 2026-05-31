@@ -7,6 +7,7 @@ import { Pipeline } from "../collab-data";
 interface Props {
   pipelines: Pipeline[];
   onToggle: (id: string, action: "pause" | "resume" | "stop") => void;
+  onSpawn: () => void;
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -17,16 +18,43 @@ const STATUS_COLORS: Record<string, string> = {
   queued: "#64748b",
 };
 
-export default function PipelineEngine({ pipelines, onToggle }: Props) {
+export default function PipelineEngine({ pipelines, onToggle, onSpawn }: Props) {
   const router = useRouter();
+
+  // Find the most relevant pipeline to visualize (e.g. the first running one, or just the first one)
+  const activePipe = pipelines.find(p => p.status === "running") || pipelines[0];
+
+  // Helper to determine style based on pipeline stage
+  const getStageStatus = (stageName: string) => {
+    if (!activePipe) return "pending";
+    const stage = activePipe.stages.find(s => s.name === stageName);
+    return stage ? stage.status : "pending";
+  };
+
+  const getStageColor = (status: string, baseColor: string) => {
+    if (status === "done") return baseColor;
+    if (status === "active") return baseColor;
+    return "#334155"; // dim when pending
+  };
+
+  const getStageOpacity = (status: string) => {
+    if (status === "done") return 0.8;
+    if (status === "active") return 0.5;
+    return 0.1;
+  };
 
   return (
     <div style={{ display: "contents" }}>
       <div className={styles.panelHeader}>
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2">
-          <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
-        </svg>
-        <h2>Pipeline Engine</h2>
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2">
+            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+          </svg>
+          <h2>Pipeline Engine</h2>
+        </div>
+        <button className={styles.spawnBtn} onClick={onSpawn} title="Launch Demo Pipeline">
+          🚀 Launch Pipeline
+        </button>
       </div>
 
       <div className={styles.pipelineList}>
@@ -102,25 +130,25 @@ export default function PipelineEngine({ pipelines, onToggle }: Props) {
         <div className={styles.nodeMapGfx}>
           <svg width="100%" height="140" viewBox="0 0 240 140">
             {/* Nodes */}
-            <circle cx="30" cy="40" r="14" fill="rgba(16,185,129,0.1)" stroke="#10b981" strokeWidth="2" />
-            <circle cx="120" cy="25" r="12" fill="rgba(99,102,241,0.1)" stroke="#6366f1" strokeWidth="2" />
-            <circle cx="210" cy="45" r="14" fill="rgba(6,182,212,0.1)" stroke="#06b6d4" strokeWidth="2" />
-            <circle cx="75" cy="110" r="10" fill="rgba(236,72,153,0.1)" stroke="#ec4899" strokeWidth="2" />
-            <circle cx="170" cy="115" r="12" fill="rgba(245,158,11,0.1)" stroke="#f59e0b" strokeWidth="2" />
+            <circle cx="30" cy="40" r="14" fill={getStageColor(getStageStatus("QC"), "#10b981")} fillOpacity={getStageOpacity(getStageStatus("QC"))} stroke={getStageColor(getStageStatus("QC"), "#10b981")} strokeWidth="2" />
+            <circle cx="120" cy="25" r="12" fill={getStageColor(getStageStatus("Align"), "#6366f1")} fillOpacity={getStageOpacity(getStageStatus("Align"))} stroke={getStageColor(getStageStatus("Align"), "#6366f1")} strokeWidth="2" />
+            <circle cx="210" cy="45" r="14" fill={getStageColor(getStageStatus("Call"), "#06b6d4")} fillOpacity={getStageOpacity(getStageStatus("Call"))} stroke={getStageColor(getStageStatus("Call"), "#06b6d4")} strokeWidth="2" />
+            <circle cx="75" cy="110" r="10" fill={getStageColor(getStageStatus("Filter"), "#ec4899")} fillOpacity={getStageOpacity(getStageStatus("Filter"))} stroke={getStageColor(getStageStatus("Filter"), "#ec4899")} strokeWidth="2" />
+            <circle cx="170" cy="115" r="12" fill={getStageColor(getStageStatus("Annotate"), "#f59e0b")} fillOpacity={getStageOpacity(getStageStatus("Annotate"))} stroke={getStageColor(getStageStatus("Annotate"), "#f59e0b")} strokeWidth="2" />
 
             {/* Connections with animated flow */}
-            <line x1="44" y1="40" x2="108" y2="28" stroke="#10b981" strokeWidth="1.5" strokeDasharray="4 3" className={styles.flowLine} />
-            <line x1="132" y1="30" x2="197" y2="40" stroke="#6366f1" strokeWidth="1.5" strokeDasharray="4 3" className={styles.flowLine} />
-            <line x1="38" y1="52" x2="68" y2="102" stroke="#ec4899" strokeWidth="1.5" strokeDasharray="4 3" className={styles.flowLine} />
-            <line x1="85" y1="112" x2="158" y2="115" stroke="#f59e0b" strokeWidth="1.5" strokeDasharray="4 3" className={styles.flowLine} />
-            <line x1="178" y1="107" x2="204" y2="57" stroke="#06b6d4" strokeWidth="1.5" strokeDasharray="4 3" className={styles.flowLine} />
+            <line x1="44" y1="40" x2="108" y2="28" stroke={getStageColor(getStageStatus("Align"), "#10b981")} strokeWidth="1.5" strokeDasharray="4 3" className={getStageStatus("Align") === "active" ? styles.flowLine : ""} />
+            <line x1="132" y1="30" x2="197" y2="40" stroke={getStageColor(getStageStatus("Call"), "#6366f1")} strokeWidth="1.5" strokeDasharray="4 3" className={getStageStatus("Call") === "active" ? styles.flowLine : ""} />
+            <line x1="38" y1="52" x2="68" y2="102" stroke={getStageColor(getStageStatus("Filter"), "#ec4899")} strokeWidth="1.5" strokeDasharray="4 3" className={getStageStatus("Filter") === "active" ? styles.flowLine : ""} />
+            <line x1="85" y1="112" x2="158" y2="115" stroke={getStageColor(getStageStatus("Annotate"), "#f59e0b")} strokeWidth="1.5" strokeDasharray="4 3" className={getStageStatus("Annotate") === "active" ? styles.flowLine : ""} />
+            <line x1="178" y1="107" x2="204" y2="57" stroke={getStageColor(getStageStatus("Call"), "#06b6d4")} strokeWidth="1.5" strokeDasharray="4 3" className={getStageStatus("Call") === "active" ? styles.flowLine : ""} />
 
             {/* Center dots */}
-            <circle cx="30" cy="40" r="4" fill="#10b981" />
-            <circle cx="120" cy="25" r="3" fill="#6366f1" />
-            <circle cx="210" cy="45" r="4" fill="#06b6d4" />
-            <circle cx="75" cy="110" r="3" fill="#ec4899" />
-            <circle cx="170" cy="115" r="3" fill="#f59e0b" />
+            <circle cx="30" cy="40" r="4" fill={getStageColor(getStageStatus("QC"), "#10b981")} />
+            <circle cx="120" cy="25" r="3" fill={getStageColor(getStageStatus("Align"), "#6366f1")} />
+            <circle cx="210" cy="45" r="4" fill={getStageColor(getStageStatus("Call"), "#06b6d4")} />
+            <circle cx="75" cy="110" r="3" fill={getStageColor(getStageStatus("Filter"), "#ec4899")} />
+            <circle cx="170" cy="115" r="3" fill={getStageColor(getStageStatus("Annotate"), "#f59e0b")} />
 
             {/* Labels */}
             <text x="30" y="65" textAnchor="middle" fill="#94a3b8" fontSize="7" fontFamily="monospace">QC</text>

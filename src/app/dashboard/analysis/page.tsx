@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import styles from "./page.module.css";
 
@@ -34,6 +34,7 @@ export default function AnalysisPage() {
   const searchParams = useSearchParams();
   const explicitQueryId = searchParams.get("queryId");
   const explicitRefId = searchParams.get("refId");
+  const hasTriggered = useRef(false);
 
   const generateContext = (pos: number) => {
     const bases = ['A', 'T', 'G', 'C'];
@@ -177,6 +178,9 @@ export default function AnalysisPage() {
   };
 
   useEffect(() => {
+    if (hasTriggered.current) return;
+    hasTriggered.current = true;
+
     // Automatically trigger the Python pipeline silently
     const triggerAutoAnalysis = async () => {
       try {

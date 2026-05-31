@@ -39,6 +39,7 @@ export default function UploadPage() {
   const [linkUrl, setLinkUrl] = useState("");
   const [isLinking, setIsLinking] = useState(false);
   const [dbStats, setDbStats] = useState({ uploaded: 0, passed: 0, failed: 0 });
+  const [visibility, setVisibility] = useState<"private" | "public">("private");
 
   // Patient profile for clinical oncology risk calculations (CanRisk/BOADICEA)
   const [patientAge, setPatientAge] = useState<string>("40");
@@ -160,7 +161,7 @@ export default function UploadPage() {
     const res = await fetch("/api/files", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ url: linkUrl, fileName, fileType: type }),
+      body: JSON.stringify({ url: linkUrl, fileName, fileType: type, visibility }),
     });
     if (!res.ok) throw new Error("Failed to link URL");
     const data = await res.json();
@@ -212,6 +213,7 @@ export default function UploadPage() {
     const formData = new FormData();
     formData.append("file", file);
     formData.append("fileType", type);
+    formData.append("visibility", visibility);
     // Note: patientMetadata is NOT sent here — it is saved later when user confirms the patient profile form
 
     const xhr = new XMLHttpRequest();
@@ -323,6 +325,24 @@ export default function UploadPage() {
         <div className={`${styles.formatCard} ${styles.maxSizeCard}`}>
           <span className={styles.maxSizeLabel}>Max Size</span>
           <span className={styles.maxSizeValue}>500 MB</span>
+        </div>
+      </div>
+
+      {/* ── Visibility Toggle ── */}
+      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '2rem' }}>
+        <div style={{ background: '#090e17', border: '1px solid #1e293b', borderRadius: '12px', padding: '0.5rem', display: 'flex', gap: '0.5rem' }}>
+          <button
+            onClick={() => setVisibility("private")}
+            style={{ padding: '0.6rem 1.5rem', borderRadius: '8px', border: 'none', background: visibility === "private" ? 'rgba(59,130,246,0.15)' : 'transparent', color: visibility === "private" ? '#3b82f6' : 'var(--gn-text-muted)', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+          >
+            🔒 Private Dataset
+          </button>
+          <button
+            onClick={() => setVisibility("public")}
+            style={{ padding: '0.6rem 1.5rem', borderRadius: '8px', border: 'none', background: visibility === "public" ? 'rgba(16,185,129,0.15)' : 'transparent', color: visibility === "public" ? '#10b981' : 'var(--gn-text-muted)', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+          >
+            🌐 Public (Collab Nexus)
+          </button>
         </div>
       </div>
 

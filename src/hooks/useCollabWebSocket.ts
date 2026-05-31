@@ -249,9 +249,13 @@ export function useCollabWebSocket(activeUser: TeamMember | null = null): Collab
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id, action }),
-    }).catch(() => {});
-    // Also broadcast via WS if connected
-    wsSend({ type: "pipeline_action", pipelineId: id, action });
+    }).catch(console.error);
+    // Real-time broadcast
+    wsSend({ type: "pipeline_action", id, action });
+  }, [wsSend]);
+
+  const spawnPipeline = useCallback(() => {
+    wsSend({ type: "pipeline_action", id: "spawn", action: "spawn" });
   }, [wsSend]);
 
   const dismissAlert = useCallback((id: number) => {
@@ -283,6 +287,7 @@ export function useCollabWebSocket(activeUser: TeamMember | null = null): Collab
     postNote,
     sendTyping,
     togglePipeline,
+    spawnPipeline,
     dismissAlert,
     inviteMember,
   };

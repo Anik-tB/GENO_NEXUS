@@ -49,7 +49,7 @@ export async function GET() {
     // ── 1. File count ─────────────────────────────────────────────────────────
     let totalFiles = 0;
     try {
-      const r = await db.query(`SELECT COUNT(*) AS cnt FROM dna_files WHERE user_id = $1`, [uid]);
+      const r = await db.query(`SELECT COUNT(*) AS cnt FROM dna_files WHERE user_id = $1 OR visibility = 'public'`, [uid]);
       totalFiles = parseInt(r.rows[0]?.cnt ?? "0", 10);
     } catch (e) {
       console.error("[collab/stats] file count error:", e);
@@ -67,11 +67,13 @@ export async function GET() {
            cr.indels_found,
            cr.detected_organism,
            q.file_name AS query_name,
-           r2.file_name AS ref_name
+           r2.file_name AS ref_name,
+           u.email AS author_email
          FROM comparison_results cr
          JOIN dna_files q ON cr.query_file_id = q.id
          JOIN dna_files r2 ON cr.reference_file_id = r2.id
-         WHERE q.user_id = $1
+         JOIN users u ON q.user_id = u.id
+         WHERE q.user_id = $1 OR q.visibility = 'public'
          ORDER BY cr.created_at DESC
          LIMIT 20`,
         [uid]
@@ -135,7 +137,7 @@ export async function GET() {
         desc = `${row.query_name || "File"} vs ${row.ref_name || "reference"}: ${Number(row.match_percentage)?.toFixed(1) ?? "100"}% match — no variants detected.`;
       }
 
-      return { id: 2000 + idx, type, author: user.email, desc, time: relTimeLabel(row.created_at), ts };
+      return { id: 2000 + idx, type, author: row.author_email || user.email, desc, time: relTimeLabel(row.created_at), ts };
     });
 
     // ── 5. Build research timeline ────────────────────────────────────────────
@@ -170,7 +172,7 @@ export async function GET() {
         id: 3000 + idx,
         type,
         title,
-        author: user.email,
+        author: row.author_email || user.email,
         time: dateLabel(row.created_at),
         detail,
       };

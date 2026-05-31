@@ -97,3 +97,7 @@ export async function POST(request: NextRequest) {
 
   return response;
 }
+
+export async function GET(request: NextRequest) {
+  return POST(request);
+}

@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
     const contentType = req.headers.get("content-type") || "";
     if (contentType.includes("application/json")) {
       const body = await req.json();
-      const { url, fileName, fileType, patientMetadata } = body;
+      const { url, fileName, fileType, patientMetadata, visibility = 'private' } = body;
       
       if (!url || !fileName || !fileType) {
         return NextResponse.json({ error: "Missing required fields for URL link" }, { status: 400 });
@@ -36,10 +36,10 @@ export async function POST(req: NextRequest) {
       
       await db.query(`
         INSERT INTO dna_files
-          (id, user_id, file_name, file_size, file_type, storage_path, status, progress, patient_metadata)
+          (id, user_id, file_name, file_size, file_type, storage_path, status, progress, patient_metadata, visibility)
         VALUES
-          ($1, $2, $3, 0, $4, $5, 'success', 100, $6)
-      `, [fileId, user.id, fileName, fileType, url, patientMetadata ? JSON.stringify(patientMetadata) : null]);
+          ($1, $2, $3, 0, $4, $5, 'success', 100, $6, $7)
+      `, [fileId, user.id, fileName, fileType, url, patientMetadata ? JSON.stringify(patientMetadata) : null, visibility]);
 
       return NextResponse.json({ success: true, id: fileId });
     }
@@ -48,6 +48,7 @@ export async function POST(req: NextRequest) {
     const file = formData.get("file") as File;
     const fileType = formData.get("fileType") as string;
     const patientMetadataRaw = formData.get("patientMetadata") as string | null;
+    const visibility = (formData.get("visibility") as string) || 'private';
     let patientMetadata: object | null = null;
     try { if (patientMetadataRaw) patientMetadata = JSON.parse(patientMetadataRaw); } catch {}
 
@@ -73,10 +74,10 @@ export async function POST(req: NextRequest) {
 
     await db.query(`
       INSERT INTO dna_files
-        (id, user_id, file_name, file_size, file_type, storage_path, status, patient_metadata)
+        (id, user_id, file_name, file_size, file_type, storage_path, status, patient_metadata, visibility)
       VALUES
-        ($1, $2, $3, $4, $5, $6, 'processing', $7)
-    `, [fileId, user.id, fileName, fileSize, fileType, storagePath, patientMetadata ? JSON.stringify(patientMetadata) : null]);
+        ($1, $2, $3, $4, $5, $6, 'processing', $7, $8)
+    `, [fileId, user.id, fileName, fileSize, fileType, storagePath, patientMetadata ? JSON.stringify(patientMetadata) : null, visibility]);
 
     return NextResponse.json({ success: true, id: fileId });
   } catch (error) {

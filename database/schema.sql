@@ -159,6 +159,7 @@ CREATE TABLE IF NOT EXISTS dna_files (
   storage_path TEXT NOT NULL,
   status TEXT NOT NULL DEFAULT 'uploading',
   progress INTEGER DEFAULT 0,
+  visibility TEXT NOT NULL DEFAULT 'private',
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -196,3 +197,33 @@ CREATE TABLE IF NOT EXISTS reports (
 );
 
 CREATE INDEX IF NOT EXISTS idx_reports_user_id ON reports(user_id, created_at DESC);
+
+-- ============================================================================
+-- COLLABORATION TABLES
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS hypotheses (
+  id TEXT PRIMARY KEY,
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  title TEXT NOT NULL,
+  tags JSONB,
+  annotations JSONB,
+  confidence INTEGER DEFAULT 50,
+  version INTEGER DEFAULT 1,
+  active BOOLEAN DEFAULT TRUE,
+  comments INTEGER DEFAULT 0,
+  avatars JSONB,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS hypothesis_messages (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  hypothesis_id TEXT NOT NULL REFERENCES hypotheses(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  content TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_hypotheses_user_id ON hypotheses(user_id);
+CREATE INDEX IF NOT EXISTS idx_hypothesis_messages_hypo_id ON hypothesis_messages(hypothesis_id);
