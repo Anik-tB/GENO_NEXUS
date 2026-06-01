@@ -2,6 +2,10 @@ import Link from "next/link";
 import { cookies } from "next/headers";
 import { getUserFromSessionToken } from "@/lib/auth/sessions";
 import { env } from "@/lib/env";
+import { assertDatabase } from "@/lib/db";
+import { ProfileInfoForm } from "./ProfileInfoForm";
+import { PrivacySettings } from "./PrivacySettings";
+import { DangerZone } from "./DangerZone";
 import styles from "./page.module.css";
 import type { Metadata } from "next";
 
@@ -10,14 +14,33 @@ export const metadata: Metadata = {
   description: "Manage your personal information and privacy settings.",
 };
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export default async function UserProfilePage() {
   const cookieStore = await cookies();
   const sessionToken = cookieStore.get(env.sessionCookieName)?.value;
   let user = null;
+  let uploadedFiles: any[] = [];
+  let researchOptIn = false;
 
   if (sessionToken) {
     try {
       user = await getUserFromSessionToken(sessionToken);
+      if (user) {
+        const db = assertDatabase();
+        const res = await db.query(
+          "SELECT id, file_name, file_size, status, created_at FROM dna_files WHERE user_id = $1 ORDER BY created_at DESC",
+          [user.id]
+        );
+        uploadedFiles = res.rows;
+        
+        // Also fetch the user's research opt in status
+        const userRes = await db.query("SELECT research_opt_in FROM users WHERE id = $1", [user.id]);
+        if (userRes.rows.length > 0) {
+          researchOptIn = userRes.rows[0].research_opt_in;
+        }
+      }
     } catch {
       // silently continue
     }
@@ -60,118 +83,57 @@ export default async function UserProfilePage() {
       </div>
 
       {/* ── Personal Information ───────────────────────────────────── */}
-      <section className={styles.section}>
-        <div className={styles.sectionHead}>
-          <h2 className={styles.sectionTitle}>Personal Information</h2>
-          <button className={styles.editBtn} id="profile-edit-info">
-            ✏️ Edit
-          </button>
-        </div>
-        <div className={styles.infoGrid}>
-          <div className={styles.infoItem}>
-            <span className={styles.infoLabel}>First Name</span>
-            <span className={styles.infoValue}>{user?.firstName || "—"}</span>
-          </div>
-          <div className={styles.infoItem}>
-            <span className={styles.infoLabel}>Last Name</span>
-            <span className={styles.infoValue}>{user?.lastName || "—"}</span>
-          </div>
-          <div className={styles.infoItem}>
-            <span className={styles.infoLabel}>Email Address</span>
-            <span className={styles.infoValue}>{user?.email || "—"}</span>
-          </div>
-          <div className={styles.infoItem}>
-            <span className={styles.infoLabel}>Account Type</span>
-            <span className={styles.infoValue}>
-              {user?.accountCategory === "patient"
-                ? "Patient"
-                : user?.accountCategory === "caregiver"
-                  ? "Caregiver"
-                  : "User"}
-            </span>
-          </div>
-          {user?.phone && (
-            <div className={styles.infoItem}>
-              <span className={styles.infoLabel}>Phone</span>
-              <span className={styles.infoValue}>{user.phone}</span>
-            </div>
-          )}
-          {user?.organization && (
-            <div className={styles.infoItem}>
-              <span className={styles.infoLabel}>Organization</span>
-              <span className={styles.infoValue}>{user.organization}</span>
-            </div>
-          )}
-        </div>
-      </section>
+      {user && (
+        <ProfileInfoForm user={{
+          firstName: user.firstName,
+          lastName: user.lastName,
+          email: user.email,
+          accountCategory: user.accountCategory,
+          phone: user.phone,
+          organization: user.organization
+        }} />
+      )}
 
       {/* ── Upload History ─────────────────────────────────────────── */}
       <section className={styles.section}>
         <h2 className={styles.sectionTitle}>Upload History</h2>
-        <div className={styles.emptyHistory}>
-          <span className={styles.emptyIcon}>🧬</span>
-          <p className={styles.emptyText}>No DNA files uploaded yet.</p>
-          <Link href="/user/upload-dna" className={styles.uploadLink} id="profile-upload-link">
-            Upload your first DNA file →
-          </Link>
-        </div>
+        {uploadedFiles.length > 0 ? (
+          <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+            {uploadedFiles.map(file => (
+              <div key={file.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "1rem", background: "rgba(255, 255, 255, 0.03)", borderRadius: "12px", border: "1px solid #1e293b" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+                  <span style={{ fontSize: "1.5rem" }}>🧬</span>
+                  <div>
+                    <p style={{ margin: 0, fontWeight: "600", color: "var(--gn-white)" }}>{file.file_name}</p>
+                    <p style={{ margin: 0, fontSize: "0.85rem", color: "var(--gn-text-muted)" }}>
+                      {(file.file_size / (1024 * 1024)).toFixed(2)} MB • Uploaded on {new Date(file.created_at).toLocaleDateString()}
+                    </p>
+                  </div>
+                </div>
+                <div>
+                  <span style={{ padding: "4px 10px", borderRadius: "999px", fontSize: "0.8rem", fontWeight: "600", background: file.status === "success" ? "rgba(16, 185, 129, 0.1)" : "rgba(234, 179, 8, 0.1)", color: file.status === "success" ? "#10b981" : "#eab308" }}>
+                    {file.status === "success" ? "Analyzed" : "Processing"}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className={styles.emptyHistory}>
+            <span className={styles.emptyIcon}>🧬</span>
+            <p className={styles.emptyText}>No DNA files uploaded yet.</p>
+            <Link href="/user/upload-dna" className={styles.uploadLink} id="profile-upload-link">
+              Upload your first DNA file →
+            </Link>
+          </div>
+        )}
       </section>
 
       {/* ── Privacy Settings ───────────────────────────────────────── */}
-      <section className={styles.section}>
-        <h2 className={styles.sectionTitle}>Privacy &amp; Data</h2>
-        <div className={styles.privacyList}>
-          <div className={styles.privacyRow}>
-            <div>
-              <p className={styles.privacyName}>Data Encryption</p>
-              <p className={styles.privacyDesc}>
-                Your DNA data is encrypted at rest and in transit.
-              </p>
-            </div>
-            <span className={styles.privacyBadge}>🔒 Active</span>
-          </div>
-          <div className={styles.privacyRow}>
-            <div>
-              <p className={styles.privacyName}>Data Sharing</p>
-              <p className={styles.privacyDesc}>
-                We do not share your genetic data with third parties without
-                your consent.
-              </p>
-            </div>
-            <span className={styles.privacyBadgeOff}>❌ Off</span>
-          </div>
-          <div className={styles.privacyRow}>
-            <div>
-              <p className={styles.privacyName}>Research Contribution</p>
-              <p className={styles.privacyDesc}>
-                Allow your anonymized data to contribute to medical research.
-              </p>
-            </div>
-            <button className={styles.toggleBtn} id="profile-research-toggle">
-              Enable
-            </button>
-          </div>
-        </div>
-      </section>
+      <PrivacySettings initialResearchOptIn={researchOptIn} />
 
       {/* ── Danger Zone ────────────────────────────────────────────── */}
-      <section className={styles.dangerSection}>
-        <h2 className={styles.sectionTitle} style={{ color: "var(--gn-danger)" }}>
-          Danger Zone
-        </h2>
-        <div className={styles.dangerCard}>
-          <div>
-            <p className={styles.dangerTitle}>Delete All My Data</p>
-            <p className={styles.dangerDesc}>
-              Permanently delete all your uploaded DNA files, analysis results,
-              and account data. This action cannot be undone.
-            </p>
-          </div>
-          <button className={styles.deleteBtn} id="profile-delete-data">
-            🗑️ Delete My Data
-          </button>
-        </div>
-      </section>
+      <DangerZone />
     </div>
   );
 }

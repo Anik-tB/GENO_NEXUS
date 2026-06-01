@@ -3,8 +3,12 @@ import { cookies } from "next/headers";
 import { getUserFromSessionToken } from "@/lib/auth/sessions";
 import { env } from "@/lib/env";
 import { isNormalUserCategory } from "@/lib/auth/portal";
+import { assertDatabase } from "@/lib/db";
+import { randomUUID } from "node:crypto";
+import fs from "fs";
+import path from "path";
 
-const ALLOWED_EXTENSIONS = ["fasta", "fa", "vcf", "txt", "zip"];
+const ALLOWED_EXTENSIONS = ["fasta", "fa", "vcf", "fna", "zip"];
 const MAX_SIZE_BYTES = 100 * 1024 * 1024; // 100 MB
 
 export async function POST(request: NextRequest) {
@@ -56,27 +60,57 @@ export async function POST(request: NextRequest) {
   const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
   if (!ALLOWED_EXTENSIONS.includes(ext)) {
     return NextResponse.json(
-      { error: `Unsupported file type ".${ext}". Please upload a FASTA, VCF, or TXT file.` },
+      { error: `Unsupported file type ".${ext}". Please upload a FASTA, VCF, or FNA file.` },
       { status: 415 }
     );
   }
 
+  const referenceUrl = formData.get("referenceUrl")?.toString() || null;
+  const patientMetadataRaw = formData.get("patientMetadata")?.toString() || null;
+  const fileId = randomUUID();
+
   // ── Process Upload ──────────────────────────────────────────────────────
-  // TODO: Replace this stub with actual storage logic:
-  //   1. Upload file to Firebase Storage (or AWS S3)
-  //   2. Store file metadata in PostgreSQL (user_id, file_url, file_name, file_size)
-  //   3. Trigger FastAPI genomics analysis pipeline
-  //   4. Return analysis job ID
+  try {
+    const uploadDir = path.join(process.cwd(), "public", "uploads");
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
 
-  // Stub response for now
-  const analysisId = `analysis_${user.id}_${Date.now()}`;
+    const storagePath = `uploads/${fileId}_${file.name}`;
+    const filePath = path.join(process.cwd(), "public", storagePath);
 
-  return NextResponse.json({
-    ok: true,
-    message: "File uploaded successfully. Analysis has started.",
-    analysisId,
-    fileName: file.name,
-    fileSize: file.size,
-    status: "processing",
-  });
+    // Save file locally
+    const buffer = Buffer.from(await file.arrayBuffer());
+    await fs.promises.writeFile(filePath, buffer);
+
+    const db = assertDatabase();
+    
+    // Store referenceUrl and patientMetadata for later use in analysis
+    let metadataObj: any = {};
+    if (patientMetadataRaw) {
+      try { metadataObj = JSON.parse(patientMetadataRaw); } catch {}
+    }
+    if (referenceUrl) metadataObj.referenceUrl = referenceUrl;
+    const patientMetadata = Object.keys(metadataObj).length > 0 ? JSON.stringify(metadataObj) : null;
+
+    await db.query(`
+      INSERT INTO dna_files
+        (id, user_id, file_name, file_size, file_type, storage_path, status, patient_metadata)
+      VALUES
+        ($1, $2, $3, $4, $5, $6, 'success', $7)
+    `, [fileId, user.id, file.name, file.size, ext, storagePath, patientMetadata]);
+
+    return NextResponse.json({
+      ok: true,
+      message: "File uploaded successfully.",
+      analysisId: fileId,
+      fileName: file.name,
+      fileSize: file.size,
+      referenceUrl,
+      status: "success",
+    });
+  } catch (error) {
+    console.error("Upload process failed:", error);
+    return NextResponse.json({ error: "Failed to process and store file." }, { status: 500 });
+  }
 }

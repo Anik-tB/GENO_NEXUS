@@ -1,4 +1,5 @@
-import Link from "next/link";
+import { UserSidebar } from "@/components/user/UserSidebar";
+import { UserTopNav } from "@/components/user/UserTopNav";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { getUserFromSessionToken } from "@/lib/auth/sessions";
@@ -42,6 +43,7 @@ export default async function UserPortalLayout({
   const firstName = user.firstName || "User";
 
   return (
+<<<<<<< Updated upstream
     <div className={styles.shell}>
       <nav className={styles.nav} aria-label="Main navigation">
         <Link href="/user/dashboard" className={styles.navBrand}>
@@ -77,6 +79,16 @@ export default async function UserPortalLayout({
       </nav>
 
       <main className={styles.main}>{children}</main>
+=======
+    <div className={styles.dashboardShell}>
+      <UserSidebar />
+      <div className={styles.mainWrapper}>
+        <UserTopNav userInitials={initials} userName={fullName || firstName} userEmail={user.email} />
+        <main className={styles.contentArea}>
+          {children}
+        </main>
+      </div>
+>>>>>>> Stashed changes
     </div>
   );
 }

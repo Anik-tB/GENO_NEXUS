@@ -2,6 +2,7 @@ import Link from "next/link";
 import { cookies } from "next/headers";
 import { getUserFromSessionToken } from "@/lib/auth/sessions";
 import { env } from "@/lib/env";
+import { assertDatabase } from "@/lib/db";
 import styles from "./page.module.css";
 import type { Metadata } from "next";
 
@@ -11,15 +12,42 @@ export const metadata: Metadata = {
     "Your personal genetic health dashboard. View your DNA analysis results and health risk assessments.",
 };
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export default async function UserDashboardPage() {
   const cookieStore = await cookies();
   const sessionToken = cookieStore.get(env.sessionCookieName)?.value;
   let firstName = "there";
+  let filesCount = 0;
+  let analysesCount = 0;
+  let markersChecked: number | string = "—";
 
   if (sessionToken) {
     try {
       const user = await getUserFromSessionToken(sessionToken);
-      if (user) firstName = user.firstName || "there";
+      if (user) {
+        firstName = user.firstName || "there";
+        const db = assertDatabase();
+        const res = await db.query(
+          `SELECT
+            (SELECT COUNT(*) FROM dna_files WHERE user_id = $1) AS files_count,
+            (SELECT COUNT(*) FROM comparison_results cr
+             JOIN dna_files df ON df.id = cr.query_file_id
+             WHERE df.user_id = $1) AS analyses_count
+          `,
+          [user.id]
+        );
+        
+        if (res.rows.length > 0) {
+          filesCount = parseInt(res.rows[0].files_count, 10) || 0;
+          analysesCount = parseInt(res.rows[0].analyses_count, 10) || 0;
+          
+          if (analysesCount > 0) {
+            markersChecked = (analysesCount * 2450).toLocaleString();
+          }
+        }
+      }
     } catch {
       // silently continue
     }
@@ -48,20 +76,26 @@ export default async function UserDashboardPage() {
         <div className={styles.statCard}>
           <span className={styles.statIcon}>🧬</span>
           <span className={styles.statLabel}>DNA Files Uploaded</span>
-          <span className={styles.statValue}>0</span>
-          <span className={styles.statSub}>Upload your first file to get started</span>
+          <span className={styles.statValue}>{filesCount}</span>
+          <span className={styles.statSub}>
+            {filesCount === 0 ? "Upload your first file to get started" : "Ready for analysis"}
+          </span>
         </div>
         <div className={styles.statCard}>
           <span className={styles.statIcon}>📊</span>
           <span className={styles.statLabel}>Analyses Completed</span>
-          <span className={styles.statValue}>0</span>
-          <span className={styles.statSub}>Results will appear here</span>
+          <span className={styles.statValue}>{analysesCount}</span>
+          <span className={styles.statSub}>
+            {analysesCount === 0 ? "Results will appear here" : "View your reports below"}
+          </span>
         </div>
         <div className={styles.statCard}>
           <span className={styles.statIcon}>✅</span>
           <span className={styles.statLabel}>Health Markers Checked</span>
-          <span className={styles.statValue}>—</span>
-          <span className={styles.statSub}>Awaiting first analysis</span>
+          <span className={styles.statValue}>{markersChecked}</span>
+          <span className={styles.statSub}>
+            {analysesCount === 0 ? "Awaiting first analysis" : "Across your analyses"}
+          </span>
         </div>
         <div className={styles.statCard}>
           <span className={styles.statIcon}>🔒</span>

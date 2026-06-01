@@ -1,150 +1,41 @@
-/* ─── Normal User Portal Layout ─────────────────────────────────────────── */
+.dashboardShell {
+  display: flex;
+  height: 100vh;
+  width: 100%;
+  background: var(--gn-bg);
+  overflow: hidden;
+}
 
-.shell {
-  min-height: 100vh;
+.mainWrapper {
+  flex: 1;
   display: flex;
   flex-direction: column;
-  background: var(--gn-bg);
+  min-width: 0;
+  height: 100vh;
+  overflow: hidden;
 }
 
-/* ─── Top Navigation ─────────────────────────────────────────────────────── */
-.nav {
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 2rem;
-  height: 64px;
-  background: rgba(9, 9, 11, 0.85);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-bottom: 1px solid var(--gn-surface-border);
-}
-
-.navBrand {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  font-size: 1.15rem;
-  font-weight: 700;
-  color: var(--gn-text-primary);
-  text-decoration: none;
-}
-
-.navLogo {
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
-  background: linear-gradient(135deg, var(--gn-primary) 0%, var(--gn-blue) 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1rem;
-  font-weight: 800;
-  color: white;
-  letter-spacing: -0.05em;
-  flex-shrink: 0;
-}
-
-.navLinks {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-}
-
-.navLink {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 0.9rem;
-  border-radius: 10px;
-  font-size: 0.88rem;
-  font-weight: 500;
-  color: var(--gn-text-secondary);
-  text-decoration: none;
-  transition: background 150ms, color 150ms;
-}
-
-.navLink:hover {
-  background: var(--gn-surface-hover);
-  color: var(--gn-text-primary);
-}
-
-.navLinkActive {
-  background: var(--gn-primary-glow);
-  color: var(--gn-primary);
-}
-
-.navRight {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.navAvatar {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, var(--gn-primary) 0%, var(--gn-blue) 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.8rem;
-  font-weight: 700;
-  color: white;
-  cursor: pointer;
-  border: 2px solid var(--gn-surface-border);
-  transition: border-color 150ms;
-}
-
-.navAvatar:hover {
-  border-color: var(--gn-primary);
-}
-
-.logoutBtn {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0.45rem 0.9rem;
-  border-radius: 8px;
-  font-size: 0.82rem;
-  font-weight: 500;
-  color: var(--gn-text-muted);
-  background: transparent;
-  border: 1px solid var(--gn-surface-border);
-  cursor: pointer;
-  text-decoration: none;
-  transition: color 150ms, background 150ms, border-color 150ms;
-}
-
-.logoutBtn:hover {
-  color: var(--gn-danger);
-  border-color: var(--gn-danger);
-  background: rgba(244, 63, 94, 0.08);
-}
-
-/* ─── Main Content Area ──────────────────────────────────────────────────── */
-.main {
+.contentArea {
   flex: 1;
-  width: 100%;
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 2.5rem 2rem;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 2rem;
+  scrollbar-width: thin;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 
-/* ─── Mobile Responsive ──────────────────────────────────────────────────── */
-@media (max-width: 768px) {
-  .nav {
-    padding: 0 1rem;
-  }
+.contentArea::-webkit-scrollbar {
+  width: 8px;
+}
 
-  .navLinks {
-    display: none;
-  }
+.contentArea::-webkit-scrollbar-track {
+  background: transparent;
+}
 
-  .main {
-    padding: 1.5rem 1rem;
-  }
+.contentArea::-webkit-scrollbar-thumb {
+  background: var(--gn-surface-border-strong);
+  border-radius: 4px;
 }

@@ -4,8 +4,14 @@ import { useState, useRef, useCallback } from "react";
 import Link from "next/link";
 import styles from "./page.module.css";
 
-const ACCEPTED_FORMATS = [".fasta", ".fa", ".vcf", ".txt", ".zip"];
+const ACCEPTED_FORMATS = [".fasta", ".fa", ".vcf", ".fna", ".zip"];
 const MAX_SIZE_MB = 100;
+
+const FORMAT_INFO = [
+  { ext: "FASTA", desc: "Genetic Sequence", color: "var(--gn-primary)" },
+  { ext: "VCF", desc: "Variant Call Format", color: "var(--gn-blue)" },
+  { ext: "FNA", desc: "FASTA Nucleic Acid", color: "#a78bfa" },
+];
 
 function formatBytes(bytes: number) {
   if (bytes === 0) return "0 Bytes";
@@ -22,12 +28,20 @@ export default function UploadDnaPage() {
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [done, setDone] = useState(false);
+  const [linkUrl, setLinkUrl] = useState("");
+  
+  // Patient Profile fields (required for BRCA)
+  const [patientAge, setPatientAge] = useState("");
+  const [patientSex, setPatientSex] = useState<"female" | "male" | "">("");
+  const [fhBreast, setFhBreast] = useState("0");
+  const [fhOvarian, setFhOvarian] = useState("0");
+
   const inputRef = useRef<HTMLInputElement>(null);
 
   function validateFile(f: File) {
     const ext = "." + f.name.split(".").pop()?.toLowerCase();
     if (!ACCEPTED_FORMATS.includes(ext)) {
-      return `Unsupported file type "${ext}". Please upload a FASTA, VCF, or TXT file.`;
+      return `Unsupported file type "${ext}". Please upload a FASTA, FNA, or VCF file.`;
     }
     if (f.size > MAX_SIZE_MB * 1024 * 1024) {
       return `File is too large (${formatBytes(f.size)}). Maximum allowed size is ${MAX_SIZE_MB} MB.`;
@@ -71,6 +85,27 @@ export default function UploadDnaPage() {
 
   async function handleUpload() {
     if (!file) return;
+
+    // Validate filename against selected reference genome to prevent mismatches
+    const filenameLower = file.name.toLowerCase();
+    
+    const references = [
+      { id: 'covid', urlKey: 'NC_045512', name: 'COVID-19', keywords: ['covid', 'sars', 'nc_045512'] },
+      { id: 'hiv', urlKey: 'NC_001802', name: 'HIV-1', keywords: ['hiv', 'nc_001802'] },
+      { id: 'brca', urlKey: 'NM_007294', name: 'BRCA1', keywords: ['brca', 'nm_007294'] }
+    ];
+
+    const selectedRef = references.find(ref => linkUrl.includes(ref.urlKey));
+
+    if (selectedRef) {
+      for (const ref of references) {
+        if (ref.id !== selectedRef.id && ref.keywords.some(kw => filenameLower.includes(kw))) {
+          setError(`You selected the ${selectedRef.name} reference genome, but uploaded a file for ${ref.name}. You have submitted the wrong file.`);
+          return;
+        }
+      }
+    }
+
     setUploading(true);
     setError(null);
     setProgress(0);
@@ -84,6 +119,19 @@ export default function UploadDnaPage() {
     try {
       const formData = new FormData();
       formData.append("file", file);
+      if (linkUrl) formData.append("referenceUrl", linkUrl);
+
+      const isBrca = linkUrl === "https://www.ncbi.nlm.nih.gov/nuccore/NM_007294.4?report=fasta";
+      if (isBrca) {
+        formData.append("patientMetadata", JSON.stringify({
+          age: parseInt(patientAge),
+          sex: patientSex,
+          familyHistory: {
+            breastCancer: parseInt(fhBreast),
+            ovarianCancer: parseInt(fhOvarian)
+          }
+        }));
+      }
 
       const response = await fetch("/api/user/upload", {
         method: "POST",
@@ -138,8 +186,8 @@ export default function UploadDnaPage() {
             This usually takes 2–5 minutes.
           </p>
           <div className={styles.successActions}>
-            <Link href="/user/results" className={styles.btnPrimary} id="upload-view-results">
-              📊 View My Results
+            <Link href="/user/results" style={{ background: "rgba(59, 130, 246, 0.15)", color: "var(--gn-blue)", border: '1px solid rgba(59, 130, 246, 0.3)', padding: "0.85rem 1.6rem", borderRadius: "999px", fontWeight: "700", fontSize: "0.95rem", textDecoration: "none", transition: "all 0.2s" }}>
+              View Disease Predictions →
             </Link>
             <button onClick={reset} className={styles.btnSecondary} id="upload-another">
               Upload Another File
@@ -148,6 +196,22 @@ export default function UploadDnaPage() {
         </div>
       ) : (
         <>
+          {/* ── Format Info Cards ── */}
+          <div className={styles.formatRow}>
+            {FORMAT_INFO.map((f) => (
+              <div key={f.ext} className={styles.formatCard}>
+                <span className={styles.formatExt} style={{ color: f.color }}>
+                  .{f.ext.toLowerCase()}
+                </span>
+                <span className={styles.formatDesc}>{f.desc}</span>
+              </div>
+            ))}
+            <div className={`${styles.formatCard} ${styles.maxSizeCard}`}>
+              <span className={styles.maxSizeLabel}>Max Size</span>
+              <span className={styles.maxSizeValue}>{MAX_SIZE_MB} MB</span>
+            </div>
+          </div>
+
           {/* ── Drop Zone ──────────────────────────────────────────── */}
           <div
             className={`${styles.dropZone} ${dragOver ? styles.dropZoneActive : ""} ${file ? styles.dropZoneHasFile : ""}`}
@@ -208,6 +272,58 @@ export default function UploadDnaPage() {
             )}
           </div>
 
+          {/* ── Reference Genome Selection ───────────────────────────────────────────── */}
+          <div style={{ background: "#090e17", border: "1px solid #1e293b", borderRadius: "16px", padding: "1.5rem", boxShadow: "0 10px 25px -5px rgba(0,0,0,0.3)", marginTop: "1.5rem" }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+              <h3 style={{ fontSize: "1.1rem", fontWeight: "600", color: "var(--gn-primary)", display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0 }}>
+                <span style={{ background: 'rgba(16, 185, 129, 0.1)', padding: '6px', borderRadius: '8px' }}>🧬</span>
+                Select Reference Genome
+              </h3>
+            </div>
+
+            <p style={{ color: "var(--gn-text-secondary)", fontSize: "0.9rem", marginBottom: "1.25rem", lineHeight: 1.5 }}>
+              Select an NCBI reference genome below. Our system will analyze your uploaded DNA against this reference sequence.
+            </p>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+              {[
+                { id: 'covid', name: 'SARS-CoV-2 (COVID-19)', url: 'https://www.ncbi.nlm.nih.gov/nuccore/NC_045512.2?report=fasta', desc: 'NC_045512.2' },
+                { id: 'hiv', name: 'HIV-1', url: 'https://www.ncbi.nlm.nih.gov/nuccore/NC_001802.1?report=fasta', desc: 'NC_001802.1' },
+                { id: 'brca', name: 'Homo sapiens BRCA1', url: 'https://www.ncbi.nlm.nih.gov/nuccore/NM_007294.4?report=fasta', desc: 'NM_007294.4' }
+              ].map(opt => (
+                <div 
+                  key={opt.id}
+                  onClick={() => setLinkUrl(opt.url)}
+                  style={{
+                    padding: '1rem 1.25rem',
+                    borderRadius: '12px',
+                    border: `2px solid ${linkUrl === opt.url ? 'var(--gn-primary)' : '#1e293b'}`,
+                    background: linkUrl === opt.url ? 'rgba(16, 185, 129, 0.05)' : '#05080d',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    transition: 'all 0.2s ease-in-out'
+                  }}
+                >
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                    <span style={{ color: linkUrl === opt.url ? 'var(--gn-primary)' : 'var(--gn-white)', fontWeight: '600', fontSize: '0.95rem' }}>
+                      {opt.name}
+                    </span>
+                    <span style={{ color: 'var(--gn-text-muted)', fontSize: '0.8rem' }}>
+                      {opt.desc}
+                    </span>
+                  </div>
+                  {linkUrl === opt.url && (
+                    <div style={{ width: '20px', height: '20px', borderRadius: '50%', background: 'var(--gn-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
           {/* ── Error ──────────────────────────────────────────────── */}
           {error && (
             <div className={styles.errorBanner} role="alert">
@@ -234,50 +350,89 @@ export default function UploadDnaPage() {
             </div>
           )}
 
-          {/* ── Upload Button ───────────────────────────────────────── */}
-          {file && !uploading && (
-            <button
-              onClick={handleUpload}
-              className={styles.uploadBtn}
-              id="upload-submit-btn"
-              disabled={uploading}
-            >
-              🔒 Securely Upload &amp; Analyze
-            </button>
+          {/* ── Patient Profile Form (For BRCA only) ──────────────────────── */}
+          {linkUrl === "https://www.ncbi.nlm.nih.gov/nuccore/NM_007294.4?report=fasta" && (
+            <div style={{ marginTop: "1.5rem", background: "#090e17", border: (patientAge && patientSex) ? '1px solid rgba(129, 140, 248, 0.5)' : '1px solid rgba(248, 113, 113, 0.5)', borderRadius: "16px", padding: "1.5rem", boxShadow: "0 10px 25px -5px rgba(0,0,0,0.3)" }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+                <h3 style={{ fontSize: "1.05rem", fontWeight: "700", color: "#818cf8", display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0 }}>
+                  <span style={{ background: 'rgba(129, 140, 248, 0.15)', padding: '6px', borderRadius: '8px' }}>🧬</span>
+                  Patient Profile Required
+                  {(!patientAge || !patientSex) && <span style={{ fontSize: '0.7rem', background: 'rgba(248,113,113,0.15)', color: '#f87171', padding: '2px 8px', borderRadius: '999px', border: '1px solid rgba(248,113,113,0.3)', marginLeft: '0.4rem' }}>⚠ Required for BRCA Analysis</span>}
+                </h3>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <p style={{ color: 'var(--gn-text-muted)', fontSize: '0.82rem', margin: 0 }}>Because you selected a BRCA reference genome, please fill in this profile. This is required by the CanRisk clinical model to calculate accurate cancer risk percentages.</p>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                    <label style={{ color: 'var(--gn-text-secondary)', fontSize: '0.82rem', fontWeight: 600 }}>Age</label>
+                    <input
+                      type="number" min="18" max="90" value={patientAge}
+                      onChange={e => setPatientAge(e.target.value)}
+                      style={{ padding: '0.7rem 1rem', borderRadius: '8px', border: '1px solid #1e293b', background: '#05080d', color: 'var(--gn-white)', outline: 'none', fontSize: '0.95rem', width: '100%' }}
+                    />
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                    <label style={{ color: 'var(--gn-text-secondary)', fontSize: '0.82rem', fontWeight: 600 }}>Biological Sex</label>
+                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                      {(['female', 'male'] as const).map(s => (
+                        <button key={s} onClick={() => setPatientSex(s)}
+                          style={{ flex: 1, padding: '0.7rem', borderRadius: '8px', border: `1px solid ${patientSex === s ? '#818cf8' : '#1e293b'}`, background: patientSex === s ? 'rgba(129,140,248,0.15)' : '#05080d', color: patientSex === s ? '#818cf8' : 'var(--gn-text-muted)', fontWeight: 600, cursor: 'pointer', fontSize: '0.85rem', textTransform: 'capitalize', transition: 'all 0.2s' }}>
+                          {s === 'female' ? '♀ Female' : '♂ Male'}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{ background: 'rgba(129,140,248,0.04)', border: '1px solid rgba(129,140,248,0.15)', borderRadius: '10px', padding: '1rem' }}>
+                  <p style={{ color: '#818cf8', fontSize: '0.82rem', fontWeight: 600, margin: '0 0 0.75rem 0' }}>Family History (First-Degree Relatives)</p>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                      <label style={{ color: 'var(--gn-text-secondary)', fontSize: '0.8rem' }}>With Breast Cancer</label>
+                      <input type="number" min="0" max="10" value={fhBreast} onChange={e => setFhBreast(e.target.value)}
+                        style={{ padding: '0.6rem 0.75rem', borderRadius: '8px', border: '1px solid #1e293b', background: '#05080d', color: 'var(--gn-white)', outline: 'none', fontSize: '0.95rem', width: '100%' }}
+                      />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                      <label style={{ color: 'var(--gn-text-secondary)', fontSize: '0.8rem' }}>With Ovarian Cancer</label>
+                      <input type="number" min="0" max="10" value={fhOvarian} onChange={e => setFhOvarian(e.target.value)}
+                        style={{ padding: '0.6rem 0.75rem', borderRadius: '8px', border: '1px solid #1e293b', background: '#05080d', color: 'var(--gn-white)', outline: 'none', fontSize: '0.95rem', width: '100%' }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           )}
+
+          {/* ── Upload Button ───────────────────────────────────────── */}
+          {file && !uploading && (() => {
+            const isBrca = linkUrl === "https://www.ncbi.nlm.nih.gov/nuccore/NM_007294.4?report=fasta";
+            const brcaValid = patientAge && patientSex;
+            const disabled = uploading || !linkUrl || (isBrca && !brcaValid);
+            return (
+              <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "1rem" }}>
+                <button
+                  onClick={handleUpload}
+                  className={styles.uploadBtn}
+                  id="upload-submit-btn"
+                  disabled={disabled}
+                  style={
+                    !disabled
+                    ? { width: "auto", padding: "1rem 2.5rem" } 
+                    : { width: "auto", padding: "1rem 2.5rem", background: "rgba(100,116,139,0.1)", color: "var(--gn-text-muted)", boxShadow: "none", border: "1px solid #1e293b", cursor: "not-allowed" }
+                  }
+                >
+                  {linkUrl ? "Upload and Analysis" : "Select Reference Genome"}
+                </button>
+              </div>
+            );
+          })()}
         </>
       )}
 
-      {/* ── Format Guide ───────────────────────────────────────────── */}
-      <section className={styles.formatGuide}>
-        <h2 className={styles.guideTitle}>What file do I need?</h2>
-        <div className={styles.guideGrid}>
-          <div className={styles.guideCard}>
-            <span className={styles.guideIcon}>🧪</span>
-            <p className={styles.guideName}>23andMe</p>
-            <p className={styles.guideDesc}>
-              Go to <strong>Settings → 23andMe Data → Download</strong> and
-              download your raw data as a TXT file.
-            </p>
-          </div>
-          <div className={styles.guideCard}>
-            <span className={styles.guideIcon}>🌳</span>
-            <p className={styles.guideName}>AncestryDNA</p>
-            <p className={styles.guideDesc}>
-              Go to <strong>DNA → Settings → Download Raw DNA Data</strong> and
-              download your TXT file.
-            </p>
-          </div>
-          <div className={styles.guideCard}>
-            <span className={styles.guideIcon}>🏥</span>
-            <p className={styles.guideName}>Clinical / Lab</p>
-            <p className={styles.guideDesc}>
-              Upload standard FASTA (.fasta, .fa) or VCF (.vcf) files provided
-              by your genetic testing laboratory.
-            </p>
-          </div>
-        </div>
-      </section>
 
       {/* ── Privacy Assurance ───────────────────────────────────────── */}
       <div className={styles.privacyNote}>

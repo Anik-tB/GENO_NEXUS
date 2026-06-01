@@ -24,7 +24,7 @@ export async function GET() {
       `SELECT id, first_name, last_name, email, account_category,
               bio, job_title, avatar_url, phone, organization,
               github_id, google_id, firebase_uid,
-              email_verified, created_at, last_login_at,
+              email_verified, created_at, last_login_at, research_opt_in,
               (SELECT COUNT(*) FROM dna_files WHERE user_id = $1) AS dna_files_count,
               (SELECT COUNT(*) FROM comparison_results cr
                JOIN dna_files df ON df.id = cr.query_file_id
@@ -57,6 +57,7 @@ export async function GET() {
         emailVerified: row.email_verified,
         createdAt: row.created_at,
         lastLoginAt: row.last_login_at,
+        researchOptIn: row.research_opt_in,
         dnaFilesCount: parseInt(row.dna_files_count, 10) || 0,
         analysesCount: parseInt(row.analyses_count, 10) || 0,
       },
@@ -75,7 +76,12 @@ export async function PATCH(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { firstName, lastName, bio, jobTitle, phone, organization, accountCategory } = body;
+    const { firstName, lastName, bio, jobTitle, phone, organization, accountCategory, researchOptIn } = body;
+
+    const db = assertDatabase();
+    if (typeof researchOptIn === 'boolean') {
+      await db.query(`UPDATE users SET research_opt_in = $1 WHERE id = $2`, [researchOptIn, user.id]);
+    }
 
     const updated = await updateUserProfile(user.id, {
       firstName: firstName?.trim() || undefined,
@@ -90,6 +96,28 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ profile: updated });
   } catch (error) {
     console.error("PATCH /api/profile error:", error);
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+  }
+}
+
+export async function DELETE() {
+  try {
+    const user = await getAuthedUser();
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const db = assertDatabase();
+    // Delete user from database. This should cascade and delete sessions, dna_files, etc.
+    await db.query(`DELETE FROM users WHERE id = $1`, [user.id]);
+
+    // Clear session cookie
+    const cookieStore = await cookies();
+    cookieStore.delete(env.sessionCookieName);
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("DELETE /api/profile error:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
