@@ -51,6 +51,7 @@ export interface CollabWebSocketReturn {
   postNote: (text: string, noteType: ActivityEntry["type"], author?: string) => void;
   sendTyping: (memberId: string, typing: boolean) => void;
   togglePipeline: (id: string, action: "pause" | "resume" | "stop") => void;
+  spawnPipeline: () => void;
   dismissAlert: (id: number) => void;
   inviteMember: (member: TeamMember) => void;
 }
