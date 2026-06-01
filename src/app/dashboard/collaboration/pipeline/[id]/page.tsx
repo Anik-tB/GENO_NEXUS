@@ -1,8 +1,22 @@
 "use client";
 
-import { use } from "react";
+import { use, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { PIPELINES } from "../../collab-data";
+
+import { useCollabStats } from "@/hooks/useCollabStats";
+import { useCollabWebSocket } from "@/hooks/useCollabWebSocket";
+
+interface PipelineStage { name: string; status: string; }
+
+interface Pipeline {
+  id: string;
+  name: string;
+  status: string;
+  progress: number;
+  eta?: string;
+  stages: PipelineStage[];
+  logs: string[];
+}
 
 const STATUS_COLORS: Record<string, string> = {
   running:   "#3b82f6",
@@ -26,18 +40,48 @@ const STAGE_COLORS: Record<string, string> = {
   pending: "#334155",
 };
 
+const STAGE_DESCRIPTIONS: Record<string, { title: string; desc: string }> = {
+  "QC":       { title: "Quality Control", desc: "Checking sequencing read qualities and removing adapters" },
+  "Parse":    { title: "Sequence Parsing", desc: "Extracting and validating raw genomic data" },
+  "Align":    { title: "Sequence Alignment", desc: "Mapping genomic reads to the reference genome" },
+  "Call":     { title: "Variant Calling", desc: "Identifying SNPs and Insertions/Deletions (Indels)" },
+  "Filter":   { title: "Variant Filtering", desc: "Removing false positive and low-quality variant calls" },
+  "Annotate": { title: "Variant Annotation", desc: "Predicting biological and functional effects of variants" },
+  "Report":   { title: "Clinical Report", desc: "Generating final diagnostic and pathogenic insights" },
+};
+
 interface PageProps { params: Promise<{ id: string }> }
 
 export default function PipelineDetailPage({ params }: PageProps) {
   const router = useRouter();
   const { id } = use(params);
-  const pipe = PIPELINES.find(p => p.id === id);
+
+  const { activeUser } = useCollabStats();
+  const { pipelines, wsStatus } = useCollabWebSocket(activeUser);
+
+  const pipe = pipelines.find(p => p.id === id) ?? null;
+
+  // We are "loading" if the WS hasn't connected yet and hasn't fallen back to offline mode
+  const loading = wsStatus === "connecting" || wsStatus === "reconnecting";
+
+  if (loading && !pipe) {
+    return (
+      <div style={{ display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", flex:1, gap:"1rem", color:"#475569" }}>
+        <span style={{ fontSize:"3rem", animation:"spin 1.5s linear infinite", display:"inline-block" }}>⚡</span>
+        <h2 style={{ margin:0, color:"#94a3b8" }}>Loading pipeline…</h2>
+        <style>{`@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}`}</style>
+      </div>
+    );
+  }
 
   if (!pipe) {
     return (
       <div style={{ display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", flex:1, gap:"1rem", color:"#475569" }}>
         <span style={{ fontSize:"3rem" }}>⚡</span>
         <h2 style={{ margin:0, color:"#94a3b8" }}>Pipeline not found</h2>
+        <p style={{ margin:0, fontSize:"0.85rem", color:"#475569", maxWidth:"320px", textAlign:"center" }}>
+          This pipeline may have been from a previous session. Dynamic pipelines live only in the active server session.
+        </p>
         <button onClick={() => router.back()} style={{ background:"rgba(255,255,255,0.06)", border:"1px solid rgba(255,255,255,0.12)", color:"#94a3b8", padding:"0.5rem 1.25rem", borderRadius:"8px", cursor:"pointer" }}>← Go Back</button>
       </div>
     );
@@ -119,10 +163,15 @@ export default function PipelineDetailPage({ params }: PageProps) {
             <div style={{ display:"flex", flexDirection:"column", gap:"0.5rem" }}>
               {pipe.stages.map((stage, i) => {
                 const sc = STAGE_COLORS[stage.status] ?? "#334155";
+                const info = STAGE_DESCRIPTIONS[stage.name] || { title: stage.name, desc: "Processing genomic data..." };
+                
                 return (
                   <div key={i} style={{ display:"flex", alignItems:"center", gap:"0.9rem", padding:"0.7rem 1rem", background:"rgba(255,255,255,0.02)", border:`1px solid ${sc}25`, borderRadius:"10px", borderLeft:`3px solid ${sc}` }}>
                     <div style={{ width:9, height:9, borderRadius:"50%", background:sc, flexShrink:0, boxShadow: stage.status === "active" ? `0 0 8px ${sc}` : "none" }} />
-                    <span style={{ flex:1, fontSize:"0.85rem", color:"#f1f5f9", fontWeight:500 }}>{stage.name}</span>
+                    <div style={{ flex:1, display:"flex", flexDirection:"column", gap:"0.2rem" }}>
+                      <span style={{ fontSize:"0.85rem", color:"#f1f5f9", fontWeight:600 }}>{info.title}</span>
+                      <span style={{ fontSize:"0.7rem", color:"#94a3b8" }}>{info.desc}</span>
+                    </div>
                     <span style={{ fontSize:"0.6rem", fontWeight:800, textTransform:"uppercase", letterSpacing:"0.06em", color:sc, background:`${sc}15`, padding:"0.12rem 0.45rem", borderRadius:"4px" }}>{stage.status}</span>
                   </div>
                 );
@@ -141,6 +190,9 @@ export default function PipelineDetailPage({ params }: PageProps) {
             <div style={{ fontSize:"0.63rem", color:"#475569", marginTop:"0.2rem" }}>{pipe.logs.length} entries</div>
           </div>
           <div style={{ padding:"0.85rem", display:"flex", flexDirection:"column", gap:"0.35rem" }}>
+            {pipe.logs.length === 0 && (
+              <div style={{ fontSize:"0.75rem", color:"#475569", textAlign:"center", padding:"1rem" }}>No log entries yet.</div>
+            )}
             {pipe.logs.map((log, i) => (
               <div key={i} style={{
                 fontFamily:"'JetBrains Mono','Fira Code',monospace",
