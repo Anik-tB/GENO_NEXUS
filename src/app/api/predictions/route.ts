@@ -26,8 +26,8 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "No uploaded file found. Please upload a genomic file first." }, { status: 404 });
     }
 
-    // 2. Try to find a completed comparison for the latest file first
-    let latestComparison = await db.query(`
+    // 2. Find a completed comparison for the latest file specifically
+    const latestComparison = await db.query(`
       SELECT cr.mutations_found, cr.match_percentage, df.file_name, cr.detected_organism, df.patient_metadata
       FROM comparison_results cr
       JOIN dna_files df ON cr.query_file_id = df.id
@@ -35,19 +35,19 @@ export async function GET(req: NextRequest) {
       ORDER BY cr.created_at DESC LIMIT 1
     `, [latestFile.rows[0].id]);
 
-    // 3. If no completed result for the latest file, fall back to ANY completed comparison for this user
     if (latestComparison.rowCount === 0) {
-      latestComparison = await db.query(`
-        SELECT cr.mutations_found, cr.match_percentage, df.file_name, cr.detected_organism, df.patient_metadata
-        FROM comparison_results cr
-        JOIN dna_files df ON cr.query_file_id = df.id
-        WHERE df.user_id = $1 AND cr.status = 'completed'
-        ORDER BY cr.created_at DESC LIMIT 1
-      `, [user.id]);
-    }
+      // Check if analysis is still processing
+      const processing = await db.query(`
+        SELECT id FROM comparison_results
+        WHERE query_file_id = $1 AND status = 'processing'
+        LIMIT 1
+      `, [latestFile.rows[0].id]);
 
-    if (latestComparison.rowCount === 0) {
-      return NextResponse.json({ error: "No completed analysis found. Please upload a file and run the analysis first." }, { status: 404 });
+      if (processing.rowCount && processing.rowCount > 0) {
+        return NextResponse.json({ error: "Analysis is still running. Please wait a moment and refresh." }, { status: 202 });
+      }
+
+      return NextResponse.json({ error: "No completed analysis found for your latest file. We are starting the analysis now — please wait a moment and refresh.", status: "pending" }, { status: 404 });
     }
 
     const mutations = latestComparison.rows[0].mutations_found || [];

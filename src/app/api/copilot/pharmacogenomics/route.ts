@@ -102,7 +102,7 @@ Output ONLY a valid JSON object matching the requested schema. Do not include ma
         prompt,
         systemInstruction,
         responseMimeType: "application/json",
-        maxOutputTokens: 1500
+        maxOutputTokens: 3000
       });
     } catch (apiError: any) {
       console.warn("Pharmacogenomics Gemini API Error, falling back to standard profile:", apiError);
