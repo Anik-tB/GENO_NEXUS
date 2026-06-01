@@ -43,43 +43,6 @@ export default async function UserPortalLayout({
   const firstName = user.firstName || "User";
 
   return (
-<<<<<<< Updated upstream
-    <div className={styles.shell}>
-      <nav className={styles.nav} aria-label="Main navigation">
-        <Link href="/user/dashboard" className={styles.navBrand}>
-          <span className={styles.navLogo}>GN</span>
-          <span>GenoNexus</span>
-        </Link>
-
-        <div className={styles.navLinks}>
-          <Link href="/user/dashboard" className={styles.navLink} id="nav-home">
-            🏠 Home
-          </Link>
-          <Link href="/user/upload-dna" className={styles.navLink} id="nav-upload">
-            🧬 Upload DNA
-          </Link>
-          <Link href="/user/results" className={styles.navLink} id="nav-results">
-            📊 My Results
-          </Link>
-          <Link href="/user/profile" className={styles.navLink} id="nav-profile">
-            👤 Profile
-          </Link>
-        </div>
-
-        <div className={styles.navRight}>
-          <div className={styles.navAvatar} title={fullName || firstName}>
-            {initials}
-          </div>
-          <form action="/api/auth/logout" method="POST" style={{ margin: 0 }}>
-            <button type="submit" className={styles.logoutBtn} id="nav-logout">
-              Sign out
-            </button>
-          </form>
-        </div>
-      </nav>
-
-      <main className={styles.main}>{children}</main>
-=======
     <div className={styles.dashboardShell}>
       <UserSidebar />
       <div className={styles.mainWrapper}>
@@ -88,7 +51,6 @@ export default async function UserPortalLayout({
           {children}
         </main>
       </div>
->>>>>>> Stashed changes
     </div>
   );
 }
