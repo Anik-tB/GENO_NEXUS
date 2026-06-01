@@ -6,6 +6,9 @@ export const metadata: Metadata = {
   title: "GenoNexus | Precision Genomics Intelligence",
   description:
     "GenoNexus is a precision genomics platform for DNA analysis, AI-guided interpretation, visualization, collaboration, and privacy-first clinical decision support.",
+  icons: {
+    icon: "/dna-icon.svg",
+  },
 };
 
 export default function RootLayout({

@@ -13,8 +13,8 @@ type OutbreakData = {
   alert_stats: AlertStat[];
 };
 
-function mkPoints(vals: number[], startIdx: number, w: number, h: number, max: number) {
-  const pad = 20, uw = w - pad * 2, uh = h - pad * 2, xStep = uw / (LABELS.length - 1);
+function mkPoints(vals: number[], startIdx: number, w: number, h: number, max: number, numLabels: number) {
+  const pad = 20, uw = w - pad * 2, uh = h - pad * 2, xStep = uw / (numLabels - 1);
   return vals.map((v, i) => ({ x: pad + (startIdx + i) * xStep, y: h - pad - (v / max) * uh }));
 }
 
@@ -25,6 +25,11 @@ export default function OutbreakPage() {
   const [disease, setDisease]  = useState("COVID-19");
   const [horizon, setHorizon]  = useState("6 Months");
   
+  const isHiv = disease === "HIV";
+  const currentLabels = isHiv
+    ? ["2018", "2019", "2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027", "2028"]
+    : ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov"];
+
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<OutbreakData>({
     historical_points: [12, 18, 25, 32, 45, 58, 65],
@@ -88,8 +93,8 @@ export default function OutbreakPage() {
   );
   const MAX = Math.max(150, maxVal * 1.2); // Give 20% headroom above highest point
 
-  const pastPts = mkPoints(data.historical_points, 0, W, H, MAX);
-  const futPts  = mkPoints(data.future_points, data.historical_points.length - 1, W, H, MAX);
+  const pastPts = mkPoints(data.historical_points, 0, W, H, MAX, currentLabels.length);
+  const futPts  = mkPoints(data.future_points, data.historical_points.length - 1, W, H, MAX, currentLabels.length);
   const joinedFuture = pastPts.length > 0 ? [pastPts[pastPts.length - 1], ...futPts.slice(1)] : futPts;
 
   const pastStr   = pts(pastPts);
@@ -134,8 +139,8 @@ export default function OutbreakPage() {
       {/* Filters */}
       <div className={styles.filtersBar}>
         {[
-          { label: "Region", value: country, set: setCountry, opts: ["Global","USA","UK","India","Brazil","Italy"] },
-          { label: "Pathogen", value: disease, set: setDisease, opts: ["COVID-19"] },
+          { label: "Region", value: country, set: setCountry, opts: ["Global","Bangladesh","USA","UK","India","Brazil","Italy"] },
+          { label: "Pathogen", value: disease, set: setDisease, opts: ["COVID-19","HIV"] },
           { label: "Time Horizon", value: horizon, set: setHorizon, opts: ["6 Months","1 Year","5 Years"] },
         ].map((f) => (
           <div key={f.label} className={styles.filterGroup}>
@@ -199,7 +204,7 @@ export default function OutbreakPage() {
             {joinedFuture.slice(1).map((p, i) => <circle key={`f${i}`} cx={p.x} cy={p.y} r="5" fill="var(--gn-bg)" stroke="var(--gn-danger)" strokeWidth="2"/>)}
           </svg>
           <div className={styles.xLabels}>
-            {LABELS.map((l) => <span key={l}>{l}</span>)}
+            {currentLabels.map((l) => <span key={l}>{l}</span>)}
           </div>
         </div>
       </div>
