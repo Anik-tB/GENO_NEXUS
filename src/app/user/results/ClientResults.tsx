@@ -129,6 +129,11 @@ export default function ClientResults() {
   const [predictions, setPredictions] = useState<Prediction[]>([]);
   const [meta, setMeta] = useState<PredictionResponse["meta"] | null>(null);
 
+  const [showPreventionPlan, setShowPreventionPlan] = useState(false);
+  const [loadingPlan, setLoadingPlan] = useState(false);
+  const [customPlan, setCustomPlan] = useState<{title: string, content: string}[] | null>(null);
+  const [planError, setPlanError] = useState<string | null>(null);
+
   const isBn = lang === "bn";
   const RISK_CONF = isBn ? BN_RISK_CONFIG : EN_RISK_CONFIG;
   const OVERALL_CONF = isBn ? BN_OVERALL_CONFIG : EN_OVERALL_CONFIG;
@@ -186,6 +191,115 @@ export default function ClientResults() {
     triggerAndPoll();
     return () => clearTimeout(pollTimer);
   }, []);
+
+  const handleGeneratePreventionPlan = async () => {
+    setShowPreventionPlan(true);
+    if (customPlan) return; // already loaded
+
+    setLoadingPlan(true);
+    setPlanError(null);
+    setCustomPlan(null);
+
+    try {
+      const isBn = lang === "bn";
+      const prompt = `Generate a concise clinical prevention plan and a list of recommended specialists to consult based on the patient's overall genomic analysis. Keep it brief and easy to understand.
+You MUST provide exactly 2 actionable sections in raw JSON format.
+CRITICAL: For every section, the 'title' and 'content' MUST contain BOTH the English text AND the Bengali (Bangla) translation. Do not omit the Bengali translation.
+Format example:
+[
+  {
+    "title": "Immediate Action / তাৎক্ষণিক পদক্ষেপ",
+    "content": "English text here.\\n\\nবাংলা অনুবাদ এখানে।"
+  }
+]`;
+      
+      const res = await fetch("/api/copilot", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: prompt,
+          mode: "prevention_plan",
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error(`Failed to generate prevention plan: ${res.statusText}`);
+      }
+
+      const data = await res.json();
+      if (!data.success || !data.reply) {
+        throw new Error(data.error || "Failed to generate prevention plan.");
+      }
+
+      let cleaned = data.reply.trim();
+      if (cleaned.startsWith("```")) {
+        cleaned = cleaned.replace(/^```(json)?\n/, "").replace(/\n```$/, "").trim();
+      }
+
+      let parsedSections: any[] = [];
+      try {
+        const parsed = JSON.parse(cleaned);
+        if (Array.isArray(parsed)) {
+          parsedSections = parsed;
+        } else if (parsed && typeof parsed === "object") {
+          const arrayKey = Object.keys(parsed).find(key => Array.isArray((parsed as any)[key]));
+          if (arrayKey) {
+            parsedSections = (parsed as any)[arrayKey];
+          } else if (parsed.title && parsed.content) {
+            parsedSections = [parsed];
+          }
+        }
+        if (parsedSections.length === 0) {
+          throw new Error("Parsed JSON did not contain any valid section list");
+        }
+      } catch (err) {
+        console.warn("Failed to parse reply as JSON. Attempting repair...", err);
+        
+        let success = false;
+        const endings = ['', '"]}]', '"}]', '}]', ']', '"}', '}'];
+        
+        for (let end of endings) {
+          try {
+            const parsed = JSON.parse(cleaned + end);
+            if (Array.isArray(parsed)) {
+              parsedSections = parsed;
+              success = true;
+              break;
+            } else if (parsed && parsed.sections) {
+              parsedSections = parsed.sections;
+              success = true;
+              break;
+            }
+          } catch (e) {}
+        }
+        
+        if (!success) {
+          // If appending closures doesn't work, fallback to basic regex
+          const titles = [...cleaned.matchAll(/"title"\s*:\s*"([^"\\]*(?:\\.[^"\\]*)*)"?/g)];
+          const contents = [...cleaned.matchAll(/"content"\s*:\s*"([^"\\]*(?:\\.[^"\\]*)*)"?/g)];
+          
+          for (let i = 0; i < Math.max(titles.length, contents.length); i++) {
+            parsedSections.push({
+              title: titles[i]?.[1] ? titles[i][1].replace(/\\n/g, ' ').replace(/\\"/g, '"') : "Section",
+              content: contents[i]?.[1] ? contents[i][1].replace(/\\n/g, ' ').replace(/\\"/g, '"') : "..."
+            });
+          }
+          
+          if (parsedSections.length === 0) {
+             let plainText = cleaned.replace(/[{}\[\]"]/g, "").replace(/title:/g, "\n\n").replace(/content:/g, "\n");
+             parsedSections = [{ title: "Partial Plan", content: plainText }];
+          }
+        }
+      }
+
+      setCustomPlan(parsedSections);
+    } catch (err: any) {
+      console.warn("Copilot prevention plan error:", err);
+      setPlanError(err.message || "Failed to connect to the clinical genomics copilot API. Please try again.");
+    } finally {
+      setLoadingPlan(false);
+    }
+  };
 
   // ── Computed State ──────────────────────────────────────────────────────────
   const overallStatus = computeOverallStatus(predictions);
@@ -363,6 +477,78 @@ export default function ClientResults() {
         <span>⚕️</span>
         <p>{UI.disclaimer}</p>
       </div>
+
+      {/* ── Floating Prevention Plan Button ─────────────────────────── */}
+      <button 
+        className={styles.fabPrevention} 
+        onClick={handleGeneratePreventionPlan}
+        title="View Prevention Plan"
+      >
+        <span>🛡️</span>
+        {isBn ? "প্রতিরোধ পরিকল্পনা দেখুন" : "View Prevention Plan"}
+      </button>
+
+      {/* ── Prevention Plan Modal ───────────────────────────────────── */}
+      {showPreventionPlan && (
+        <div className={styles.modalOverlay} onClick={() => setShowPreventionPlan(false)}>
+          <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <h3 className={styles.modalTitle}>
+                {isBn ? "ক্লিনিক্যাল প্রতিরোধ পরিকল্পনা" : "Clinical Prevention Plan"}
+              </h3>
+              <button className={styles.closeButton} onClick={() => setShowPreventionPlan(false)}>×</button>
+            </div>
+            
+            <div className={styles.planContent}>
+              {loadingPlan && (
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "2rem 0" }}>
+                  <div style={{ width: 40, height: 40, border: '3px solid rgba(16, 185, 129, 0.1)', borderLeftColor: '#10b981', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+                  <p style={{ color: "var(--gn-text-secondary)", marginTop: "1rem", fontSize: "0.9rem", textAlign: "center" }}>
+                    {isBn ? "ক্লিনিক্যাল সুপারিশ তৈরি করা হচ্ছে..." : "Generating clinical recommendations..."}
+                  </p>
+                  <style>{`@keyframes spin { 100% { transform: rotate(360deg); } }`}</style>
+                </div>
+              )}
+
+              {planError && (
+                <div style={{ textAlign: "center", padding: "1rem 0" }}>
+                  <p style={{ color: "var(--gn-danger)", fontSize: "0.9rem", marginBottom: "1.5rem" }}>
+                    {planError}
+                  </p>
+                  <button
+                    onClick={() => {
+                      setPlanError(null);
+                      setLoadingPlan(true);
+                      handleGeneratePreventionPlan();
+                    }}
+                    style={{ background: "transparent", border: "1px solid var(--gn-border-light-strong)", color: "var(--gn-text-primary)", padding: "0.5rem 1rem", borderRadius: "6px", cursor: "pointer", fontSize: "0.85rem" }}
+                  >
+                    {isBn ? "পুনরায় চেষ্টা করুন" : "Retry"}
+                  </button>
+                </div>
+              )}
+
+              {customPlan && customPlan.map((section: any, idx: number) => (
+                <div key={idx} className={styles.planSection}>
+                  <h4>{section.title}</h4>
+                  <p>{section.content}</p>
+                </div>
+              ))}
+            </div>
+
+            <div style={{ marginTop: "2rem", display: "flex", justifyContent: "flex-end", flexShrink: 0 }}>
+              <button 
+                onClick={() => setShowPreventionPlan(false)}
+                style={{ background: "var(--gn-primary)", color: "#000", border: "none", padding: "0.6rem 1.5rem", borderRadius: "8px", fontWeight: "bold", cursor: "pointer", transition: "transform 0.2s" }}
+                onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+                onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
+              >
+                {isBn ? "বন্ধ করুন" : "Acknowledge"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

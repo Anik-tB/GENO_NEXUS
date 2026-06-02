@@ -368,8 +368,8 @@ export default function UploadDnaPage() {
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
                     <label style={{ color: 'var(--gn-text-secondary)', fontSize: '0.82rem', fontWeight: 600 }}>Age</label>
                     <input
-                      type="number" min="18" max="90" value={patientAge}
-                      onChange={e => setPatientAge(e.target.value)}
+                      type="text" inputMode="numeric" pattern="[0-9]*" maxLength={3} value={patientAge}
+                      onChange={e => setPatientAge(e.target.value.replace(/\D/g, ''))}
                       style={{ padding: '0.7rem 1rem', borderRadius: '8px', border: '1px solid #1e293b', background: '#05080d', color: 'var(--gn-white)', outline: 'none', fontSize: '0.95rem', width: '100%' }}
                     />
                   </div>
@@ -391,13 +391,13 @@ export default function UploadDnaPage() {
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
                       <label style={{ color: 'var(--gn-text-secondary)', fontSize: '0.8rem' }}>With Breast Cancer</label>
-                      <input type="number" min="0" max="10" value={fhBreast} onChange={e => setFhBreast(e.target.value)}
+                      <input type="text" inputMode="numeric" pattern="[0-9]*" maxLength={2} value={fhBreast} onChange={e => setFhBreast(e.target.value.replace(/\D/g, ''))}
                         style={{ padding: '0.6rem 0.75rem', borderRadius: '8px', border: '1px solid #1e293b', background: '#05080d', color: 'var(--gn-white)', outline: 'none', fontSize: '0.95rem', width: '100%' }}
                       />
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
                       <label style={{ color: 'var(--gn-text-secondary)', fontSize: '0.8rem' }}>With Ovarian Cancer</label>
-                      <input type="number" min="0" max="10" value={fhOvarian} onChange={e => setFhOvarian(e.target.value)}
+                      <input type="text" inputMode="numeric" pattern="[0-9]*" maxLength={2} value={fhOvarian} onChange={e => setFhOvarian(e.target.value.replace(/\D/g, ''))}
                         style={{ padding: '0.6rem 0.75rem', borderRadius: '8px', border: '1px solid #1e293b', background: '#05080d', color: 'var(--gn-white)', outline: 'none', fontSize: '0.95rem', width: '100%' }}
                       />
                     </div>

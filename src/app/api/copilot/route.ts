@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { z } from "zod";
 import { getUserFromSessionToken } from "@/lib/auth/sessions";
+import { isNormalUserCategory } from "@/lib/auth/portal";
 import { assertDatabase } from "@/lib/db";
 import { env } from "@/lib/env";
 import { getCopilotContext } from "@/lib/copilot/context";
@@ -105,9 +106,16 @@ export async function GET() {
     const db = assertDatabase();
     const context = await getCopilotContext(user.id, db);
     const greeting = buildGreeting(context);
+
+    let initialMessage = "Give the user a concise opening summary of the latest GenoNexus analysis. If no completed analysis exists, explain what is missing.";
+    
+    if (isNormalUserCategory(user.accountCategory)) {
+      initialMessage = "Generate a full, easy-to-understand simplified report of the patient's latest genomic analysis. Explain what the findings mean. At the end, explicitly list the specific specialists they should consult based on their condition (e.g. Cardiologist, Pulmonologist, Infectious Disease Specialist, General Medicine). Provide the entire response in both English and Bangla translations.";
+    }
+
     const reply = await askGeminiCopilot({
       context,
-      message: "Give the user a concise opening summary of the latest GenoNexus analysis. If no completed analysis exists, explain what is missing.",
+      message: initialMessage,
     });
 
     return NextResponse.json({
@@ -184,7 +192,7 @@ export async function POST(req: NextRequest) {
       history: parsed.data.history,
       systemInstruction,
       responseMimeType: parsed.data.mode === "prevention_plan" ? "application/json" : "text/plain",
-      maxOutputTokens: parsed.data.mode === "prevention_plan" ? 1500 : 700,
+      maxOutputTokens: parsed.data.mode === "prevention_plan" ? 4000 : 1500,
     });
 
     return NextResponse.json({

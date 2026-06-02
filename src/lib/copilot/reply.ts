@@ -347,10 +347,10 @@ function buildSuggestions(context: CopilotContext) {
   }
 
   if (context.metrics.riskLevel === "high") {
-    return ["Show high-risk loci", "Explain drug resistance", "What should I do next?"];
+    return ["Show high-risk loci", "What should I do next?", "Generate a simplified report and recommend specialists"];
   }
 
-  return ["Summarize latest analysis", "Show affected genes", "Any report ready?"];
+  return ["Summarize latest analysis", "Generate a simplified report and recommend specialists", "Show affected genes"];
 }
 
 function buildMeta(context: CopilotContext) {
