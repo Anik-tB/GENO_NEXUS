@@ -4,8 +4,8 @@
   align-items: center;
   justify-content: space-between;
   padding: 0 2rem;
-  background: var(--gn-surface);
-  border-bottom: 1px solid var(--gn-surface-border);
+  background: var(--gn-bg);
+  border-bottom: 1px solid var(--gn-border-light);
   position: sticky;
   top: 0;
   z-index: 40;

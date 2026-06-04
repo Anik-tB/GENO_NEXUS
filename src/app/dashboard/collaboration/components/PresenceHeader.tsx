@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import styles from "./PresenceHeader.module.css";
 import { TeamMember } from "../collab-data";
 
@@ -13,6 +14,7 @@ interface Props {
 }
 
 export default function PresenceHeader({ members, alertCount, onToggleAlerts, onAddMember, wsStatus = "live" }: Props) {
+  const router = useRouter();
   const [isInviteOpen, setIsInviteOpen] = useState(false);
   const [inviteUsername, setInviteUsername] = useState("");
   const [isInviting, setIsInviting] = useState(false);
@@ -84,7 +86,19 @@ export default function PresenceHeader({ members, alertCount, onToggleAlerts, on
 
       <div className={styles.teamPresence}>
         {members.map(member => (
-          <div key={member.id} className={styles.memberNode} style={{ borderColor: member.color }}>
+          <div 
+            key={member.id} 
+            className={styles.memberNode} 
+            style={{ borderColor: member.color }}
+            onClick={() => {
+              if (member.id === "AI") {
+                window.dispatchEvent(new Event("openCopilot"));
+              } else {
+                router.push(`/dashboard/chat/${member.id}`);
+              }
+            }}
+            title={`Chat with ${member.name}`}
+          >
             <span className={styles.memberAvatar}>
               {member.id === "AI" ? "🤖" : (member.initials || member.name.substring(0, 2).toUpperCase())}
             </span>

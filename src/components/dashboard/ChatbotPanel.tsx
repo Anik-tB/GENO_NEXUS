@@ -127,6 +127,14 @@ export function ChatbotPanel() {
     messageListRef.current.scrollTop = messageListRef.current.scrollHeight;
   }, [messages, isOpen, isSending]);
 
+  useEffect(() => {
+    const handleOpen = () => {
+      setIsOpen(true);
+    };
+    window.addEventListener("openCopilot", handleOpen);
+    return () => window.removeEventListener("openCopilot", handleOpen);
+  }, []);
+
   const togglePanel = () => setIsOpen((current) => !current);
 
   async function sendMessage(rawMessage: string) {
