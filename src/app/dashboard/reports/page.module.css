@@ -122,19 +122,30 @@
 .docSection code { color: var(--gn-primary); background: var(--gn-bg-glass-light); padding: 0.1rem 0.35rem; border-radius: 4px; font-size: 0.85em; border: 1px solid var(--gn-border-light); }
 
 .docTable { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
-.docTable th { padding: 0.55rem 0.75rem; color: var(--gn-text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; font-size: 0.7rem; border-bottom: 1px solid var(--gn-border-light); }
+.docTable th { text-align: left; padding: 0.55rem 0.75rem; color: var(--gn-text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; font-size: 0.7rem; border-bottom: 1px solid var(--gn-border-light); }
 .docTable td { padding: 0.75rem; color: var(--gn-text-primary); border-bottom: 1px solid var(--gn-border-light); }
 .docTable code { color: var(--gn-primary); background: var(--gn-bg-glass-light); padding: 0.1rem 0.35rem; border-radius: 4px; }
 
-.riskHigh { color: var(--gn-danger); font-weight: 700; font-size: 0.75rem; }
-.riskLow  { color: var(--gn-success); font-weight: 700; font-size: 0.75rem; }
+.tierBadge { padding: 0.2rem 0.5rem; border-radius: 4px; font-weight: 700; font-size: 0.72rem; letter-spacing: 0.05em; text-transform: uppercase; border: 1px solid transparent; }
+.tier1 { background: rgba(239, 68, 68, 0.1); color: #ef4444; border-color: rgba(239, 68, 68, 0.2); }
+.tier2 { background: rgba(245, 158, 11, 0.1); color: #f59e0b; border-color: rgba(245, 158, 11, 0.2); }
+.tier3 { background: rgba(100, 116, 139, 0.1); color: #94a3b8; border-color: rgba(100, 116, 139, 0.2); }
 
-.riskBars { display: flex; flex-direction: column; gap: 0.6rem; }
-.riskBarRow { display: flex; align-items: center; gap: 0.75rem; }
-.riskBarLabel { font-size: 0.8rem; color: var(--gn-text-secondary); min-width: 105px; }
-.riskBarTrack { flex: 1; height: 6px; background: var(--gn-bg-glass-light); border-radius: 999px; overflow: hidden; }
-.riskBarFill { height: 100%; border-radius: 999px; transition: width 0.5s ease; }
-.riskBarPct { font-size: 0.78rem; font-weight: 700; color: var(--gn-white); min-width: 32px; text-align: right; }
+.statusIndicated { color: var(--gn-success); font-weight: 700; font-size: 0.75rem; background: rgba(16,185,129,0.1); padding: 0.2rem 0.5rem; border-radius: 4px; border: 1px solid rgba(16,185,129,0.2); }
+.statusContra { color: var(--gn-danger); font-weight: 700; font-size: 0.75rem; background: rgba(239,68,68,0.1); padding: 0.2rem 0.5rem; border-radius: 4px; border: 1px solid rgba(239,68,68,0.2); }
+
+.demographicsBox {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+  background: var(--gn-bg-glass-light);
+  border: 1px solid var(--gn-border-light-strong);
+  padding: 1rem;
+  border-radius: 8px;
+}
+.demoItem { display: flex; flex-direction: column; gap: 0.2rem; }
+.demoItem span { font-size: 0.7rem; text-transform: uppercase; color: var(--gn-text-muted); font-weight: 600; letter-spacing: 0.05em; }
+.demoItem strong { font-size: 0.9rem; color: var(--gn-white); }
 
 .docFooter { font-size: 0.72rem; color: var(--gn-text-muted); border-top: 1px solid var(--gn-border-light); padding-top: 0.75rem; }
 
@@ -214,18 +225,21 @@
   font-weight: 700;
 }
 
-/* Recommendations */
-.recommendationsList {
-  list-style-type: disc;
-  padding-left: 1.5rem;
-  color: var(--gn-text-secondary);
-  font-size: 0.875rem;
-  line-height: 1.6;
-  margin: 0;
+/* Trials */
+.trialsList { display: flex; flex-direction: column; gap: 0.75rem; }
+.trialItem {
+  background: var(--gn-bg-glass-light);
+  border: 1px solid var(--gn-border-light-strong);
+  padding: 1rem;
+  border-left: 3px solid #3b82f6;
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
 }
-.recommendationsList li {
-  margin-bottom: 0.5rem;
-}
+.trialHeader { display: flex; align-items: center; justify-content: space-between; font-size: 0.85rem; color: var(--gn-white); }
+.trialPhase { background: rgba(59, 130, 246, 0.15); color: #60a5fa; padding: 0.1rem 0.5rem; border-radius: 999px; font-size: 0.7rem; font-weight: 700; border: 1px solid rgba(59, 130, 246, 0.2); }
+.trialTitle { font-size: 0.82rem; color: var(--gn-text-secondary); line-height: 1.5; }
 
 /* Methodology */
 .methodology {
@@ -244,4 +258,26 @@
 
 @media (max-width: 640px) {
   .header { flex-direction: column; }
+}
+
+/* Print Styles for PDF Export */
+@media print {
+  .container {
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  
+  .documentPreview {
+    max-height: none !important;
+    overflow: visible !important;
+    padding: 0 !important;
+  }
+  
+  .previewPanel {
+    border: none !important;
+    box-shadow: none !important;
+    background: transparent !important;
+  }
+  
+  /* We'll handle the global body hiding via inline style in page.tsx */
 }

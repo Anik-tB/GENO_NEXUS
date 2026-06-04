@@ -41,6 +41,11 @@ export async function POST(req: NextRequest) {
           ($1, $2, $3, 0, $4, $5, 'success', 100, $6, $7)
       `, [fileId, user.id, fileName, fileType, url, patientMetadata ? JSON.stringify(patientMetadata) : null, visibility]);
 
+      await db.query(`
+        INSERT INTO user_notifications (user_id, title, message, type, link)
+        VALUES ($1, $2, $3, $4, $5)
+      `, [user.id, "Reference Linked", `Reference sequence '${fileName}' linked successfully.`, "info", "/dashboard/upload"]);
+
       return NextResponse.json({ success: true, id: fileId });
     }
 
@@ -78,6 +83,11 @@ export async function POST(req: NextRequest) {
       VALUES
         ($1, $2, $3, $4, $5, $6, 'processing', $7, $8)
     `, [fileId, user.id, fileName, fileSize, fileType, storagePath, patientMetadata ? JSON.stringify(patientMetadata) : null, visibility]);
+
+    await db.query(`
+      INSERT INTO user_notifications (user_id, title, message, type, link)
+      VALUES ($1, $2, $3, $4, $5)
+    `, [user.id, "Sequence Uploaded", `File '${fileName}' was successfully uploaded.`, "info", "/dashboard/upload"]);
 
     return NextResponse.json({ success: true, id: fileId });
   } catch (error) {

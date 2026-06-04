@@ -1,7 +1,21 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import styles from "./page.module.css";
+
+type Severity = "high" | "medium";
+type ProfileMode = "no_data" | "baseline" | "variant_guided";
+type CpicLevel = "A" | "B" | "C";
+type Phenotype =
+  | "poor_metabolizer"
+  | "intermediate_metabolizer"
+  | "normal_metabolizer"
+  | "rapid_metabolizer"
+  | "ultrarapid_metabolizer"
+  | "normal_function"
+  | "decreased_function"
+  | "increased_sensitivity"
+  | "deficient";
 
 interface DrugItem {
   name: string;
@@ -10,447 +24,648 @@ interface DrugItem {
   note: string;
   pathways: string[];
   variantEvidence: string;
-  severity?: "high" | "medium";
+  guideline: string;
+  severity?: Severity;
+  cpicLevel: CpicLevel;
+  fdaWarning: boolean;
+  dosingGuidance: string;
 }
 
 interface MetabolicEnzyme {
   enzyme: string;
+  geneFullName: string;
   status: string;
+  phenotype: Phenotype;
   description: string;
+  evidence: string;
+  diplotype: string;
 }
 
 interface PrescribingProfile {
   hasData: boolean;
   fileName?: string;
+  source: string;
+  mode: ProfileMode;
+  generatedAt: string;
+  coverage: {
+    pharmacogeneVariants: number;
+    totalVariants: number;
+    genesTested: number;
+    genesWithFindings: number;
+    genes: string[];
+    limitations: string[];
+  };
   metabolicProfile: MetabolicEnzyme[];
   favorable: DrugItem[];
   avoid: DrugItem[];
 }
 
+const emptyProfile: PrescribingProfile = {
+  hasData: false,
+  source: "CPIC/FDA Pharmacogenomics Decision Support",
+  mode: "no_data",
+  generatedAt: "",
+  coverage: {
+    pharmacogeneVariants: 0,
+    totalVariants: 0,
+    genesTested: 9,
+    genesWithFindings: 0,
+    genes: [],
+    limitations: ["No completed analysis is available yet."],
+  },
+  metabolicProfile: [],
+  favorable: [],
+  avoid: [],
+};
+
+function CheckIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.7" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="20 6 9 17 4 12" />
+    </svg>
+  );
+}
+
+function CloseIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="18" y1="6" x2="6" y2="18" />
+      <line x1="6" y1="6" x2="18" y2="18" />
+    </svg>
+  );
+}
+
+function FlaskIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M10 2v7.31" />
+      <path d="M14 9.3V2" />
+      <path d="M8.5 2h7" />
+      <path d="M14 9.3a6.5 6.5 0 1 1-4 0" />
+      <path d="M5.5 16.5h13" />
+      <path d="M12 13v7" />
+    </svg>
+  );
+}
+
+function WarningIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z" />
+      <line x1="12" y1="9" x2="12" y2="13" />
+      <line x1="12" y1="17" x2="12.01" y2="17" />
+    </svg>
+  );
+}
+
+function InfoIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="10" />
+      <line x1="12" y1="16" x2="12" y2="12" />
+      <line x1="12" y1="8" x2="12.01" y2="8" />
+    </svg>
+  );
+}
+
+function ShieldIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+    </svg>
+  );
+}
+
+function statusLabel(mode: ProfileMode) {
+  if (mode === "variant_guided") return "Variant evidence linked";
+  if (mode === "baseline") return "Baseline guideline mode";
+  return "Analysis required";
+}
+
+function statusTone(mode: ProfileMode) {
+  if (mode === "variant_guided") return styles.statusSuccess;
+  if (mode === "baseline") return styles.statusWarning;
+  return styles.statusMuted;
+}
+
+function scoreText(drug: DrugItem) {
+  return drug.severity ? `${100 - drug.score}%` : `${drug.score}%`;
+}
+
 export default function DrugsPage() {
   const [profile, setProfile] = useState<PrescribingProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedPathway, setSelectedPathway] = useState("All");
   const [selectedDrug, setSelectedDrug] = useState<DrugItem | null>(null);
 
-  // Fetch pharmacogenomics profile on mount
-  useEffect(() => {
-    fetch("/api/copilot/pharmacogenomics")
-      .then(async (r) => {
-        if (!r.ok) {
-          const errText = await r.text().catch(() => "Unknown error");
-          let errData;
-          try {
-            errData = JSON.parse(errText);
-          } catch {
-            errData = { error: errText || `HTTP ${r.status}` };
-          }
-          throw new Error(errData.error || `HTTP ${r.status}`);
-        }
-        return r.json();
-      })
-      .then((data) => {
-        setProfile(data);
-        setLoading(false);
-      })
-      .catch((err) => {
-        console.warn("Error fetching pharmacogenomics data:", err);
-        setProfile({ error: err.message || "Failed to fetch pharmacogenomics data." } as any);
-        setLoading(false);
+  const fetchProfile = useCallback(async (signal?: AbortSignal) => {
+    setLoading(true);
+    setError("");
+
+    try {
+      const response = await fetch("/api/copilot/pharmacogenomics", {
+        signal,
+        headers: { Accept: "application/json" },
       });
+      const data = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        throw new Error(data?.error || `Request failed with HTTP ${response.status}`);
+      }
+
+      setProfile(data as PrescribingProfile);
+    } catch (err) {
+      if ((err as Error).name === "AbortError") return;
+      setProfile(null);
+      setError((err as Error).message || "Failed to load pharmacogenomics profile.");
+    } finally {
+      if (!signal?.aborted) setLoading(false);
+    }
   }, []);
 
-  if (loading) {
-    return (
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "70vh" }}>
-        <div style={{ width: 60, height: 60, border: "3px solid rgba(16, 185, 129, 0.1)", borderTopColor: "var(--gn-primary)", borderRadius: "50%", animation: "spin 1s cubic-bezier(0.5, 0, 0.5, 1) infinite" }} />
-        <h3 style={{ marginTop: "1.5rem", color: "var(--gn-primary)", letterSpacing: "0.15em", fontSize: "0.9rem", fontWeight: 700 }}>SEQUENCING METABOLIC PATHWAYS</h3>
-        <p style={{ color: "var(--gn-text-muted)", fontSize: "0.85rem", marginTop: "0.5rem" }}>Cross-referencing genetic variants with clinical drug interactions...</p>
-        <style>{`@keyframes spin { 100% { transform: rotate(360deg); } }`}</style>
-      </div>
-    );
-  }
+  useEffect(() => {
+    const controller = new AbortController();
+    void fetchProfile(controller.signal);
+    return () => controller.abort();
+  }, [fetchProfile]);
 
-  const activeProfile = (profile && profile.favorable && profile.avoid) ? profile : {
-    hasData: false,
-    metabolicProfile: [],
-    favorable: [],
-    avoid: []
-  };
+  useEffect(() => {
+    if (!selectedDrug) return;
 
-  const filterDrugs = (list: DrugItem[] = []) => {
-    if (!list || !Array.isArray(list)) return [];
-    return list.filter((drug) => {
-      const matchesSearch = drug.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                            drug.gene.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesPathway = selectedPathway === "All" || drug.pathways.includes(selectedPathway);
-      return matchesSearch && matchesPathway;
-    });
-  };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setSelectedDrug(null);
+    };
 
-  const filteredFavorable = filterDrugs(activeProfile.favorable);
-  const filteredAvoid = filterDrugs(activeProfile.avoid);
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [selectedDrug]);
 
-  const allPathways = ["All", ...Array.from(new Set([
-    ...activeProfile.favorable.flatMap((d) => d.pathways),
-    ...activeProfile.avoid.flatMap((d) => d.pathways)
-  ]))];
+  const activeProfile = profile ?? emptyProfile;
+
+  const allDrugs = useMemo(
+    () => [...activeProfile.favorable, ...activeProfile.avoid],
+    [activeProfile.avoid, activeProfile.favorable],
+  );
+
+  const allPathways = useMemo(
+    () => [
+      "All",
+      ...Array.from(new Set(allDrugs.flatMap((drug) => drug.pathways))).sort((a, b) => a.localeCompare(b)),
+    ],
+    [allDrugs],
+  );
+
+  const browseOptions = useMemo(() => {
+    const drugNames = Array.from(new Set(allDrugs.map((drug) => drug.name))).sort((a, b) => a.localeCompare(b));
+    const genes = Array.from(new Set(allDrugs.map((drug) => drug.gene))).sort((a, b) => a.localeCompare(b));
+    return { drugNames, genes };
+  }, [allDrugs]);
+
+  const filteredDrugs = useCallback(
+    (list: DrugItem[]) => {
+      const normalizedQuery = searchQuery.trim().toLowerCase();
+
+      return list.filter((drug) => {
+        const matchesSearch =
+          !normalizedQuery ||
+          drug.name.toLowerCase().includes(normalizedQuery) ||
+          drug.gene.toLowerCase().includes(normalizedQuery) ||
+          drug.pathways.some((pathway) => pathway.toLowerCase().includes(normalizedQuery));
+        const matchesPathway = selectedPathway === "All" || drug.pathways.includes(selectedPathway);
+        return matchesSearch && matchesPathway;
+      });
+    },
+    [searchQuery, selectedPathway],
+  );
+
+  const filteredFavorable = filteredDrugs(activeProfile.favorable);
+  const filteredAvoid = filteredDrugs(activeProfile.avoid);
+  const generatedAt = activeProfile.generatedAt
+    ? new Intl.DateTimeFormat(undefined, {
+        dateStyle: "medium",
+        timeStyle: "short",
+      }).format(new Date(activeProfile.generatedAt))
+    : "Pending";
 
   return (
     <div className={styles.container}>
-      {/* ── Header ── */}
       <header className={styles.header}>
         <div className={styles.headerContent}>
-          <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", flexWrap: "wrap", marginBottom: "0.25rem" }}>
+          <div className={styles.headerMeta}>
             <div className={styles.eyebrow}>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M10 2v7.31"/><path d="M14 9.3V1.99"/><path d="M8.5 2h7"/><path d="M14 9.3a6.5 6.5 0 1 1-4 0"/><path d="M5.5 16.5h13"/><path d="M12 13v7"/></svg>
+              <span className={styles.iconSm}>
+                <FlaskIcon />
+              </span>
               Precision Prescribing Engine
             </div>
-            <span style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "0.35rem",
-              fontSize: "0.68rem",
-              background: activeProfile.hasData ? "rgba(16, 185, 129, 0.15)" : "rgba(234, 179, 8, 0.15)",
-              color: activeProfile.hasData ? "var(--gn-success)" : "var(--gn-warning)",
-              border: `1px solid ${activeProfile.hasData ? "var(--gn-success)" : "var(--gn-warning)"}33`,
-              padding: "2px 8px",
-              borderRadius: "999px",
-              fontWeight: 700
-            }}>
-              <span style={{ width: 5, height: 5, borderRadius: "50%", background: "currentColor", boxShadow: "0 0 6px currentColor" }}></span>
-              {activeProfile.hasData ? `Active Genome Linked (${activeProfile.fileName})` : "Standard Guidelines Mode"}
+            <span className={`${styles.statusPill} ${statusTone(activeProfile.mode)}`}>
+              <span className={styles.statusDot} />
+              {statusLabel(activeProfile.mode)}
             </span>
           </div>
           <h1 className={styles.title}>Pharmacogenomics</h1>
-          <p className={styles.subtitle}>AI-guided precision prescribing based on patient metabolic pathway profiling. Each recommendation is backed by detected variant evidence.</p>
+          <p className={styles.subtitle}>
+            Evidence-based prescribing support from the latest completed genome comparison, with transparent coverage,
+            guideline source, and variant evidence for each recommendation.
+          </p>
         </div>
       </header>
 
-      {profile && (profile as any).error && (
-        <div style={{
-          background: "rgba(244, 63, 94, 0.08)",
-          border: "1px solid rgba(244, 63, 94, 0.25)",
-          color: "var(--gn-danger)",
-          padding: "1rem 1.25rem",
-          borderRadius: "12px",
-          fontSize: "0.82rem",
-          display: "flex",
-          flexDirection: "column",
-          gap: "0.3rem",
-          boxShadow: "inset 0 1px 0 rgba(255,255,255,0.05)"
-        }}>
-          <strong style={{ fontSize: "0.95rem", display: "flex", alignItems: "center", gap: "0.4rem" }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
-            Error Loading Pharmacogenomics Report
-          </strong>
-          <span style={{ opacity: 0.9 }}>{(profile as any).error}</span>
-        </div>
-      )}
-
-      {profile && (profile as any).isFallback && (
-        <div style={{
-          background: "rgba(234, 179, 8, 0.08)",
-          border: "1px solid rgba(234, 179, 8, 0.25)",
-          color: "var(--gn-warning)",
-          padding: "1rem 1.25rem",
-          borderRadius: "12px",
-          fontSize: "0.82rem",
-          display: "flex",
-          flexDirection: "column",
-          gap: "0.3rem",
-          boxShadow: "inset 0 1px 0 rgba(255,255,255,0.05)"
-        }}>
-          <strong style={{ fontSize: "0.95rem", display: "flex", alignItems: "center", gap: "0.4rem" }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-            Genome Copilot API Quota Limit Reached
-          </strong>
-          <span style={{ opacity: 0.9, lineHeight: 1.4 }}>
-            The system could not retrieve customized AI recommendations due to Gemini API rate limits. 
-            Displaying standard baseline reference guidelines based on assumed normal metabolizer phenotypes.
-          </span>
-          <span style={{ fontSize: "0.72rem", opacity: 0.7, marginTop: "0.1rem" }}>
-            API Details: {(profile as any).errorDetails}
-          </span>
-        </div>
-      )}
-
-      {/* ── Grid Layout ── */}
-      <div className={styles.layout}>
-        {/* Left Column: Search, Filters & Drug Lists */}
-        <div className={styles.mainContent}>
-          {/* Search & Filter Controls */}
-          <div className={styles.filterRow}>
-            {/* Search Dropdown */}
-            <div className={styles.searchWrapper}>
-              <select 
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className={styles.searchSelect}
-              >
-                <option value="" style={{ background: "#0f172a", color: "var(--gn-white)" }}>Browse available Drugs & Genes...</option>
-                <optgroup label="Medications" style={{ background: "#0f172a", color: "var(--gn-primary)" }}>
-                  {Array.from(new Set([...activeProfile.favorable, ...activeProfile.avoid].map(d => d.name))).sort().map(name => (
-                    <option key={name} value={name} style={{ color: "var(--gn-white)" }}>{name}</option>
-                  ))}
-                </optgroup>
-                <optgroup label="Target Genes" style={{ background: "#0f172a", color: "var(--gn-warning)" }}>
-                  {Array.from(new Set([...activeProfile.favorable, ...activeProfile.avoid].map(d => d.gene))).sort().map(gene => (
-                    <option key={gene} value={gene} style={{ color: "var(--gn-white)" }}>{gene}</option>
-                  ))}
-                </optgroup>
-              </select>
-              <svg 
-                className={styles.searchIcon}
-                width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
-              >
-                <polyline points="6 9 12 15 18 9"></polyline>
-              </svg>
-            </div>
-
-            {/* Pathway Tags */}
-            <div className={styles.tagList}>
-              {allPathways.map((pathway) => (
-                <button
-                  key={pathway}
-                  onClick={() => setSelectedPathway(pathway)}
-                  className={`${styles.filterTag} ${selectedPathway === pathway ? styles.filterTagActive : ""}`}
-                >
-                  {pathway}
-                </button>
-              ))}
-            </div>
+      {loading ? (
+        <section className={styles.loadingPanel} aria-live="polite">
+          <div className={styles.spinner} />
+          <div>
+            <h2>Building prescribing profile</h2>
+            <p>Reading comparison results and matching actionable pharmacogene evidence.</p>
           </div>
-
-          {/* Columns */}
-          <div className={styles.columns}>
-            {/* ── Recommended ── */}
-            <section className={styles.column}>
-              <div className={`${styles.columnHeader} ${styles.headerSuccess}`}>
-                <div className={styles.headerIcon}>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                </div>
-                <div>
-                  <h2>Favorable Response</h2>
-                  <p>{filteredFavorable.length} drugs matched criteria</p>
-                </div>
+        </section>
+      ) : (
+        <>
+          {error && (
+            <section className={styles.alertDanger} role="alert">
+              <span className={styles.alertIcon}>
+                <WarningIcon />
+              </span>
+              <div>
+                <strong>Unable to load pharmacogenomics profile</strong>
+                <p>{error}</p>
               </div>
-              <div className={styles.drugList}>
-                {filteredFavorable.map((drug, i) => (
-                  <article 
-                    key={i} 
-                    className={`${styles.drugCard} ${styles.cardSuccess}`}
-                    onClick={() => setSelectedDrug(drug)}
-                    style={{ cursor: "pointer" }}
-                  >
-                    <div className={styles.cardTop}>
-                      <div>
-                        <h3 className={styles.drugName}>{drug.name}</h3>
-                        <code className={styles.geneTag}>
-                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21.2 15c.7-1.2 1-2.5.7-3.9-.6-2-2.4-3.5-4.4-3.5h-1.2c-.7-3-3.2-5.2-6.2-5.6-3-.3-5.9 1.3-7.3 4-1.2 2.5-1 5.4.5 7.6 1.5 2.2 4.2 3.4 6.8 3.1 1.4-.2 2.7-.8 3.7-1.8l.9.9c1 1 2.3 1.5 3.7 1.5 1.5 0 2.9-.6 3.9-1.6 1-1.1 1.6-2.5 1.6-4 0-1.5-.6-2.9-1.6-4-.9-1-2.2-1.6-3.6-1.6-1.5 0-2.9.6-3.9 1.6l-.9-.9c-1-1-2.3-1.5-3.7-1.5z"/></svg>
-                          {drug.gene}
-                        </code>
-                      </div>
-                      <div className={styles.scoreBadge}>
-                        <span className={styles.scoreVal}>{drug.score}</span>
-                        <span className={styles.scoreLbl}>Efficacy</span>
-                      </div>
-                    </div>
-                    <div className={styles.efficacyBar}>
-                      <div className={styles.efficacyFill} style={{ width: `${drug.score}%` }} />
-                    </div>
-                    <p className={styles.drugNote}>{drug.note}</p>
-                    <div className={styles.pathwayTags}>
-                      {drug.pathways.map((t) => <span key={t} className={styles.tag}>{t}</span>)}
-                    </div>
-                  </article>
-                ))}
-                {filteredFavorable.length === 0 && (
-                  <div style={{ textAlign: "center", padding: "2.5rem 1rem", color: "var(--gn-text-muted)", fontSize: "0.8rem", background: "var(--gn-bg-glass)", borderRadius: "14px", border: "1px dashed var(--gn-border-light-strong)" }}>
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.5, marginBottom: "0.4rem" }}><circle cx="12" cy="12" r="10"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
-                    <br/>
-                    No favorable drug response matches found.
-                  </div>
-                )}
-              </div>
+              <button type="button" className={styles.retryButton} onClick={() => void fetchProfile()}>
+                Retry
+              </button>
             </section>
+          )}
 
-            {/* ── Avoid ── */}
-            <section className={styles.column}>
-              <div className={`${styles.columnHeader} ${styles.headerDanger}`}>
-                <div className={styles.headerIcon}>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          {!error && (
+            <>
+              <section className={styles.insightStrip} aria-label="Pharmacogenomics profile summary">
+                <div className={styles.insightItem}>
+                  <span className={styles.mutedLabel}>Genome Source</span>
+                  <strong>{activeProfile.fileName || "No completed analysis"}</strong>
                 </div>
-                <div>
-                  <h2>Contraindicated / High Risk</h2>
-                  <p>{filteredAvoid.length} drugs flagged</p>
+                <div className={styles.insightItem}>
+                  <span className={styles.mutedLabel}>Genes Tested</span>
+                  <strong>{activeProfile.coverage.genesTested ?? activeProfile.metabolicProfile.length}</strong>
                 </div>
-              </div>
-              <div className={styles.drugList}>
-                {filteredAvoid.map((drug, i) => (
-                  <article 
-                    key={i} 
-                    className={`${styles.drugCard} ${styles.cardDanger}`}
-                    onClick={() => setSelectedDrug(drug)}
-                    style={{ cursor: "pointer" }}
-                  >
-                    <div className={styles.cardTop}>
-                      <div>
-                        <h3 className={styles.drugName}>{drug.name}</h3>
-                        <code className={styles.geneTag} style={{ background: "linear-gradient(90deg, rgba(244,63,94,0.15), rgba(244,63,94,0.05))", color: "var(--gn-danger)", borderColor: "rgba(244,63,94,0.2)" }}>
-                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21.2 15c.7-1.2 1-2.5.7-3.9-.6-2-2.4-3.5-4.4-3.5h-1.2c-.7-3-3.2-5.2-6.2-5.6-3-.3-5.9 1.3-7.3 4-1.2 2.5-1 5.4.5 7.6 1.5 2.2 4.2 3.4 6.8 3.1 1.4-.2 2.7-.8 3.7-1.8l.9.9c1 1 2.3 1.5 3.7 1.5 1.5 0 2.9-.6 3.9-1.6 1-1.1 1.6-2.5 1.6-4 0-1.5-.6-2.9-1.6-4-.9-1-2.2-1.6-3.6-1.6-1.5 0-2.9.6-3.9 1.6l-.9-.9c-1-1-2.3-1.5-3.7-1.5z"/></svg>
-                          {drug.gene}
-                        </code>
-                      </div>
-                      <span className={`${styles.sevBadge} ${styles[`sev_${drug.severity || "high"}`]}`}>
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-                        {drug.severity === "medium" ? "ELEVATED RISK" : "HIGH RISK"}
-                      </span>
-                    </div>
-                    <p className={styles.drugNote}>{drug.note}</p>
-                    <div className={styles.failureRow}>
-                      <span className={styles.failureLabel}>Toxicity / Failure</span>
-                      <div className={styles.failureTrack}>
-                        <div className={styles.failureBar} style={{ width: `${100 - drug.score}%` }} />
-                      </div>
-                      <span className={styles.failurePct}>{100 - drug.score}%</span>
-                    </div>
-                  </article>
-                ))}
-                {filteredAvoid.length === 0 && (
-                  <div style={{ textAlign: "center", padding: "2.5rem 1rem", color: "var(--gn-text-muted)", fontSize: "0.8rem", background: "var(--gn-bg-glass)", borderRadius: "14px", border: "1px dashed var(--gn-border-light-strong)" }}>
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.5, marginBottom: "0.4rem" }}><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="m9 12 2 2 4-4"/></svg>
-                    <br/>
-                    No contraindicated drug response matches found.
-                  </div>
-                )}
-              </div>
-            </section>
-          </div>
-        </div>
-
-        {/* Right Column: Sidebar with Pathway Status */}
-        <aside className={styles.sidebar}>
-          <span className={styles.mutedLabel}>Metabolic Pathway Status</span>
-          <div className={styles.pathwayGrid}>
-            {activeProfile.metabolicProfile.map((met, idx) => {
-              const isPoor = met.status.toLowerCase().includes("poor") || met.status.toLowerCase().includes("impaired");
-              const isUltra = met.status.toLowerCase().includes("ultra");
-              
-              let statusClass = styles.pathwayCardSuccess;
-              let statusColor = "var(--gn-success)";
-              if (isPoor) {
-                statusClass = styles.pathwayCardDanger;
-                statusColor = "var(--gn-danger)";
-              } else if (isUltra) {
-                statusClass = styles.pathwayCardWarning;
-                statusColor = "var(--gn-warning)";
-              } else if (met.status.toLowerCase().includes("awaiting")) {
-                statusClass = styles.pathwayCardMuted;
-                statusColor = "var(--gn-text-muted)";
-              }
-
-              return (
-                <div key={idx} className={`${styles.pathwayCard} ${statusClass}`}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.4rem" }}>
-                    <strong style={{ fontSize: "0.85rem", color: "var(--gn-white)" }}>{met.enzyme}</strong>
-                    <span style={{ fontSize: "0.62rem", padding: "2px 6px", borderRadius: "4px", background: `${statusColor}15`, color: statusColor, fontWeight: 800, border: `1px solid ${statusColor}33`, letterSpacing: "0.05em" }}>
-                      {met.status.toUpperCase()}
-                    </span>
-                  </div>
-                  <p style={{ margin: 0, fontSize: "0.78rem", color: "var(--gn-text-secondary)", lineHeight: 1.4 }}>{met.description}</p>
+                <div className={styles.insightItem}>
+                  <span className={styles.mutedLabel}>Actionable Findings</span>
+                  <strong>{activeProfile.coverage.genesWithFindings ?? 0}</strong>
                 </div>
-              );
-            })}
-          </div>
-        </aside>
-      </div>
+                <div className={styles.insightItem}>
+                  <span className={styles.mutedLabel}>Pharmacogene Variants</span>
+                  <strong>{activeProfile.coverage.pharmacogeneVariants}</strong>
+                </div>
+                <div className={styles.insightItem}>
+                  <span className={styles.mutedLabel}>Generated</span>
+                  <strong>{generatedAt}</strong>
+                </div>
+              </section>
 
-      {/* ── Interactive Detail Modal ── */}
-      {selectedDrug && (
-        <div className={styles.modalOverlay} onClick={() => setSelectedDrug(null)}>
-          <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
-            <button className={styles.closeBtn} onClick={() => setSelectedDrug(null)}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-            </button>
-
-            <div className={styles.modalHeader}>
-              <div 
-                className={styles.modalIconWrapper}
-                style={{ 
-                  background: selectedDrug.severity ? "linear-gradient(135deg, rgba(244,63,94,0.15), rgba(244,63,94,0.05))" : "linear-gradient(135deg, rgba(16,185,129,0.15), rgba(16,185,129,0.05))",
-                  border: selectedDrug.severity ? "1px solid rgba(244,63,94,0.25)" : "1px solid rgba(16,185,129,0.25)",
-                  color: selectedDrug.severity ? "var(--gn-danger)" : "var(--gn-success)",
-                }}
-              >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 2v7.31"/><path d="M14 9.3V1.99"/><path d="M8.5 2h7"/><path d="M14 9.3a6.5 6.5 0 1 1-4 0"/><path d="M5.5 16.5h13"/><path d="M12 13v7"/></svg>
-              </div>
-              <div>
-                <h3 className={styles.modalTitle}>{selectedDrug.name}</h3>
-                <code className={styles.modalGeneTag}>
-                  Gene Target: {selectedDrug.gene}
-                </code>
-              </div>
-            </div>
-
-            <div className={styles.modalBody}>
-              <div>
-                <span className={styles.mutedLabel}>Genomic Variant Evidence</span>
-                <p className={styles.modalEvidenceText}>
-                  {selectedDrug.variantEvidence || "No specific variant flagged in sequence."}
-                </p>
-              </div>
-
-              <div>
-                <span className={styles.mutedLabel}>Clinical Interaction Note</span>
-                <p className={styles.modalNoteText}>
-                  {selectedDrug.note}
-                </p>
-              </div>
-
-              <div 
-                className={styles.modalDiagnosticBox}
-                style={{ 
-                  background: selectedDrug.severity ? "linear-gradient(135deg, rgba(244,63,94,0.08), transparent)" : "linear-gradient(135deg, rgba(16,185,129,0.08), transparent)", 
-                }}
-              >
-                <div className={styles.modalDiagnosticHeader}>
-                  <span className={styles.modalDiagnosticLabel}>Diagnostic Metric</span>
-                  <span 
-                    className={styles.modalDiagnosticValue}
-                    style={{ color: selectedDrug.severity ? "var(--gn-danger)" : "var(--gn-success)" }}
-                  >
-                    {selectedDrug.severity ? "TOXICITY RISK" : "METABOLIC EFFICACY"}
+              {activeProfile.coverage.limitations.length > 0 && (
+                <section className={styles.alertInfo}>
+                  <span className={styles.alertIcon}>
+                    <InfoIcon />
                   </span>
-                </div>
-                <div className={styles.modalProgressBarWrapper}>
-                  <div className={styles.modalProgressBarTrack}>
-                    <div 
-                      className={styles.modalProgressBarFill}
-                      style={{
-                        width: `${selectedDrug.severity ? (100 - selectedDrug.score) : selectedDrug.score}%`,
-                        background: selectedDrug.severity ? "linear-gradient(90deg, var(--gn-danger), #fb7185)" : "linear-gradient(90deg, var(--gn-success), #34d399)",
-                      }} 
+                  <div>
+                    <strong>Clinical use notice</strong>
+                    <p>{activeProfile.coverage.limitations[0]}</p>
+                  </div>
+                </section>
+              )}
+
+              <div className={styles.layout}>
+                <main className={styles.mainContent}>
+                  <section className={styles.controlsPanel} aria-label="Drug and pathway filters">
+                    <div className={styles.searchGrid}>
+                      <label className={styles.searchField}>
+                        <span>Search drug, gene, or pathway</span>
+                        <input
+                          value={searchQuery}
+                          onChange={(event) => setSearchQuery(event.target.value)}
+                          placeholder="Try CYP2C19, warfarin, lipid..."
+                        />
+                      </label>
+                      <label className={styles.searchField}>
+                        <span>Browse available matches</span>
+                        <select
+                          value=""
+                          onChange={(event) => setSearchQuery(event.target.value)}
+                          aria-label="Browse available drugs and genes"
+                        >
+                          <option value="">Select a drug or gene</option>
+                          <optgroup label="Medications">
+                            {browseOptions.drugNames.map((name) => (
+                              <option key={name} value={name}>
+                                {name}
+                              </option>
+                            ))}
+                          </optgroup>
+                          <optgroup label="Genes">
+                            {browseOptions.genes.map((gene) => (
+                              <option key={gene} value={gene}>
+                                {gene}
+                              </option>
+                            ))}
+                          </optgroup>
+                        </select>
+                      </label>
+                    </div>
+
+                    <div className={styles.tagList} aria-label="Pathway filters">
+                      {allPathways.map((pathway) => (
+                        <button
+                          key={pathway}
+                          type="button"
+                          onClick={() => setSelectedPathway(pathway)}
+                          className={`${styles.filterTag} ${selectedPathway === pathway ? styles.filterTagActive : ""}`}
+                          aria-pressed={selectedPathway === pathway}
+                        >
+                          {pathway}
+                        </button>
+                      ))}
+                    </div>
+                  </section>
+
+                  <div className={styles.columns}>
+                    <DrugColumn
+                      title="Favorable Response"
+                      subtitle={`${filteredFavorable.length} matched recommendation${filteredFavorable.length === 1 ? "" : "s"}`}
+                      tone="success"
+                      drugs={filteredFavorable}
+                      emptyText="No favorable response matches for the current filters."
+                      onSelect={setSelectedDrug}
+                    />
+                    <DrugColumn
+                      title="Contraindicated / High Risk"
+                      subtitle={`${filteredAvoid.length} flagged recommendation${filteredAvoid.length === 1 ? "" : "s"}`}
+                      tone="danger"
+                      drugs={filteredAvoid}
+                      emptyText="No high-risk matches for the current filters."
+                      onSelect={setSelectedDrug}
                     />
                   </div>
-                  <strong 
-                    className={styles.modalProgressValue}
-                    style={{ color: selectedDrug.severity ? "var(--gn-danger)" : "var(--gn-success)" }}
-                  >
-                    {selectedDrug.severity ? `${100 - selectedDrug.score}%` : `${selectedDrug.score}%`}
-                  </strong>
-                </div>
-              </div>
+                </main>
 
-              <div className={styles.modalFooterInfo}>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                Recommendations sourced from CPIC & FDA guidelines. Consult a medical provider.
+                <aside className={styles.sidebar}>
+                  <div>
+                    <span className={styles.mutedLabel}>Metabolic Pathway Status</span>
+                    <p className={styles.sidebarIntro}>{activeProfile.source}</p>
+                  </div>
+                  <div className={styles.pathwayGrid}>
+                    {activeProfile.metabolicProfile.map((metabolic) => (
+                      <PathwayCard key={metabolic.enzyme} metabolic={metabolic} />
+                    ))}
+                  </div>
+                </aside>
               </div>
-            </div>
+            </>
+          )}
+        </>
+      )}
+
+      {selectedDrug && <DrugModal drug={selectedDrug} onClose={() => setSelectedDrug(null)} />}
+    </div>
+  );
+}
+
+function DrugColumn({
+  title,
+  subtitle,
+  tone,
+  drugs,
+  emptyText,
+  onSelect,
+}: {
+  title: string;
+  subtitle: string;
+  tone: "success" | "danger";
+  drugs: DrugItem[];
+  emptyText: string;
+  onSelect: (drug: DrugItem) => void;
+}) {
+  return (
+    <section className={styles.column}>
+      <div className={`${styles.columnHeader} ${tone === "success" ? styles.headerSuccess : styles.headerDanger}`}>
+        <div className={styles.headerIcon}>{tone === "success" ? <CheckIcon /> : <CloseIcon />}</div>
+        <div>
+          <h2>{title}</h2>
+          <p>{subtitle}</p>
+        </div>
+      </div>
+
+      <div className={styles.drugList}>
+        {drugs.map((drug) => (
+          <button
+            key={`${drug.name}-${drug.gene}-${drug.severity ?? "ok"}`}
+            type="button"
+            className={`${styles.drugCardButton} ${drug.severity ? styles.cardDanger : styles.cardSuccess}`}
+            onClick={() => onSelect(drug)}
+          >
+            <DrugCard drug={drug} />
+          </button>
+        ))}
+
+        {drugs.length === 0 && (
+          <div className={styles.emptyState}>
+            <span>{tone === "success" ? <CheckIcon /> : <InfoIcon />}</span>
+            <p>{emptyText}</p>
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
+
+function DrugCard({ drug }: { drug: DrugItem }) {
+  const riskPct = 100 - drug.score;
+  const metricValue = drug.severity ? riskPct : drug.score;
+
+  return (
+    <>
+      {/* Top row: drug name + gene left, badge right */}
+      <div className={styles.cardTop}>
+        <div className={styles.cardTitleBlock}>
+          <h3 className={styles.drugName}>{drug.name}</h3>
+          <code className={`${styles.geneTag} ${drug.severity ? styles.geneTagDanger : ""}`}>{drug.gene}</code>
+        </div>
+        {drug.severity ? (
+          <span className={`${styles.sevBadge} ${drug.severity === "high" ? styles.sevHigh : styles.sevMedium}`}>
+            <WarningIcon />
+            {drug.severity === "high" ? "High risk" : "Elevated"}
+          </span>
+        ) : (
+          <div className={styles.scoreBadge}>
+            <span>{drug.score}</span>
+            <small>Efficacy</small>
+          </div>
+        )}
+      </div>
+
+      {/* Note – 3 line clamp */}
+      <p className={styles.drugNote}>{drug.note}</p>
+
+      {/* Clinical badges row: CPIC level + FDA warning */}
+      <div className={styles.cardBadgeRow}>
+        <span className={`${styles.cpicBadge} ${styles[`cpic${drug.cpicLevel}`]}`}>
+          CPIC Level {drug.cpicLevel}
+        </span>
+        {drug.fdaWarning && (
+          <span className={styles.fdaBadge}>
+            <WarningIcon /> FDA Label
+          </span>
+        )}
+        <span className={styles.guidelineText}>{drug.guideline}</span>
+      </div>
+
+      {/* Dosing guidance */}
+      <div className={styles.dosingRow}>
+        <span className={styles.dosingLabel}>Recommended action</span>
+        <span className={styles.dosingValue}>{drug.dosingGuidance}</span>
+      </div>
+
+      {/* Progress bar – track + percentage */}
+      <div
+        className={styles.metricRow}
+        aria-label={`${drug.severity ? "Risk" : "Efficacy"}: ${scoreText(drug)}`}
+      >
+        <div className={styles.metricTrack}>
+          <div
+            className={`${styles.metricFill} ${drug.severity ? styles.metricFillDanger : styles.metricFillSuccess}`}
+            style={{ width: `${metricValue}%` }}
+          />
+        </div>
+        <strong>{scoreText(drug)}</strong>
+      </div>
+    </>
+  );
+}
+
+
+function PathwayCard({ metabolic }: { metabolic: MetabolicEnzyme }) {
+  const p = metabolic.phenotype;
+  const isRisk =
+    p === "poor_metabolizer" ||
+    p === "decreased_function" ||
+    p === "deficient" ||
+    p === "increased_sensitivity";
+  const isIntermediate = p === "intermediate_metabolizer";
+  const isUltrarapid = p === "ultrarapid_metabolizer" || p === "rapid_metabolizer";
+
+  const phenotypeLabel: Record<string, string> = {
+    poor_metabolizer: "Poor Metabolizer",
+    intermediate_metabolizer: "Intermediate Metabolizer",
+    normal_metabolizer: "Normal Metabolizer",
+    rapid_metabolizer: "Rapid Metabolizer",
+    ultrarapid_metabolizer: "Ultrarapid Metabolizer",
+    normal_function: "Normal Function",
+    decreased_function: "Decreased Function",
+    increased_sensitivity: "Increased Sensitivity",
+    deficient: "Deficient",
+  };
+
+  const cardClass = isRisk
+    ? styles.pathwayCardDanger
+    : isIntermediate
+      ? styles.pathwayCardWarning
+      : isUltrarapid
+        ? styles.pathwayCardRapid
+        : styles.pathwayCardSuccess;
+
+  const badgeClass = isRisk
+    ? styles.phenotypeDanger
+    : isIntermediate
+      ? styles.phenotypeWarning
+      : isUltrarapid
+        ? styles.phenotypeRapid
+        : styles.phenotypeNormal;
+
+  return (
+    <article className={`${styles.pathwayCard} ${cardClass}`}>
+      <div className={styles.pathwayHeader}>
+        <strong>{metabolic.enzyme}</strong>
+        <span className={`${styles.phenotypeBadge} ${badgeClass}`}>
+          {phenotypeLabel[metabolic.phenotype] ?? metabolic.status}
+        </span>
+      </div>
+      <p className={styles.geneFullName}>{metabolic.geneFullName}</p>
+      <code className={styles.diplotype}>{metabolic.diplotype}</code>
+      <p className={styles.pathwayDesc}>{metabolic.description}</p>
+    </article>
+  );
+}
+
+function DrugModal({ drug, onClose }: { drug: DrugItem; onClose: () => void }) {
+  const metric = drug.severity ? 100 - drug.score : drug.score;
+
+  return (
+    <div className={styles.modalOverlay} onMouseDown={onClose}>
+      <section
+        className={styles.modalContent}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="drug-detail-title"
+        onMouseDown={(event) => event.stopPropagation()}
+      >
+        <button type="button" className={styles.closeBtn} onClick={onClose} aria-label="Close drug details">
+          <CloseIcon />
+        </button>
+
+        <div className={styles.modalHeader}>
+          <div className={`${styles.modalIconWrapper} ${drug.severity ? styles.modalIconDanger : styles.modalIconSuccess}`}>
+            {drug.severity ? <WarningIcon /> : <FlaskIcon />}
+          </div>
+          <div>
+            <h3 id="drug-detail-title" className={styles.modalTitle}>
+              {drug.name}
+            </h3>
+            <code className={styles.modalGeneTag}>Gene target: {drug.gene}</code>
           </div>
         </div>
-      )}
+
+        <div className={styles.modalBody}>
+          <div>
+            <span className={styles.mutedLabel}>Variant Evidence</span>
+            <p className={styles.modalEvidenceText}>{drug.variantEvidence}</p>
+          </div>
+
+          <div>
+            <span className={styles.mutedLabel}>Clinical Recommendation</span>
+            <p className={styles.modalNoteText}>{drug.note}</p>
+          </div>
+
+          <div>
+            <span className={styles.mutedLabel}>Guideline Basis</span>
+            <p className={styles.modalNoteText}>{drug.guideline}</p>
+          </div>
+
+          <div className={styles.modalDiagnosticBox}>
+            <div className={styles.modalDiagnosticHeader}>
+              <span>{drug.severity ? "Risk signal" : "Response signal"}</span>
+              <strong className={drug.severity ? styles.textDanger : styles.textSuccess}>
+                {drug.severity ? "Review required" : "Favorable"}
+              </strong>
+            </div>
+            <div className={styles.modalProgressBarWrapper}>
+              <div className={styles.modalProgressBarTrack}>
+                <div
+                  className={`${styles.modalProgressBarFill} ${
+                    drug.severity ? styles.metricFillDanger : styles.metricFillSuccess
+                  }`}
+                  style={{ width: `${metric}%` }}
+                />
+              </div>
+              <strong className={drug.severity ? styles.textDanger : styles.textSuccess}>{metric}%</strong>
+            </div>
+          </div>
+
+          <div className={styles.modalFooterInfo}>
+            <InfoIcon />
+            Clinical decision support only. Confirm genotype and patient context before changing therapy.
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

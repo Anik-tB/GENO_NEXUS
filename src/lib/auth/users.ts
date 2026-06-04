@@ -257,6 +257,7 @@ export interface UpdateProfileInput {
   phone?: string;
   organization?: string;
   accountCategory?: AccountCategory;
+  avatarUrl?: string;
 }
 
 export async function updateUserProfile(userId: string, input: UpdateProfileInput) {
@@ -272,6 +273,7 @@ export async function updateUserProfile(userId: string, input: UpdateProfileInpu
         phone      = COALESCE($6, phone),
         organization = COALESCE($7, organization),
         account_category = COALESCE($8, account_category),
+        avatar_url = COALESCE($9, avatar_url),
         updated_at = NOW()
       WHERE id = $1
       RETURNING id, first_name, last_name, email, account_category, password_hash,
@@ -288,6 +290,7 @@ export async function updateUserProfile(userId: string, input: UpdateProfileInpu
       input.phone ?? null,
       input.organization ?? null,
       input.accountCategory ?? null,
+      input.avatarUrl ?? null,
     ]
   );
   return mapUser(result.rows[0]);

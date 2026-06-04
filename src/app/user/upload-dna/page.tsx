@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import Link from "next/link";
 import styles from "./page.module.css";
 
@@ -8,10 +8,78 @@ const ACCEPTED_FORMATS = [".fasta", ".fa", ".vcf", ".fna", ".zip"];
 const MAX_SIZE_MB = 100;
 
 const FORMAT_INFO = [
-  { ext: "FASTA", desc: "Genetic Sequence", color: "var(--gn-primary)" },
-  { ext: "VCF", desc: "Variant Call Format", color: "var(--gn-blue)" },
-  { ext: "FNA", desc: "FASTA Nucleic Acid", color: "#a78bfa" },
+  { ext: "FASTA", desc: "Genetic Sequence", descBn: "জেনেটিক সিকোয়েন্স", color: "var(--gn-primary)" },
+  { ext: "VCF", desc: "Variant Call Format", descBn: "ভ্যারিয়েন্ট কল ফরম্যাট", color: "var(--gn-blue)" },
+  { ext: "FNA", desc: "FASTA Nucleic Acid", descBn: "নিউক্লিক অ্যাসিড সিকোয়েন্স", color: "#a78bfa" },
 ];
+
+const EN = {
+  back: "← Back to Dashboard",
+  title: "Upload Your DNA File",
+  subtitle: "Upload your genetic data file to get started. We support files from 23andMe, AncestryDNA, and standard FASTA / VCF formats.",
+  successTitle: "Upload Complete!",
+  successDesc: "Your DNA file has been securely uploaded. Our system is now analyzing your genetic data. This usually takes 2–5 minutes.",
+  viewResults: "View Disease Predictions →",
+  uploadAnother: "Upload Another File",
+  maxSize: "Max Size",
+  dragDrop: "Drag & drop your DNA file",
+  or: "or",
+  browse: "click to browse",
+  limit: "Maximum file size:",
+  selectRef: "Select Reference Genome",
+  refDesc: "Select an NCBI reference genome below. Our system will analyze your uploaded DNA against this reference sequence.",
+  profileTitle: "Patient Profile Required",
+  profileRequired: "⚠ Required for BRCA Analysis",
+  profileDesc: "Because you selected a BRCA reference genome, please fill in this profile. This is required by the CanRisk clinical model to calculate accurate cancer risk percentages.",
+  age: "Age",
+  sex: "Biological Sex",
+  female: "♀ Female",
+  male: "♂ Male",
+  familyHistory: "Family History (First-Degree Relatives)",
+  withBreast: "With Breast Cancer",
+  withOvarian: "With Ovarian Cancer",
+  uploadSubmit: "Upload and Analysis",
+  uploadSelectRef: "Select Reference Genome",
+  privacy: "Your DNA data is end-to-end encrypted and stored securely. GenoNexus never sells or shares your genetic data. You can delete your data at any time.",
+  uploading: "Uploading & encrypting your file…",
+  uploadingHint: "Your data is being encrypted before leaving your device.",
+  errSize: "File is too large. Maximum allowed size is 100 MB.",
+  errType: "Unsupported file type. Please upload a FASTA, FNA, or VCF file."
+};
+
+const BN = {
+  back: "← ড্যাশবোর্ডে ফিরে যান",
+  title: "আপনার ডিএনএ ফাইল আপলোড করুন",
+  subtitle: "শুরু করতে আপনার জেনেটিক ডেটা ফাইলটি আপলোড করুন। আমরা 23andMe, AncestryDNA এবং সাধারণ FASTA / VCF ফাইল সমর্থন করি।",
+  successTitle: "আপলোড সম্পন্ন হয়েছে!",
+  successDesc: "আপনার ডিএনএ ফাইলটি সফলভাবে আপলোড করা হয়েছে। আমাদের সিস্টেম এখন আপনার জেনেটিক ডেটা বিশ্লেষণ করছে। এটি সাধারণত ২–৫ মিনিট সময় নেয়।",
+  viewResults: "ফলাফল দেখুন →",
+  uploadAnother: "আরেকটি ফাইল আপলোড করুন",
+  maxSize: "সর্বোচ্চ সাইজ",
+  dragDrop: "আপনার ডিএনএ ফাইলটি এখানে ড্র্যাগ অ্যান্ড ড্রপ করুন",
+  or: "অথবা",
+  browse: "ব্রাউজ করতে ক্লিক করুন",
+  limit: "সর্বোচ্চ ফাইল সাইজ:",
+  selectRef: "রেফারেন্স জিনোম নির্বাচন করুন",
+  refDesc: "নিচে একটি এনসিবিআই (NCBI) রেফারেন্স জিনোম নির্বাচন করুন। আমাদের সিস্টেম এই রেফারেন্স সিকোয়েন্সের বিপরীতে আপনার আপলোড করা ডিএনএ বিশ্লেষণ করবে।",
+  profileTitle: "রোগীর প্রোফাইল তথ্য আবশ্যক",
+  profileRequired: "⚠ BRCA বিশ্লেষণের জন্য আবশ্যক",
+  profileDesc: "যেহেতু আপনি একটি BRCA রেফারেন্স জিনোম নির্বাচন করেছেন, অনুগ্রহ করে এই প্রোফাইলটি পূরণ করুন। সঠিক ক্যান্সারের ঝুঁকির হার গণনা করতে CanRisk ক্লিনিক্যাল মডেলের জন্য এটি প্রয়োজনীয়।",
+  age: "বয়স",
+  sex: "শারীরবৃত্তীয় লিঙ্গ",
+  female: "♀ নারী",
+  male: "♂ পুরুষ",
+  familyHistory: "পারিবারিক ইতিহাস (প্রথম-ডিগ্রী আত্মীয়স্বজন)",
+  withBreast: "স্তন ক্যান্সারে আক্রান্ত",
+  withOvarian: "ডিম্বাশয় ক্যান্সারে আক্রান্ত",
+  uploadSubmit: "আপলোড এবং বিশ্লেষণ করুন",
+  uploadSelectRef: "রেফারেন্স জিনোম নির্বাচন করুন",
+  privacy: "আপনার ডিএনএ ডেটা অ্যান্ড-টু-অ্যান্ড এনক্রিপ্ট করা এবং নিরাপদে সংরক্ষিত। GenoNexus কখনই আপনার জেনেটিক ডেটা বিক্রি বা শেয়ার করে না। আপনি যেকোনো সময় আপনার প্রোফাইল সেটিংস থেকে ডেটা মুছে ফেলতে পারেন।",
+  uploading: "আপনার ফাইল আপলোড ও এনক্রিপ্ট করা হচ্ছে…",
+  uploadingHint: "আপনার ডিভাইস থেকে ফাইলটি পাঠানোর আগে সম্পূর্ণ এনক্রিপ্ট করা হচ্ছে।",
+  errSize: "ফাইলটি অনেক বড়। সর্বোচ্চ অনুমোদিত সাইজ ১০০ এমবি (100 MB)।",
+  errType: "অসমর্থিত ফাইলের ধরণ। অনুগ্রহ করে FASTA, FNA, বা VCF ফাইল আপলোড করুন।"
+};
 
 function formatBytes(bytes: number) {
   if (bytes === 0) return "0 Bytes";
@@ -22,6 +90,7 @@ function formatBytes(bytes: number) {
 }
 
 export default function UploadDnaPage() {
+  const [lang, setLang] = useState("en");
   const [dragOver, setDragOver] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -38,13 +107,27 @@ export default function UploadDnaPage() {
 
   const inputRef = useRef<HTMLInputElement>(null);
 
+  useEffect(() => {
+    const savedLang = localStorage.getItem("language") || "en";
+    setLang(savedLang);
+
+    const handleLangEvent = () => {
+      const updated = localStorage.getItem("language") || "en";
+      setLang(updated);
+    };
+    window.addEventListener("languageChange", handleLangEvent);
+    return () => window.removeEventListener("languageChange", handleLangEvent);
+  }, []);
+
+  const d = lang === "bn" ? BN : EN;
+
   function validateFile(f: File) {
     const ext = "." + f.name.split(".").pop()?.toLowerCase();
     if (!ACCEPTED_FORMATS.includes(ext)) {
-      return `Unsupported file type "${ext}". Please upload a FASTA, FNA, or VCF file.`;
+      return d.errType;
     }
     if (f.size > MAX_SIZE_MB * 1024 * 1024) {
-      return `File is too large (${formatBytes(f.size)}). Maximum allowed size is ${MAX_SIZE_MB} MB.`;
+      return d.errSize;
     }
     return null;
   }
@@ -67,7 +150,7 @@ export default function UploadDnaPage() {
     setDragOver(false);
     const dropped = e.dataTransfer.files[0];
     if (dropped) pickFile(dropped);
-  }, []);
+  }, [lang]);
 
   const handleDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -83,7 +166,7 @@ export default function UploadDnaPage() {
     if (selected) pickFile(selected);
   }
 
-  async function handleUpload() {
+  function handleUpload() {
     if (!file) return;
 
     // Validate filename against selected reference genome to prevent mismatches
@@ -100,7 +183,11 @@ export default function UploadDnaPage() {
     if (selectedRef) {
       for (const ref of references) {
         if (ref.id !== selectedRef.id && ref.keywords.some(kw => filenameLower.includes(kw))) {
-          setError(`You selected the ${selectedRef.name} reference genome, but uploaded a file for ${ref.name}. You have submitted the wrong file.`);
+          setError(
+            lang === "bn" 
+            ? `আপনি ${selectedRef.name} রেফারেন্স জিনোম নির্বাচন করেছেন, কিন্তু ${ref.name} এর জন্য ফাইল আপলোড করেছেন। আপনি ভুল ফাইল সাবমিট করেছেন।` 
+            : `You selected the ${selectedRef.name} reference genome, but uploaded a file for ${ref.name}. You have submitted the wrong file.`
+          );
           return;
         }
       }
@@ -110,47 +197,63 @@ export default function UploadDnaPage() {
     setError(null);
     setProgress(0);
 
-    // Simulate upload progress (will replace with real upload API)
-    for (let i = 10; i <= 90; i += 10) {
-      await new Promise((r) => setTimeout(r, 200));
-      setProgress(i);
+    const formData = new FormData();
+    formData.append("file", file);
+    if (linkUrl) formData.append("referenceUrl", linkUrl);
+
+    const isBrca = linkUrl === "https://www.ncbi.nlm.nih.gov/nuccore/NM_007294.4?report=fasta";
+    if (isBrca) {
+      formData.append("patientMetadata", JSON.stringify({
+        age: parseInt(patientAge) || 40,
+        sex: patientSex || "female",
+        familyHistory: {
+          breastCancer: parseInt(fhBreast) || 0,
+          ovarianCancer: parseInt(fhOvarian) || 0
+        }
+      }));
     }
 
-    try {
-      const formData = new FormData();
-      formData.append("file", file);
-      if (linkUrl) formData.append("referenceUrl", linkUrl);
-
-      const isBrca = linkUrl === "https://www.ncbi.nlm.nih.gov/nuccore/NM_007294.4?report=fasta";
-      if (isBrca) {
-        formData.append("patientMetadata", JSON.stringify({
-          age: parseInt(patientAge),
-          sex: patientSex,
-          familyHistory: {
-            breastCancer: parseInt(fhBreast),
-            ovarianCancer: parseInt(fhOvarian)
-          }
-        }));
+    const xhr = new XMLHttpRequest();
+    
+    // Track actual upload progress
+    xhr.upload.addEventListener("progress", (e) => {
+      if (e.lengthComputable) {
+        const pct = Math.round((e.loaded / e.total) * 100);
+        // Cap at 95% until server finishes processing comparison check
+        setProgress(Math.min(95, pct));
       }
+    });
 
-      const response = await fetch("/api/user/upload", {
-        method: "POST",
-        body: formData,
-      });
-
-      if (!response.ok) {
-        const data = await response.json().catch(() => ({}));
-        throw new Error(data.error || "Upload failed. Please try again.");
-      }
-
-      setProgress(100);
-      setDone(true);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Upload failed. Please try again.");
-      setProgress(0);
-    } finally {
+    // Handle complete
+    xhr.addEventListener("load", () => {
       setUploading(false);
-    }
+      if (xhr.status >= 200 && xhr.status < 300) {
+        setProgress(100);
+        setDone(true);
+      } else {
+        let errMsg = lang === "bn" ? "আপলোড ব্যর্থ হয়েছে। অনুগ্রহ করে আবার চেষ্টা করুন।" : "Upload failed. Please try again.";
+        try {
+          const res = JSON.parse(xhr.responseText);
+          errMsg = res.error || errMsg;
+        } catch {}
+        setError(errMsg);
+        setProgress(0);
+      }
+    });
+
+    // Handle error
+    xhr.addEventListener("error", () => {
+      setUploading(false);
+      setError(
+        lang === "bn" 
+        ? "আপলোড করার সময় একটি নেটওয়ার্ক সমস্যা হয়েছে। অনুগ্রহ করে ইন্টারনেট সংযোগ চেক করুন।" 
+        : "Network error occurred during upload. Please check your connection."
+      );
+      setProgress(0);
+    });
+
+    xhr.open("POST", "/api/user/upload");
+    xhr.send(formData);
   }
 
   function reset() {
@@ -166,12 +269,11 @@ export default function UploadDnaPage() {
     <div className={styles.page}>
       <div className={styles.header}>
         <Link href="/user/dashboard" className={styles.back} id="upload-back">
-          ← Back to Dashboard
+          {d.back}
         </Link>
-        <h1 className={styles.title}>Upload Your DNA File</h1>
+        <h1 className={styles.title}>{d.title}</h1>
         <p className={styles.subtitle}>
-          Upload your genetic data file to get started. We support files from
-          23andMe, AncestryDNA, and standard FASTA / VCF formats.
+          {d.subtitle}
         </p>
       </div>
 
@@ -179,18 +281,20 @@ export default function UploadDnaPage() {
         /* ── Success State ─────────────────────────────────────────── */
         <div className={styles.successCard}>
           <span className={styles.successIcon}>✅</span>
-          <h2 className={styles.successTitle}>Upload Complete!</h2>
+          <h2 className={styles.successTitle}>{d.successTitle}</h2>
           <p className={styles.successDesc}>
-            Your DNA file <strong>{file?.name}</strong> has been securely
-            uploaded. Our system is now analyzing your genetic data.
-            This usually takes 2–5 minutes.
+            {lang === "bn" ? (
+              <>আপনার ডিএনএ ফাইল <strong>{file?.name}</strong> নিরাপদে আপলোড করা হয়েছে। আমাদের সিস্টেম এখন আপনার ডেটা বিশ্লেষণ করছে। এটি সাধারণত ২–৫ মিনিট সময় নেয়।</>
+            ) : (
+              <>Your DNA file <strong>{file?.name}</strong> has been securely uploaded. Our system is now analyzing your genetic data. This usually takes 2–5 minutes.</>
+            )}
           </p>
           <div className={styles.successActions}>
             <Link href="/user/results" style={{ background: "rgba(59, 130, 246, 0.15)", color: "var(--gn-blue)", border: '1px solid rgba(59, 130, 246, 0.3)', padding: "0.85rem 1.6rem", borderRadius: "999px", fontWeight: "700", fontSize: "0.95rem", textDecoration: "none", transition: "all 0.2s" }}>
-              View Disease Predictions →
+              {d.viewResults}
             </Link>
             <button onClick={reset} className={styles.btnSecondary} id="upload-another">
-              Upload Another File
+              {d.uploadAnother}
             </button>
           </div>
         </div>
@@ -203,11 +307,11 @@ export default function UploadDnaPage() {
                 <span className={styles.formatExt} style={{ color: f.color }}>
                   .{f.ext.toLowerCase()}
                 </span>
-                <span className={styles.formatDesc}>{f.desc}</span>
+                <span className={styles.formatDesc}>{lang === "bn" ? f.descBn : f.desc}</span>
               </div>
             ))}
             <div className={`${styles.formatCard} ${styles.maxSizeCard}`}>
-              <span className={styles.maxSizeLabel}>Max Size</span>
+              <span className={styles.maxSizeLabel}>{d.maxSize}</span>
               <span className={styles.maxSizeValue}>{MAX_SIZE_MB} MB</span>
             </div>
           </div>
@@ -222,7 +326,7 @@ export default function UploadDnaPage() {
             role="button"
             tabIndex={0}
             id="upload-dropzone"
-            aria-label="Drag and drop your DNA file here or click to browse"
+            aria-label={d.dragDrop}
             onKeyDown={(e) => e.key === "Enter" && !file && inputRef.current?.click()}
           >
             <input
@@ -255,10 +359,10 @@ export default function UploadDnaPage() {
               <div className={styles.dropContent}>
                 <span className={styles.dropIcon}>📂</span>
                 <p className={styles.dropTitle}>
-                  {dragOver ? "Drop it here!" : "Drag & drop your DNA file"}
+                  {dragOver ? (lang === "bn" ? "এখানে ফাইলটি ছেড়ে দিন!" : "Drop it here!") : d.dragDrop}
                 </p>
                 <p className={styles.dropHint}>
-                  or <span className={styles.browseLink}>click to browse</span>
+                  {d.or} <span className={styles.browseLink}>{d.browse}</span>
                 </p>
                 <div className={styles.formatBadges}>
                   {ACCEPTED_FORMATS.map((f) => (
@@ -267,7 +371,7 @@ export default function UploadDnaPage() {
                     </span>
                   ))}
                 </div>
-                <p className={styles.sizeLimit}>Maximum file size: {MAX_SIZE_MB} MB</p>
+                <p className={styles.sizeLimit}>{d.limit} {MAX_SIZE_MB} MB</p>
               </div>
             )}
           </div>
@@ -277,12 +381,12 @@ export default function UploadDnaPage() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
               <h3 style={{ fontSize: "1.1rem", fontWeight: "600", color: "var(--gn-primary)", display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0 }}>
                 <span style={{ background: 'rgba(16, 185, 129, 0.1)', padding: '6px', borderRadius: '8px' }}>🧬</span>
-                Select Reference Genome
+                {d.selectRef}
               </h3>
             </div>
 
             <p style={{ color: "var(--gn-text-secondary)", fontSize: "0.9rem", marginBottom: "1.25rem", lineHeight: 1.5 }}>
-              Select an NCBI reference genome below. Our system will analyze your uploaded DNA against this reference sequence.
+              {d.refDesc}
             </p>
 
             <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
@@ -335,7 +439,7 @@ export default function UploadDnaPage() {
           {uploading && (
             <div className={styles.progressCard}>
               <div className={styles.progressHeader}>
-                <span>Uploading & encrypting your file…</span>
+                <span>{d.uploading}</span>
                 <span>{progress}%</span>
               </div>
               <div className={styles.progressTrack}>
@@ -345,7 +449,7 @@ export default function UploadDnaPage() {
                 />
               </div>
               <p className={styles.progressHint}>
-                Your data is being encrypted before leaving your device.
+                {d.uploadingHint}
               </p>
             </div>
           )}
@@ -356,17 +460,17 @@ export default function UploadDnaPage() {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
                 <h3 style={{ fontSize: "1.05rem", fontWeight: "700", color: "#818cf8", display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0 }}>
                   <span style={{ background: 'rgba(129, 140, 248, 0.15)', padding: '6px', borderRadius: '8px' }}>🧬</span>
-                  Patient Profile Required
-                  {(!patientAge || !patientSex) && <span style={{ fontSize: '0.7rem', background: 'rgba(248,113,113,0.15)', color: '#f87171', padding: '2px 8px', borderRadius: '999px', border: '1px solid rgba(248,113,113,0.3)', marginLeft: '0.4rem' }}>⚠ Required for BRCA Analysis</span>}
+                  {d.profileTitle}
+                  {(!patientAge || !patientSex) && <span style={{ fontSize: '0.7rem', background: 'rgba(248,113,113,0.15)', color: '#f87171', padding: '2px 8px', borderRadius: '999px', border: '1px solid rgba(248,113,113,0.3)', marginLeft: '0.4rem' }}>{d.profileRequired}</span>}
                 </h3>
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                <p style={{ color: 'var(--gn-text-muted)', fontSize: '0.82rem', margin: 0 }}>Because you selected a BRCA reference genome, please fill in this profile. This is required by the CanRisk clinical model to calculate accurate cancer risk percentages.</p>
+                <p style={{ color: 'var(--gn-text-muted)', fontSize: '0.82rem', margin: 0 }}>{d.profileDesc}</p>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                    <label style={{ color: 'var(--gn-text-secondary)', fontSize: '0.82rem', fontWeight: 600 }}>Age</label>
+                    <label style={{ color: 'var(--gn-text-secondary)', fontSize: '0.82rem', fontWeight: 600 }}>{d.age}</label>
                     <input
                       type="text" inputMode="numeric" pattern="[0-9]*" maxLength={3} value={patientAge}
                       onChange={e => setPatientAge(e.target.value.replace(/\D/g, ''))}
@@ -374,12 +478,12 @@ export default function UploadDnaPage() {
                     />
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                    <label style={{ color: 'var(--gn-text-secondary)', fontSize: '0.82rem', fontWeight: 600 }}>Biological Sex</label>
+                    <label style={{ color: 'var(--gn-text-secondary)', fontSize: '0.82rem', fontWeight: 600 }}>{d.sex}</label>
                     <div style={{ display: 'flex', gap: '0.5rem' }}>
                       {(['female', 'male'] as const).map(s => (
                         <button key={s} onClick={() => setPatientSex(s)}
                           style={{ flex: 1, padding: '0.7rem', borderRadius: '8px', border: `1px solid ${patientSex === s ? '#818cf8' : '#1e293b'}`, background: patientSex === s ? 'rgba(129,140,248,0.15)' : '#05080d', color: patientSex === s ? '#818cf8' : 'var(--gn-text-muted)', fontWeight: 600, cursor: 'pointer', fontSize: '0.85rem', textTransform: 'capitalize', transition: 'all 0.2s' }}>
-                          {s === 'female' ? '♀ Female' : '♂ Male'}
+                          {s === 'female' ? d.female : d.male}
                         </button>
                       ))}
                     </div>
@@ -387,16 +491,16 @@ export default function UploadDnaPage() {
                 </div>
 
                 <div style={{ background: 'rgba(129,140,248,0.04)', border: '1px solid rgba(129,140,248,0.15)', borderRadius: '10px', padding: '1rem' }}>
-                  <p style={{ color: '#818cf8', fontSize: '0.82rem', fontWeight: 600, margin: '0 0 0.75rem 0' }}>Family History (First-Degree Relatives)</p>
+                  <p style={{ color: '#818cf8', fontSize: '0.82rem', fontWeight: 600, margin: '0 0 0.75rem 0' }}>{d.familyHistory}</p>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                      <label style={{ color: 'var(--gn-text-secondary)', fontSize: '0.8rem' }}>With Breast Cancer</label>
+                      <label style={{ color: 'var(--gn-text-secondary)', fontSize: '0.8rem' }}>{d.withBreast}</label>
                       <input type="text" inputMode="numeric" pattern="[0-9]*" maxLength={2} value={fhBreast} onChange={e => setFhBreast(e.target.value.replace(/\D/g, ''))}
                         style={{ padding: '0.6rem 0.75rem', borderRadius: '8px', border: '1px solid #1e293b', background: '#05080d', color: 'var(--gn-white)', outline: 'none', fontSize: '0.95rem', width: '100%' }}
                       />
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                      <label style={{ color: 'var(--gn-text-secondary)', fontSize: '0.8rem' }}>With Ovarian Cancer</label>
+                      <label style={{ color: 'var(--gn-text-secondary)', fontSize: '0.8rem' }}>{d.withOvarian}</label>
                       <input type="text" inputMode="numeric" pattern="[0-9]*" maxLength={2} value={fhOvarian} onChange={e => setFhOvarian(e.target.value.replace(/\D/g, ''))}
                         style={{ padding: '0.6rem 0.75rem', borderRadius: '8px', border: '1px solid #1e293b', background: '#05080d', color: 'var(--gn-white)', outline: 'none', fontSize: '0.95rem', width: '100%' }}
                       />
@@ -425,7 +529,7 @@ export default function UploadDnaPage() {
                     : { width: "auto", padding: "1rem 2.5rem", background: "rgba(100,116,139,0.1)", color: "var(--gn-text-muted)", boxShadow: "none", border: "1px solid #1e293b", cursor: "not-allowed" }
                   }
                 >
-                  {linkUrl ? "Upload and Analysis" : "Select Reference Genome"}
+                  {linkUrl ? d.uploadSubmit : d.uploadSelectRef}
                 </button>
               </div>
             );
@@ -433,14 +537,11 @@ export default function UploadDnaPage() {
         </>
       )}
 
-
       {/* ── Privacy Assurance ───────────────────────────────────────── */}
       <div className={styles.privacyNote}>
         <span>🔐</span>
         <p>
-          Your DNA data is <strong>end-to-end encrypted</strong> and stored
-          securely. GenoNexus never sells or shares your genetic data. You can
-          delete your data at any time.
+          {d.privacy}
         </p>
       </div>
     </div>

@@ -4,7 +4,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 0 2rem;
-  background: var(--gn-bg);
+  background: var(--gn-surface);
   border-bottom: 1px solid var(--gn-surface-border);
   position: sticky;
   top: 0;

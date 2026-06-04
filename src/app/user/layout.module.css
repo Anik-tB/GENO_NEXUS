@@ -39,3 +39,17 @@
   background: var(--gn-surface-border-strong);
   border-radius: 4px;
 }
+
+@media print {
+  .dashboardShell, 
+  .mainWrapper, 
+  .contentArea {
+    height: auto !important;
+    min-height: auto !important;
+    overflow: visible !important;
+    display: block !important;
+  }
+  .contentArea {
+    padding: 0 !important;
+  }
+}

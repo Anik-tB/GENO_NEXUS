@@ -52,7 +52,7 @@ _INITIAL_STREAMS = []
 
 _INITIAL_PIPELINES = []
 
-_uid_counter = 2000
+_uid_counter = 80000
 def _next_id() -> int:
     global _uid_counter
     _uid_counter += 1
@@ -315,6 +315,89 @@ async def collab_ws(ws: WebSocket):
         if member_id and not any(m == member_id for m in manager.ws_to_member.values()):
             collab_state.set_offline(member_id)
             asyncio.create_task(manager.broadcast({"type": "presence_update", "members": collab_state.members}))
+
+# ===========================================================================
+# Real-Time Private Chat WebSocket Hub
+# ===========================================================================
+class ChatConnectionManager:
+    def __init__(self):
+        self.active_connections: dict[str, WebSocket] = {}
+
+    async def connect(self, ws: WebSocket, user_id: str):
+        await ws.accept()
+        self.active_connections[user_id] = ws
+
+    def disconnect(self, user_id: str):
+        if user_id in self.active_connections:
+            del self.active_connections[user_id]
+
+    async def send_personal_message(self, message: dict, user_id: str):
+        if user_id in self.active_connections:
+            try:
+                await self.active_connections[user_id].send_text(json.dumps(message))
+            except Exception:
+                self.disconnect(user_id)
+
+chat_manager = ChatConnectionManager()
+
+@app.websocket("/ws/chat/{user_id}")
+async def chat_ws(ws: WebSocket, user_id: str):
+    await chat_manager.connect(ws, user_id)
+    try:
+        while True:
+            raw = await ws.receive_text()
+            try:
+                msg = json.loads(raw)
+            except json.JSONDecodeError:
+                continue
+
+            mtype = msg.get("type")
+            if mtype == "private_message":
+                receiver_id = msg.get("receiver_id")
+                
+                # Save to database
+                conn = _get_db_conn()
+                db_msg_id = None
+                if conn:
+                    try:
+                        with conn.cursor() as cur:
+                            cur.execute(
+                                "INSERT INTO private_messages (sender_id, receiver_id, content, file_url, file_type) VALUES (%s, %s, %s, %s, %s) RETURNING id",
+                                (user_id, receiver_id, msg.get("content"), msg.get("file_url"), msg.get("file_type"))
+                            )
+                            db_msg_id = cur.fetchone()[0]
+                            conn.commit()
+                    except Exception as e:
+                        print(f"[WARN] Failed to save private message: {e}")
+                    finally:
+                        conn.close()
+
+                out_msg = {
+                    "type": "private_message",
+                    "id": db_msg_id or str(_next_id()),
+                    "sender_id": user_id,
+                    "receiver_id": receiver_id,
+                    "content": msg.get("content"),
+                    "file_url": msg.get("file_url"),
+                    "file_type": msg.get("file_type"),
+                    "created_at": time.strftime("%Y-%m-%dT%H:%M:%S.000Z", time.gmtime()),
+                }
+                
+                await chat_manager.send_personal_message(out_msg, receiver_id)
+                if receiver_id != user_id:
+                    await chat_manager.send_personal_message(out_msg, user_id)
+            
+            elif mtype == "typing":
+                receiver_id = msg.get("receiver_id")
+                out_msg = {
+                    "type": "typing",
+                    "sender_id": user_id,
+                    "typing": msg.get("typing", False)
+                }
+                await chat_manager.send_personal_message(out_msg, receiver_id)
+
+    except WebSocketDisconnect:
+        chat_manager.disconnect(user_id)
 
 # ===========================================================================
 

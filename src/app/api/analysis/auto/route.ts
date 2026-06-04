@@ -108,6 +108,11 @@ export async function POST(req: NextRequest) {
           JSON.stringify(data.analysis_metadata ?? {}),
           resultId
         ]);
+
+        await db.query(`
+          INSERT INTO user_notifications (user_id, title, message, type, link)
+          VALUES ($1, $2, $3, $4, $5)
+        `, [user.id, "Analysis Complete", "Automated analysis pipeline completed successfully.", "success", `/dashboard/results/${resultId}`]);
       } else {
         await db.query(`UPDATE comparison_results SET status = 'failed' WHERE id = $1`, [resultId]);
       }

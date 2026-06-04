@@ -76,7 +76,7 @@ export async function PATCH(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { firstName, lastName, bio, jobTitle, phone, organization, accountCategory, researchOptIn } = body;
+    const { firstName, lastName, bio, jobTitle, phone, organization, accountCategory, researchOptIn, avatarUrl } = body;
 
     const db = assertDatabase();
     if (typeof researchOptIn === 'boolean') {
@@ -91,6 +91,7 @@ export async function PATCH(req: NextRequest) {
       phone: phone?.trim() ?? undefined,
       organization: organization?.trim() ?? undefined,
       accountCategory: accountCategory || undefined,
+      avatarUrl: avatarUrl || undefined,
     });
 
     return NextResponse.json({ profile: updated });

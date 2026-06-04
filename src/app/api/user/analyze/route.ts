@@ -159,6 +159,12 @@ export async function POST(req: NextRequest) {
         ]);
         // Update the file status to success
         await db.query(`UPDATE dna_files SET status = 'success', progress = 100 WHERE id = $1`, [queryFileId]);
+
+        // Send Notification
+        await db.query(`
+          INSERT INTO user_notifications (user_id, title, message, type, link)
+          VALUES ($1, $2, $3, $4, $5)
+        `, [user.id, "Analysis Complete", "Your DNA analysis has finished processing. You can view your insights now.", "success", "/user/results"]);
       } else {
         await db.query(`UPDATE comparison_results SET status = 'failed' WHERE id = $1`, [resultId]);
       }

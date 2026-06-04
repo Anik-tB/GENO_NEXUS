@@ -100,6 +100,11 @@ export async function POST(request: NextRequest) {
         ($1, $2, $3, $4, $5, $6, 'success', $7)
     `, [fileId, user.id, file.name, file.size, ext, storagePath, patientMetadata]);
 
+    await db.query(`
+      INSERT INTO user_notifications (user_id, title, message, type, link)
+      VALUES ($1, $2, $3, $4, $5)
+    `, [user.id, "DNA Sequence Uploaded", `Your DNA sequence file '${file.name}' was successfully uploaded and is ready for analysis.`, "info", "/user/results"]);
+
     return NextResponse.json({
       ok: true,
       message: "File uploaded successfully.",

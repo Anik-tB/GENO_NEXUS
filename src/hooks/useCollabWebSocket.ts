@@ -252,11 +252,11 @@ export function useCollabWebSocket(activeUser: TeamMember | null = null): Collab
       body: JSON.stringify({ id, action }),
     }).catch(console.error);
     // Real-time broadcast
-    wsSend({ type: "pipeline_action", id, action });
+    wsSend({ type: "pipeline_action", pipelineId: id, action });
   }, [wsSend]);
 
   const spawnPipeline = useCallback(() => {
-    wsSend({ type: "pipeline_action", id: "spawn", action: "spawn" });
+    wsSend({ type: "pipeline_action", pipelineId: "spawn", action: "spawn" });
   }, [wsSend]);
 
   const dismissAlert = useCallback((id: number) => {

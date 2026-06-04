@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import styles from "./page.module.css";
 
 const ACCOUNT_CATEGORIES = [
@@ -22,6 +23,7 @@ interface Profile {
 }
 
 export default function ProfileClient({ profile: initial }: { profile: Profile }) {
+  const router = useRouter();
   const [profile, setProfile] = useState(initial);
   const [activeTab, setActiveTab] = useState<"info" | "security">("info");
   const [editing, setEditing] = useState(false);
@@ -30,6 +32,7 @@ export default function ProfileClient({ profile: initial }: { profile: Profile }
     bio: initial.bio, jobTitle: initial.jobTitle,
     phone: initial.phone, organization: initial.organization,
     accountCategory: initial.accountCategory,
+    avatarUrl: initial.avatarUrl,
   });
   const [pwForm, setPwForm] = useState({ current: "", next: "", confirm: "" });
   const [toast, setToast] = useState<{ msg: string; type: "success" | "error" } | null>(null);
@@ -44,6 +47,20 @@ export default function ProfileClient({ profile: initial }: { profile: Profile }
     setTimeout(() => setToast(null), 3500);
   }
 
+  const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 3 * 1024 * 1024) {
+      return showToast("Image must be smaller than 3MB", "error");
+    }
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const base64 = event.target?.result as string;
+      setForm(f => ({ ...f, avatarUrl: base64 }));
+    };
+    reader.readAsDataURL(file);
+  };
+
   async function saveProfile() {
     startTransition(async () => {
       const res = await fetch("/api/profile", {
@@ -56,6 +73,9 @@ export default function ProfileClient({ profile: initial }: { profile: Profile }
         setProfile(prev => ({ ...prev, ...form }));
         setEditing(false);
         showToast("Profile updated successfully!", "success");
+        setTimeout(() => {
+          router.refresh();
+        }, 100);
       } else {
         const data = await res.json();
         showToast(data.error || "Failed to update profile.", "error");
@@ -91,9 +111,19 @@ export default function ProfileClient({ profile: initial }: { profile: Profile }
       <div className={styles.hero}>
         <div className={styles.heroBg} />
         <div className={styles.heroContent}>
-          <div className={styles.avatar}>
-            <span>{initials}</span>
+          <div className={styles.avatar} style={{ position: 'relative' }}>
+            {form.avatarUrl || profile.avatarUrl ? (
+              <img src={form.avatarUrl || profile.avatarUrl || ""} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+            ) : (
+              <span>{initials}</span>
+            )}
             <div className={styles.avatarRing} />
+            {editing && (
+              <label style={{ position: 'absolute', bottom: -10, right: -20, background: 'var(--gn-primary)', padding: '4px 8px', borderRadius: '12px', cursor: 'pointer', fontSize: '12px', color: '#fff', border: '1px solid #fff' }}>
+                Upload
+                <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleAvatarUpload} />
+              </label>
+            )}
           </div>
           <div className={styles.heroInfo}>
             <div className={styles.heroName}>{profile.firstName} {profile.lastName}</div>
@@ -132,7 +162,7 @@ export default function ProfileClient({ profile: initial }: { profile: Profile }
                 {!editing
                   ? <button className={styles.editBtn} onClick={() => setEditing(true)}>✏️ Edit</button>
                   : <div className={styles.btnRow}>
-                      <button className={styles.cancelBtn} onClick={() => { setEditing(false); setForm({ firstName: profile.firstName, lastName: profile.lastName, bio: profile.bio, jobTitle: profile.jobTitle, phone: profile.phone, organization: profile.organization, accountCategory: profile.accountCategory }); }}>Cancel</button>
+                      <button className={styles.cancelBtn} onClick={() => { setEditing(false); setForm({ firstName: profile.firstName, lastName: profile.lastName, bio: profile.bio, jobTitle: profile.jobTitle, phone: profile.phone, organization: profile.organization, accountCategory: profile.accountCategory, avatarUrl: profile.avatarUrl }); }}>Cancel</button>
                       <button className={styles.saveBtn} onClick={saveProfile} disabled={isPending}>{isPending ? "Saving…" : "💾 Save"}</button>
                     </div>
                 }

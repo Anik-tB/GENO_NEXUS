@@ -88,6 +88,14 @@ export default function ReportsPage() {
 
   return (
     <div className={styles.container}>
+      <style>{`
+        @media print {
+          body * { visibility: hidden; }
+          .gn-print-target, .gn-print-target * { visibility: visible; }
+          .gn-print-target { position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 0; color: black; }
+          main, div { overflow: visible !important; max-height: none !important; }
+        }
+      `}</style>
       {/* ── Header ── */}
       <header className={styles.header}>
         <div className={styles.headerContent}>
@@ -147,19 +155,27 @@ export default function ReportsPage() {
                 Select a report from the archive to view details.
               </div>
             ) : (
-              <div className={styles.documentPage}>
+              <div className={`${styles.documentPage} gn-print-target`}>
                 <div className={styles.docHeader}>
                   <div className={styles.docBrand}>
                     <span className={styles.docBrandIcon}>🧬</span> GenoNexus Clinical
                   </div>
                   <div className={styles.docMeta}>
-                    <span><strong>Patient:</strong> {reportData.patient_id}</span>
-                    <span className={styles.metaDivider}>·</span>
-                    <span><strong>Date:</strong> {formatDate(reportData.created_at)}</span>
+                    <span><strong>Report Date:</strong> {formatDate(reportData.created_at)}</span>
                     <span className={styles.metaDivider}>·</span>
                     <span className={styles.signedBadge}>✓ Electronically {reportData.status}</span>
                   </div>
                 </div>
+
+                {reportData.content?.demographics && (
+                  <div className={styles.demographicsBox}>
+                    <div className={styles.demoItem}><span>Patient MRN:</span> <strong>{reportData.content.demographics.mrn}</strong></div>
+                    <div className={styles.demoItem}><span>DOB:</span> <strong>{reportData.content.demographics.dob}</strong></div>
+                    <div className={styles.demoItem}><span>Specimen:</span> <strong>{reportData.content.demographics.specimen}</strong></div>
+                    <div className={styles.demoItem}><span>Physician:</span> <strong>{reportData.content.demographics.physician}</strong></div>
+                    <div className={styles.demoItem}><span>Indication:</span> <strong>{reportData.content.demographics.disease}</strong></div>
+                  </div>
+                )}
 
                 <h1 className={styles.docTitle}>{reportData.name}</h1>
 
@@ -193,17 +209,18 @@ export default function ReportsPage() {
                 )}
 
                 <div id="sec-findings" className={styles.docSection}>
-                  <h2>{reportData.content?.qc ? "3" : "2"}. Primary Findings</h2>
+                  <h2>{reportData.content?.qc ? "3" : "2"}. Genomic Alterations & Biomarkers</h2>
                   {reportData.content?.findings && reportData.content.findings.length > 0 ? (
                     <table className={styles.docTable}>
-                      <thead><tr><th>Gene</th><th>Variant</th><th>Risk</th><th>Clinical Implication</th></tr></thead>
+                      <thead><tr><th>Gene</th><th>Variant (HGVS)</th><th>AMP/ASCO/CAP Tier</th><th>Clinical Implication</th></tr></thead>
                       <tbody>
                         {reportData.content.findings.map((f: any, idx: number) => (
                           <tr key={idx}>
-                            <td><code>{f.gene}</code></td><td>{f.variant}</td>
+                            <td><strong>{f.gene}</strong></td>
+                            <td><code>{f.hgvs || f.variant}</code></td>
                             <td>
-                              <span className={f.risk === 'High' ? styles.riskHigh : styles.riskLow}>
-                                {f.risk}
+                              <span className={`${styles.tierBadge} ${f.tierClass ? styles[f.tierClass] : (f.risk === 'High' ? styles.tier1 : f.risk === 'Medium' ? styles.tier2 : styles.tier3)}`}>
+                                {f.tier || f.risk}
                               </span>
                             </td>
                             <td>{f.implication}</td>
@@ -212,43 +229,60 @@ export default function ReportsPage() {
                       </tbody>
                     </table>
                   ) : (
-                    <p style={{color: 'var(--gn-text-muted)', fontStyle: 'italic', fontSize: '0.9rem'}}>No specific findings documented.</p>
+                    <p style={{color: 'var(--gn-text-muted)', fontStyle: 'italic', fontSize: '0.9rem'}}>No reportable variants identified.</p>
                   )}
                 </div>
 
-                <div className={styles.docSection}>
-                  <h2>{reportData.content?.qc ? "4" : "3"}. Risk Distribution</h2>
-                  <div className={styles.riskBars}>
-                    {reportData.content?.risks && reportData.content.risks.length > 0 ? (
-                      reportData.content.risks.map((r: any) => (
-                        <div key={r.label} className={styles.riskBarRow}>
-                          <span className={styles.riskBarLabel}>{r.label}</span>
-                          <div className={styles.riskBarTrack}>
-                            <div className={styles.riskBarFill} style={{ width: `${r.pct}%`, background: r.color }} />
-                          </div>
-                          <span className={styles.riskBarPct}>{r.pct}%</span>
-                        </div>
-                      ))
-                    ) : (
-                      <p style={{color: 'var(--gn-text-muted)', fontStyle: 'italic', fontSize: '0.9rem'}}>No risk distribution data available.</p>
-                    )}
-                  </div>
-                </div>
-
-                {reportData.content?.recommendations && reportData.content.recommendations.length > 0 && (
+                {reportData.content?.therapeutics && reportData.content.therapeutics.length > 0 ? (
                   <div id="sec-recommendations" className={styles.docSection}>
-                    <h2>5. Therapy Guidance & Recommendations</h2>
-                    <ul className={styles.recommendationsList}>
+                    <h2>{reportData.content?.qc ? "4" : "3"}. Actionable Therapeutics (PGx)</h2>
+                    <table className={styles.docTable}>
+                      <thead><tr><th>Therapy / Drug</th><th>Status</th><th>Rationale</th></tr></thead>
+                      <tbody>
+                        {reportData.content.therapeutics.map((t: any, idx: number) => (
+                          <tr key={idx}>
+                            <td><strong>{t.drug}</strong></td>
+                            <td>
+                              <span className={t.status === 'Indicated' ? styles.statusIndicated : styles.statusContra}>
+                                {t.status}
+                              </span>
+                            </td>
+                            <td>{t.reason}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : reportData.content?.recommendations && reportData.content.recommendations.length > 0 ? (
+                  <div id="sec-recommendations" className={styles.docSection}>
+                    <h2>{reportData.content?.qc ? "4" : "3"}. Therapy Guidance & Recommendations</h2>
+                    <ul style={{ paddingLeft: '1.5rem', color: 'var(--gn-text-secondary)', fontSize: '0.875rem', lineHeight: '1.6' }}>
                       {reportData.content.recommendations.map((rec: string, idx: number) => (
-                        <li key={idx}>{rec}</li>
+                        <li key={idx} style={{ marginBottom: '0.5rem' }}>{rec}</li>
                       ))}
                     </ul>
+                  </div>
+                ) : null}
+
+                {reportData.content?.trials && reportData.content.trials.length > 0 && (
+                  <div className={styles.docSection}>
+                    <h2>{reportData.content?.qc ? "5" : "4"}. Clinical Trials Matching</h2>
+                    <div className={styles.trialsList}>
+                      {reportData.content.trials.map((trial: any, idx: number) => (
+                        <div key={idx} className={styles.trialItem}>
+                          <div className={styles.trialHeader}>
+                            <strong>{trial.id}</strong> <span className={styles.trialPhase}>{trial.phase}</span>
+                          </div>
+                          <div className={styles.trialTitle}>{trial.title}</div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
 
                 {reportData.content?.methodology && (
                   <div className={styles.methodology}>
-                    <strong>Methodology:</strong> {reportData.content.methodology}
+                    <strong>Methodology & Limitations:</strong> {reportData.content.methodology}
                   </div>
                 )}
 
@@ -291,7 +325,18 @@ export default function ReportsPage() {
                       </span>
                     </div>
                   </div>
-                  <button className={styles.dlBtn} title="Download" onClick={(e) => e.stopPropagation()}>
+                  <button 
+                    className={styles.dlBtn} 
+                    title="Download" 
+                    onClick={(e) => { 
+                      e.stopPropagation(); 
+                      if (selectedReportId !== rep.id) {
+                        fetchReportDetails(rep.id).then(() => setTimeout(handlePrint, 300));
+                      } else {
+                        handlePrint();
+                      }
+                    }}
+                  >
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                   </button>
                 </div>

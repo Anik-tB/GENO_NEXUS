@@ -24,6 +24,8 @@ export function UserTopNav({ userInitials, userName, userEmail }: TopNavProps) {
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const notifRef = useRef<HTMLDivElement>(null);
 
+  const [lang, setLang] = useState("en");
+
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
@@ -49,7 +51,21 @@ export function UserTopNav({ userInitials, userName, userEmail }: TopNavProps) {
        setTheme(updated);
     };
     window.addEventListener("themeChange", handleThemeEvent);
-    return () => window.removeEventListener("themeChange", handleThemeEvent);
+
+    // Initialise language
+    const savedLang = localStorage.getItem("language") || "en";
+    setLang(savedLang);
+
+    const handleLangEvent = () => {
+      const updated = localStorage.getItem("language") || "en";
+      setLang(updated);
+    };
+    window.addEventListener("languageChange", handleLangEvent);
+
+    return () => {
+      window.removeEventListener("themeChange", handleThemeEvent);
+      window.removeEventListener("languageChange", handleLangEvent);
+    };
   }, []);
 
   const toggleTheme = () => {
@@ -64,9 +80,18 @@ export function UserTopNav({ userInitials, userName, userEmail }: TopNavProps) {
     window.dispatchEvent(new Event("themeChange"));
   };
 
+  const toggleLanguage = () => {
+    const next = lang === "en" ? "bn" : "en";
+    setLang(next);
+    localStorage.setItem("language", next);
+    window.dispatchEvent(new Event("languageChange"));
+  };
+
   const handleNavigation = (path: string) => {
     setIsProfileOpen(false);
-    router.push(path);
+    setTimeout(() => {
+      router.push(path);
+    }, 0);
   };
 
   const handleLogout = async () => {
@@ -123,12 +148,17 @@ export function UserTopNav({ userInitials, userName, userEmail }: TopNavProps) {
     return () => clearInterval(interval);
   }, []);
 
-  const markAllAsRead = async () => {
+  const markAllAsRead = async (e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     try {
       const res = await fetch('/api/notifications/read-all', { method: 'PATCH' });
       if (res.ok) {
         setNotifications(notifications.map(n => ({ ...n, is_read: true })));
         setUnreadCount(0);
+        setIsNotifOpen(false);
       }
     } catch (err) {
       console.error("Failed to mark all as read:", err);
@@ -200,14 +230,20 @@ export function UserTopNav({ userInitials, userName, userEmail }: TopNavProps) {
 
       <div className={styles.tools}>
         <div className={styles.infoPill}>
-          <svg className={styles.pillIcon} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-            <polyline points="14 2 14 8 20 8"></polyline>
-            <line x1="16" y1="13" x2="8" y2="13"></line>
-            <line x1="16" y1="17" x2="8" y2="17"></line>
-            <polyline points="10 9 9 9 8 9"></polyline>
-          </svg>
-          <span>Reports</span>
+          <div 
+            style={{ display: "flex", alignItems: "center", gap: "0.5rem", cursor: "pointer" }}
+            onClick={() => router.push('/user/reports')}
+            title="Open Reports"
+          >
+            <svg className={styles.pillIcon} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="16" y1="13" x2="8" y2="13"></line>
+              <line x1="16" y1="17" x2="8" y2="17"></line>
+              <polyline points="10 9 9 9 8 9"></polyline>
+            </svg>
+            <span style={{ transition: "color 0.2s" }} onMouseOver={e => e.currentTarget.style.color = "var(--gn-primary)"} onMouseOut={e => e.currentTarget.style.color = ""}>Reports</span>
+          </div>
           <div className={styles.pillDivider} />
           <svg className={styles.pillIcon} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
@@ -262,6 +298,21 @@ export function UserTopNav({ userInitials, userName, userEmail }: TopNavProps) {
           )}
         </div>
 
+        <button 
+          className={styles.iconButton} 
+          aria-label="Toggle Language" 
+          onClick={toggleLanguage}
+          style={{ width: "auto", height: "38px", borderRadius: "20px", padding: "0 0.8rem", display: "flex", alignItems: "center", gap: "0.4rem", fontSize: "0.85rem", fontWeight: 700, border: "1px solid var(--gn-surface-border)", color: "var(--gn-text-secondary)", transition: "all 0.2s" }}
+          title={lang === "en" ? "Switch to Bengali" : "ইংরেজি পরিবর্তন করুন"}
+        >
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="2" y1="12" x2="22" y2="12"></line>
+            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+          </svg>
+          <span>{lang === "en" ? "EN" : "বাং"}</span>
+        </button>
+
         <button className={styles.iconButton} aria-label="Toggle Theme" onClick={toggleTheme}>
           {mounted ? (
             theme === "dark" ? (
@@ -302,7 +353,33 @@ export function UserTopNav({ userInitials, userName, userEmail }: TopNavProps) {
                     <div 
                       key={notif.id} 
                       className={`${styles.notificationItem} ${!notif.is_read ? styles.unread : ''}`}
-                      onClick={() => !notif.is_read && markAsRead(notif.id)}
+                      onClick={() => {
+                        if (!notif.is_read) markAsRead(notif.id);
+                        
+                        let targetLink = notif.link;
+                        if (targetLink) {
+                            if (targetLink.startsWith('/dashboard/upload')) {
+                                targetLink = '/user/upload-dna';
+                            } else if (targetLink.startsWith('/dashboard/results/')) {
+                                targetLink = '/user/results';
+                            } else if (targetLink.startsWith('/dashboard/')) {
+                                targetLink = targetLink.replace('/dashboard/', '/user/');
+                            }
+                        } else {
+                           const title = notif.title || "";
+                           if (title.includes("Report")) targetLink = "/user/reports";
+                           else if (title.includes("Analysis") || title.includes("Compare") || title.includes("Match")) targetLink = "/user/results";
+                           else if (title.includes("Sequence") || title.includes("Reference") || title.includes("Upload")) targetLink = "/user/upload-dna";
+                           else targetLink = "/user/dashboard";
+                        }
+
+                        if (targetLink) {
+                          setIsNotifOpen(false);
+                          setTimeout(() => {
+                            router.push(targetLink);
+                          }, 0);
+                        }
+                      }}
                     >
                       {!notif.is_read && <div className={styles.unreadDot} />}
                       <span className={styles.notifTitle}>{notif.title}</span>

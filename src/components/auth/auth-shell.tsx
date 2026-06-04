@@ -2,23 +2,23 @@ import Link from "next/link";
 import Image from "next/image";
 import styles from "./auth-shell.module.css";
 
-const PLATFORM_TAGS = ["DNA uploads", "Report history", "Google + GitHub"];
+const PLATFORM_TAGS = ["DNA Ingest", "Medication Safety", "Outbreak Tracking"];
 
 const PLATFORM_SIGNALS = [
   {
     code: "01",
     title: "Secure intake",
-    text: "Enter the workspace for uploads, case review, and report history."
+    text: "Enter the workspace for genomic uploads, clinical case review, and outbreak tracking."
   },
   {
     code: "02",
     title: "Medication safety",
-    text: "Keep pharmacogenomic signals readable for clinicians and patients."
+    text: "Access real-time pharmacogenomics and track potential outbreak risks in one place."
   },
   {
     code: "03",
     title: "Governed access",
-    text: "Consent, identity, and audit posture stay attached to the product."
+    text: "Consent parameters, access logs, and data security controls stay fully visible."
   }
 ];
 
@@ -48,7 +48,7 @@ export function AuthShell({ children }: AuthShellProps) {
           <div className={styles.storyBlock}>
             <p className="eyebrow">Secure access</p>
             <h1>Access the GenoNexus platform.</h1>
-            <p>One account for genomic uploads, medication-safety review, and report history.</p>
+            <p>One account for genomic uploads, medication safety review, and real-time outbreak surveillance.</p>
           </div>
 
           <div className={styles.tagRow}>

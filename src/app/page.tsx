@@ -11,7 +11,7 @@ const HERO_METRICS = [
   },
   {
     value: "AI",
-    label: "signal layers turn markers into medication and phenotype insight"
+    label: "signal layers turn markers into medication, pathogen surveillance, and phenotype insight"
   },
   {
     value: "HQ",
@@ -23,6 +23,7 @@ const HERO_CHIPS = [
   "23andMe + AncestryDNA",
   "VCF normalization",
   "Medication safety",
+  "Outbreak tracking",
   "Clinician-ready reports"
 ];
 
@@ -35,7 +36,7 @@ const PLATFORM_SUMMARY = [
   },
   {
     label: "Release focus",
-    value: "Medication safety and phenotype review"
+    value: "Medication safety, outbreak surveillance, and phenotype review"
   },
   {
     label: "Control layer",
@@ -52,8 +53,8 @@ const PLATFORM_SIGNALS = [
   },
   {
     label: "Interpret",
-    title: "Signal engine",
-    text: "Surface pharmacogenomic and phenotype cues in a readable layer.",
+    title: "Genomics engine",
+    text: "Surface pharmacogenomic cues and outbreak surveillance data in a readable layer.",
     position: "meshEast"
   },
   {
@@ -79,9 +80,9 @@ const WORKSPACE_VIEWS = [
   },
   {
     stage: "Interpret lane",
-    value: "Drug-gene panel",
-    caption: "Guidelines matched",
-    progress: "72%"
+    value: "Pharmacogenomics & Outbreaks",
+    caption: "Analysis complete",
+    progress: "100%"
   },
   {
     stage: "Report lane",
@@ -93,11 +94,11 @@ const WORKSPACE_VIEWS = [
 
 const SIGNAL_MIX = [
   { label: "Pharmacogenomics", width: "88%" },
-  { label: "Phenotype cues", width: "64%" },
-  { label: "Research flags", width: "46%" }
+  { label: "Outbreak tracking", width: "76%" },
+  { label: "Phenotype cues", width: "64%" }
 ];
 
-const AUDIT_EVENTS = ["Consent captured", "Variant pipeline locked", "Report handoff logged"];
+const AUDIT_EVENTS = ["Consent captured", "Variant pipeline locked", "Pathogen match detected", "Report handoff logged"];
 
 const WORKFLOW_STEPS = [
   {
@@ -108,12 +109,12 @@ const WORKFLOW_STEPS = [
   {
     step: "02",
     title: "Turn data into signal",
-    text: "Markers, evidence layers, and risk posture surface fast. The platform normalizes variant data against clinical guidelines to identify actionable pharmacogenomic and phenotypic cues in real-time."
+    text: "Markers, evidence layers, and risk posture surface fast. The platform uses a powerful genomics engine to identify actionable pharmacogenomic cues and track potential outbreak risks in real-time."
   },
   {
     step: "03",
     title: "Deliver a readable report",
-    text: "Results become clear summaries instead of raw genomic jargon. Clinician-ready views prioritize high-impact findings, mapping metabolism risks seamlessly to specific medication guidance."
+    text: "Results become clear summaries instead of raw genomic jargon. User profiles and clinical views prioritize high-impact findings, seamlessly mapping medication guidance and surveillance alerts."
   },
   {
     step: "04",
@@ -165,19 +166,19 @@ const TRUST_SIGNALS = [
 
 const FAQ_ITEMS = [
   {
-    question: "What opens first in GenoNexus?",
+    question: "How do I get started with GenoNexus?",
     answer:
-      "A secure onboarding flow, guided DNA intake, and the medication-safety workspace."
+      "Simply create an account, upload your raw DNA file (such as a 23andMe, AncestryDNA, or VCF export), and the platform will guide you through normalization and clinical profile creation."
   },
   {
-    question: "Who is this interface designed for?",
+    question: "Who is the GenoNexus platform designed for?",
     answer:
-      "Patients, clinicians, and research teams that need readable genomic signals in one place."
+      "It is built for patients seeking personalized medication insights, clinicians requiring genomic decision-support tools, and public health teams tracking pathogen outbreaks."
   },
   {
-    question: "How is privacy represented in the UI?",
+    question: "How is data privacy and ownership handled?",
     answer:
-      "Consent, access, and audit states are visible inside the workflow instead of being buried in settings."
+      "Your genetic data belongs to you. Consent parameters, data access controls, and activity audit trails are fully visible and manageable directly inside your account workspace."
   }
 ];
 
@@ -493,9 +494,9 @@ export default function HomePage() {
       <section className={styles.section} id="faq">
         <div className="pageShell">
           <div className="sectionHeader">
-            <h2>Keep the answers short and the interface obvious.</h2>
+            <h2>Frequently Asked Questions</h2>
             <p>
-              A few concise answers still help conversion when the product handles genomic data.
+              Find clear, simple answers to common questions about GenoNexus onboarding, security, and workspaces.
             </p>
           </div>
 

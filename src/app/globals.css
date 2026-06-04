@@ -73,6 +73,7 @@
   --gn-bg-glass: rgba(24, 24, 27, 0.4);
   --gn-bg-glass-hover: rgba(24, 24, 27, 0.6);
   --gn-bg-glass-light: rgba(255, 255, 255, 0.04);
+  --gn-bg-glass-strong: rgba(39, 39, 42, 0.8);
   --gn-shadow-glass: 0 8px 32px rgba(0, 0, 0, 0.3);
   --gn-shadow-glass-hover: 0 12px 40px rgba(0, 0, 0, 0.4);
 }
@@ -116,7 +117,7 @@
 
   --gn-text-primary: #0f172a;
   --gn-text-secondary: #475569;
-  --gn-text-muted: #94a3b8;
+  --gn-text-muted: #5e7185;
 
   --risk-high: var(--gn-danger);
   --risk-high-bg: rgba(225, 29, 72, 0.08);
@@ -128,19 +129,20 @@
   --risk-low-bg: rgba(5, 150, 105, 0.08);
   --risk-low-border: rgba(5, 150, 105, 0.2);
 
-  --shadow-soft: 0 4px 20px rgba(0, 0, 0, 0.05);
-  --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.06);
-  --shadow-focus: 0 0 0 4px rgba(5, 150, 105, 0.2);
+  --shadow-soft: 0 4px 20px rgba(15, 23, 42, 0.04);
+  --shadow-card: 0 10px 30px rgba(15, 23, 42, 0.06);
+  --shadow-focus: 0 0 0 4px rgba(5, 150, 105, 0.15);
 
   --gn-inverse-bg: #0f172a;
   --gn-inverse-text: #ffffff;
-  --gn-border-light: rgba(0, 0, 0, 0.06);
-  --gn-border-light-strong: rgba(0, 0, 0, 0.12);
-  --gn-bg-glass: rgba(255, 255, 255, 0.85);
-  --gn-bg-glass-hover: #ffffff;
-  --gn-bg-glass-light: rgba(0, 0, 0, 0.03);
-  --gn-shadow-glass: 0 8px 32px rgba(0, 0, 0, 0.05);
-  --gn-shadow-glass-hover: 0 12px 40px rgba(0, 0, 0, 0.08);
+  --gn-border-light: rgba(15, 23, 42, 0.08);
+  --gn-border-light-strong: rgba(15, 23, 42, 0.14);
+  --gn-bg-glass: #ffffff;
+  --gn-bg-glass-hover: #f8fafc;
+  --gn-bg-glass-light: #f8fafc;
+  --gn-bg-glass-strong: #ffffff;
+  --gn-shadow-glass: 0 10px 30px rgba(15, 23, 42, 0.05);
+  --gn-shadow-glass-hover: 0 15px 40px rgba(15, 23, 42, 0.08);
 }
 
 * {
@@ -409,5 +411,17 @@ h6 {
 @media (max-width: 768px) {
   .pageShell {
     width: min(calc(100% - 1.5rem), var(--max-width-app));
+  }
+}
+
+@media print {
+  aside, header, nav {
+    display: none !important;
+  }
+  body, html {
+    background: white !important;
+    color: black !important;
+    height: auto !important;
+    overflow: visible !important;
   }
 }

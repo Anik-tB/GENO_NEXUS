@@ -134,12 +134,35 @@ export default function ClientResults() {
   const [customPlan, setCustomPlan] = useState<{title: string, content: string}[] | null>(null);
   const [planError, setPlanError] = useState<string | null>(null);
 
+  useEffect(() => {
+    const savedLang = (localStorage.getItem("language") || "en") as "en" | "bn";
+    setLang(savedLang);
+
+    const handleLangEvent = () => {
+      const updated = (localStorage.getItem("language") || "en") as "en" | "bn";
+      setLang(updated);
+    };
+    window.addEventListener("languageChange", handleLangEvent);
+    return () => window.removeEventListener("languageChange", handleLangEvent);
+  }, []);
+
   const isBn = lang === "bn";
   const RISK_CONF = isBn ? BN_RISK_CONFIG : EN_RISK_CONFIG;
   const OVERALL_CONF = isBn ? BN_OVERALL_CONFIG : EN_OVERALL_CONFIG;
   const UI = isBn ? BN_UI : EN_UI;
 
-  const toggleLang = () => setLang(l => l === "en" ? "bn" : "en");
+  // Handle escape key to close modal
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setShowPreventionPlan(false);
+      }
+    };
+    if (showPreventionPlan) {
+      window.addEventListener("keydown", handleKeyDown);
+    }
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [showPreventionPlan]);
 
   useEffect(() => {
     let pollTimer: ReturnType<typeof setTimeout>;
@@ -153,7 +176,7 @@ export default function ClientResults() {
         const res = await fetch("/api/predictions");
         const data = await res.json();
 
-        if (res.ok) {
+        if (res.status === 200) {
           // Results are ready
           setPredictions(data.predictions || []);
           setMeta(data.meta || null);
@@ -333,9 +356,6 @@ Format example:
           <Link href="/user/dashboard" className={styles.back} id="results-back">{UI.back}</Link>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
             <h1 className={styles.title}>{UI.title}</h1>
-            <button onClick={toggleLang} className={styles.btnSecondary} style={{ padding: "0.5rem 1rem", fontSize: "0.9rem" }}>
-              🌐 {UI.translateBtn}
-            </button>
           </div>
         </div>
         <div className={styles.emptyState}>
@@ -349,16 +369,13 @@ Format example:
 
 
   // ── No Results / Error State ────────────────────────────────────────────────
-  if (error || predictions.length === 0) {
+  if (error || !meta) {
     return (
       <div className={styles.page}>
         <div className={styles.header}>
           <Link href="/user/dashboard" className={styles.back} id="results-back">{UI.back}</Link>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <h1 className={styles.title}>{UI.title}</h1>
-            <button onClick={toggleLang} className={styles.btnSecondary} style={{ padding: "0.4rem 0.8rem", fontSize: "0.85rem" }}>
-              🌐 {UI.translateBtn}
-            </button>
           </div>
         </div>
         <div className={styles.emptyState}>
@@ -391,9 +408,6 @@ Format example:
               </p>
             )}
           </div>
-          <button onClick={toggleLang} className={styles.btnSecondary} style={{ padding: "0.5rem 1rem", fontSize: "0.9rem" }}>
-            🌐 {UI.translateBtn}
-          </button>
         </div>
       </div>
 
@@ -464,7 +478,11 @@ Format example:
 
       {/* ── Download Report ────────────────────────────────────────── */}
       <div className={styles.reportActions}>
-        <button className={styles.btnDownload} id="results-download-pdf">
+        <button 
+          className={styles.btnDownload} 
+          id="results-download-pdf"
+          onClick={() => window.print()}
+        >
           {UI.downloadBtn}
         </button>
         <Link href="/user/upload-dna" className={styles.btnSecondary} id="results-upload-new">
