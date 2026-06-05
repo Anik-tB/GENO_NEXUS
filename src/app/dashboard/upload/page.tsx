@@ -394,7 +394,8 @@ export default function UploadPage() {
               {[
                 { id: 'covid', name: 'SARS-CoV-2 (COVID-19)', url: 'https://www.ncbi.nlm.nih.gov/nuccore/NC_045512.2?report=fasta', desc: 'NC_045512.2' },
                 { id: 'hiv', name: 'HIV-1', url: 'https://www.ncbi.nlm.nih.gov/nuccore/NC_001802.1?report=fasta', desc: 'NC_001802.1' },
-                { id: 'brca', name: 'Homo sapiens BRCA1', url: 'https://www.ncbi.nlm.nih.gov/nuccore/NM_007294.4?report=fasta', desc: 'NM_007294.4' }
+                { id: 'brca', name: 'Homo sapiens BRCA1', url: 'https://www.ncbi.nlm.nih.gov/nuccore/NM_007294.4?report=fasta', desc: 'NM_007294.4' },
+                { id: 'ebola', name: 'Ebola virus', url: 'https://www.ncbi.nlm.nih.gov/nuccore/NC_002549.1?report=fasta', desc: 'NC_002549.1' }
               ].map(opt => (
                 <div 
                   key={opt.id}

@@ -439,6 +439,7 @@ KNOWN_DR_POSITIONS = {
     "HIV-1":      {65, 74, 75, 101, 103, 106, 115, 116, 151, 184, 190, 215, 219, 41, 67, 70, 210, 215, 219},
     "SARS-CoV-2": {501, 484, 417, 452, 614, 681},
     "Influenza-A": {275, 119, 292, 222, 226},
+    "Ebola": {274, 509, 544},
 }
 
 # ---------------------------------------------------------------------------
@@ -970,7 +971,7 @@ async def predict_disease(req: PredictDiseaseRequest):
         })
         
         # 2. Antimicrobial/Antiviral Resistance
-        if dr_count > 0 or req.organism.startswith("HIV"):
+        if dr_count > 0 or req.organism.startswith("HIV") or req.organism == "Ebola":
             dr_risk = min(99, 1 + (dr_count * 25) + (high_sev_count * 1))
             predictions.append({
                 "id": "pred-dr",
@@ -984,7 +985,7 @@ async def predict_disease(req: PredictDiseaseRequest):
             })
 
         # 3. Immune Evasion / Vaccine Escape (e.g. Spike/Env/HA genes)
-        evasion_genes = {"S", "env", "HA", "E1", "E2"}
+        evasion_genes = {"S", "env", "HA", "E1", "E2", "GP"}
         evasion_hits = len(affected_genes.intersection(evasion_genes))
         if evasion_hits > 0 or high_sev_count > 10:
             ev_risk = min(99, 30 + (evasion_hits * 10) + (high_sev_count * 2))
