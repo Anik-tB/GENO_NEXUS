@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS private_messages (
   content TEXT,
   file_url TEXT,
   file_type TEXT,
+  is_read BOOLEAN DEFAULT FALSE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 

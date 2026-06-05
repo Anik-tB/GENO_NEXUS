@@ -81,8 +81,29 @@ export async function POST(req: NextRequest) {
        RETURNING id, sender_id, receiver_id, content, file_url, file_type, created_at`,
       [user.id, receiverId, content?.trim() || null, fileUrl || null, fileType || null]
     );
+    const savedMessage = result.rows[0];
 
-    return NextResponse.json({ message: result.rows[0] });
+    // Notify FastAPI to broadcast the real-time message
+    try {
+      await fetch("http://127.0.0.1:8000/api/chat/broadcast", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "private_message",
+          id: savedMessage.id,
+          sender_id: savedMessage.sender_id,
+          receiver_id: savedMessage.receiver_id,
+          content: savedMessage.content,
+          file_url: savedMessage.file_url,
+          file_type: savedMessage.file_type,
+          created_at: savedMessage.created_at,
+        }),
+      });
+    } catch (err) {
+      console.error("Failed to notify WS hub:", err);
+    }
+
+    return NextResponse.json({ message: savedMessage });
   } catch (error) {
     console.error("Failed to send message:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });

@@ -45,10 +45,16 @@ export default function CollaborationNexus() {
     return combined.sort((a, b) => (b.ts ?? 0) - (a.ts ?? 0)).slice(0, 50);
   })();
 
+  const onlineCount = members.filter(m => m.status !== "offline").length;
+  const displayStats = impactStats ? {
+    ...impactStats,
+    activeResearchers: onlineCount
+  } : null;
+
   return (
     <div className={styles.nexusContainer}>
       {/* ── Research Impact Dashboard Strip ── */}
-      <ImpactStrip stats={impactStats} loading={statsLoading} />
+      <ImpactStrip stats={displayStats} loading={statsLoading} />
 
       {/* ── Presence Header ── */}
       <PresenceHeader

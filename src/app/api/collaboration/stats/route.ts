@@ -233,6 +233,20 @@ export async function GET() {
       console.error("[collab/stats] exact contributions error:", e);
     }
 
+    // ── 7. Fetch real-time online researchers ───────────────────────────────
+    let onlineCount = contributors.length || 1;
+    try {
+      const presenceRes = await fetch("http://127.0.0.1:8000/api/chat/presence", { cache: 'no-store' });
+      if (presenceRes.ok) {
+        const presence = await presenceRes.json();
+        if (presence.onlineIds && presence.onlineIds.length > 0) {
+          onlineCount = presence.onlineIds.length;
+        }
+      }
+    } catch (e) {
+      console.error("[collab/stats] presence fetch error:", e);
+    }
+
     const activeUserName = [user.firstName, user.lastName].filter(Boolean).join(" ") || user.email;
     const activeUserInitials = `${user.firstName?.[0] ?? ""}${user.lastName?.[0] ?? ""}`.toUpperCase() || "GN";
 
@@ -248,7 +262,7 @@ export async function GET() {
           color: "#10b981"
         },
         impactStats: {
-          activeResearchers: contributors.length || 1,
+          activeResearchers: onlineCount,
           sharedDatasets: totalFiles,
           pipelinesExecuted: totalAnalyses,
           variantsIdentified: totalVariants,

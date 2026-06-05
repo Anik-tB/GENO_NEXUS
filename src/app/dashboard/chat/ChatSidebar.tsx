@@ -16,6 +16,8 @@ export default function ChatSidebar({ users }: { users: User[] }) {
   const pathname = usePathname();
   // Track which users have been recently active (polled from presence ping)
   const [onlineIds, setOnlineIds] = useState<Set<string>>(new Set());
+  // Track unread message counts per user
+  const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
 
   useEffect(() => {
     // Poll for "who is online" every 10s via a simple presence check
@@ -33,7 +35,48 @@ export default function ChatSidebar({ users }: { users: User[] }) {
     };
     checkPresence();
     const interval = setInterval(checkPresence, 10000);
-    return () => clearInterval(interval);
+
+    const fetchUnread = async () => {
+      try {
+        const res = await fetch("/api/chat/unread");
+        if (res.ok) {
+          const data = await res.json();
+          setUnreadCounts(data.unread || {});
+        }
+      } catch (err) {}
+    };
+    fetchUnread();
+
+    const handleGlobalMsg = (e: any) => {
+      const data = e.detail;
+      if (data.type === "private_message") {
+        const senderId = data.sender_id;
+        // Only increment if we are not currently chatting with this user
+        if (window.location.pathname !== `/dashboard/chat/${senderId}`) {
+          setUnreadCounts(prev => ({
+            ...prev,
+            [senderId]: (prev[senderId] || 0) + 1
+          }));
+        }
+      }
+    };
+
+    const handleMarkRead = (e: any) => {
+      const peerId = e.detail.peerId;
+      setUnreadCounts(prev => ({
+        ...prev,
+        [peerId]: 0
+      }));
+    };
+
+    window.addEventListener("global_chat_message", handleGlobalMsg);
+    window.addEventListener("mark_chat_read", handleMarkRead);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("global_chat_message", handleGlobalMsg);
+      window.removeEventListener("mark_chat_read", handleMarkRead);
+    };
   }, []);
 
   const getInitials = (u: User) =>
@@ -65,6 +108,11 @@ export default function ChatSidebar({ users }: { users: User[] }) {
                   {isOnline ? "● Online" : "○ Offline"}
                 </span>
               </div>
+              {unreadCounts[u.id] > 0 && (
+                <div className={styles.unreadBadge}>
+                  {unreadCounts[u.id]}
+                </div>
+              )}
             </Link>
           );
         })}

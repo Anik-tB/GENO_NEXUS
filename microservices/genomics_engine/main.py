@@ -366,22 +366,31 @@ async def collab_ws(ws: WebSocket):
 # ===========================================================================
 class ChatConnectionManager:
     def __init__(self):
-        self.active_connections: dict[str, WebSocket] = {}
+        self.active_connections: dict[str, list[WebSocket]] = {}
 
     async def connect(self, ws: WebSocket, user_id: str):
         await ws.accept()
-        self.active_connections[user_id] = ws
+        if user_id not in self.active_connections:
+            self.active_connections[user_id] = []
+        self.active_connections[user_id].append(ws)
 
-    def disconnect(self, user_id: str):
+    def disconnect(self, ws: WebSocket, user_id: str):
         if user_id in self.active_connections:
-            del self.active_connections[user_id]
+            if ws in self.active_connections[user_id]:
+                self.active_connections[user_id].remove(ws)
+            if not self.active_connections[user_id]:
+                del self.active_connections[user_id]
 
     async def send_personal_message(self, message: dict, user_id: str):
         if user_id in self.active_connections:
-            try:
-                await self.active_connections[user_id].send_text(json.dumps(message))
-            except Exception:
-                self.disconnect(user_id)
+            dead_sockets = []
+            for ws in self.active_connections[user_id]:
+                try:
+                    await ws.send_text(json.dumps(message))
+                except Exception:
+                    dead_sockets.append(ws)
+            for dead in dead_sockets:
+                self.disconnect(dead, user_id)
 
 chat_manager = ChatConnectionManager()
 
@@ -442,7 +451,23 @@ async def chat_ws(ws: WebSocket, user_id: str):
                 await chat_manager.send_personal_message(out_msg, receiver_id)
 
     except WebSocketDisconnect:
-        chat_manager.disconnect(user_id)
+        chat_manager.disconnect(ws, user_id)
+
+@app.post("/api/chat/broadcast")
+async def broadcast_chat_message(msg: dict):
+    """Allows Next.js REST API to trigger a real-time WS broadcast after saving to DB."""
+    receiver_id = msg.get("receiver_id")
+    sender_id = msg.get("sender_id")
+    if receiver_id:
+        await chat_manager.send_personal_message(msg, receiver_id)
+    if sender_id and sender_id != receiver_id:
+        await chat_manager.send_personal_message(msg, sender_id)
+    return {"status": "ok"}
+
+@app.get("/api/chat/presence")
+async def get_chat_presence():
+    """Returns the list of user IDs who currently have an active WebSocket connection."""
+    return {"onlineIds": list(chat_manager.active_connections.keys())}
 
 # ===========================================================================
 

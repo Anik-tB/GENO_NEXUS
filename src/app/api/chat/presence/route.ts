@@ -13,17 +13,17 @@ export async function GET() {
     const user = await getUserFromSessionToken(token);
     if (!user) return NextResponse.json({ onlineIds: [] });
 
-    const db = assertDatabase();
+    // Fetch actual online presence from the FastAPI WebSocket hub
+    const fastapiRes = await fetch("http://127.0.0.1:8000/api/chat/presence", {
+      next: { revalidate: 0 },
+    });
     
-    // For demo purposes, we will mark all other users in the database as "online"
-    // so the chat interface looks active and populated.
-    const res = await db.query(
-      `SELECT id FROM users WHERE id != $1`,
-      [user.id]
-    );
-
-    const onlineIds = res.rows.map((r: { id: string }) => r.id);
-    return NextResponse.json({ onlineIds });
+    if (fastapiRes.ok) {
+      const data = await fastapiRes.json();
+      return NextResponse.json({ onlineIds: data.onlineIds || [] });
+    }
+    
+    return NextResponse.json({ onlineIds: [] });
   } catch (error) {
     console.error("Presence check failed:", error);
     return NextResponse.json({ onlineIds: [] });

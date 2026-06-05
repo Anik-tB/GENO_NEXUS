@@ -28,11 +28,9 @@ export default function ChatRoom({ params }: { params: Promise<{ userId: string 
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const wsRef = useRef<WebSocket | null>(null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const myUserIdRef = useRef<string>("");
   const lastSeenRef = useRef<string | null>(null);
-  const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Keep ref in sync
   useEffect(() => { myUserIdRef.current = myUserId; }, [myUserId]);
@@ -42,37 +40,38 @@ export default function ChatRoom({ params }: { params: Promise<{ userId: string 
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isPeerTyping]);
 
-  // Poll for new messages every 3 seconds
-  const pollMessages = useCallback(async () => {
+  // Fetch initial message history
+  const fetchHistory = useCallback(async () => {
     if (!peerId) return;
     try {
-      const url = lastSeenRef.current
-        ? `/api/chat/history?peerId=${peerId}&since=${encodeURIComponent(lastSeenRef.current)}`
-        : `/api/chat/history?peerId=${peerId}`;
-
+      const url = `/api/chat/history?peerId=${peerId}`;
       const res = await fetch(url);
       if (!res.ok) return;
       const data = await res.json();
       const incoming: Message[] = data.messages || [];
 
       if (incoming.length > 0) {
-        if (lastSeenRef.current) {
-          // Only append NEW messages
-          setMessages(prev => {
-            const existingIds = new Set(prev.map(m => m.id));
-            const newOnes = incoming.filter(m => !existingIds.has(m.id));
-            return newOnes.length > 0 ? [...prev, ...newOnes] : prev;
-          });
-        } else {
-          // First load — set all
-          setMessages(incoming);
-        }
+        setMessages(incoming);
         // Track the latest timestamp
         lastSeenRef.current = incoming[incoming.length - 1].created_at;
       }
     } catch {
-      // Silently ignore poll errors
+      // Silently ignore errors
     }
+  }, [peerId]);
+
+  // Mark as read
+  const markAsRead = useCallback(async () => {
+    if (!peerId) return;
+    try {
+      await fetch("/api/chat/read", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ peerId })
+      });
+      // Notify sidebar to clear badge
+      window.dispatchEvent(new CustomEvent("mark_chat_read", { detail: { peerId } }));
+    } catch {}
   }, [peerId]);
 
   useEffect(() => {
@@ -88,8 +87,7 @@ export default function ChatRoom({ params }: { params: Promise<{ userId: string 
           const userId = meData.profile?.id ?? meData.id;
           setMyUserId(userId);
           myUserIdRef.current = userId;
-          // Try WebSocket (best effort — not required)
-          tryConnectWs(userId);
+          // No local websocket init needed anymore, GlobalChatManager handles it
         }
 
         if (peerRes.ok) {
@@ -102,9 +100,9 @@ export default function ChatRoom({ params }: { params: Promise<{ userId: string 
         console.error("Failed to init chat", err);
       }
 
-      // Initial load + start polling
-      await pollMessages();
-      pollIntervalRef.current = setInterval(pollMessages, 3000);
+      // Initial load
+      await fetchHistory();
+      await markAsRead();
     };
 
     lastSeenRef.current = null;
@@ -112,54 +110,53 @@ export default function ChatRoom({ params }: { params: Promise<{ userId: string 
     init();
 
     return () => {
-      if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
       if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
-      wsRef.current?.close();
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [peerId]);
 
-  // Optional: WebSocket for instant delivery (falls back to polling gracefully)
-  const tryConnectWs = (userId: string) => {
-    try {
-      const socket = new WebSocket(`ws://127.0.0.1:8000/ws/chat/${userId}`);
-      wsRef.current = socket;
+  // Listen to GlobalChatManager events
+  useEffect(() => {
+    const handleGlobalMessage = (e: any) => {
+      const data = e.detail;
+      const me = myUserIdRef.current;
 
-      socket.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data);
-          const me = myUserIdRef.current || userId;
+      if (data.type === "private_message") {
+        if (
+          (data.sender_id === me && data.receiver_id === peerId) ||
+          (data.sender_id === peerId && data.receiver_id === me)
+        ) {
+          setMessages(prev => {
+            if (prev.find(m => m.id === String(data.id))) return prev;
+            
+            // Remove any optimistic temp message that matches the incoming real message
+            const filtered = prev.filter(m => 
+              !(m.id.startsWith("temp-") && m.content === data.content && m.sender_id === data.sender_id)
+            );
+            
+            return [...filtered, { ...data, id: String(data.id) }];
+          });
+          if (data.sender_id === peerId) setIsPeerTyping(false);
+          
+          // Mark as read immediately since we are looking at this chat
+          markAsRead();
+        }
+      } else if (data.type === "typing" && data.sender_id === peerId) {
+        setIsPeerTyping(data.typing);
+        if (data.typing) {
+          setTimeout(() => setIsPeerTyping(false), 3000);
+        }
+      }
+    };
 
-          if (data.type === "private_message") {
-            if (
-              (data.sender_id === me && data.receiver_id === peerId) ||
-              (data.sender_id === peerId && data.receiver_id === me)
-            ) {
-              setMessages(prev => {
-                if (prev.find(m => m.id === String(data.id))) return prev;
-                return [...prev, { ...data, id: String(data.id) }];
-              });
-              if (data.sender_id === peerId) setIsPeerTyping(false);
-            }
-          } else if (data.type === "typing" && data.sender_id === peerId) {
-            setIsPeerTyping(data.typing);
-            if (data.typing) {
-              setTimeout(() => setIsPeerTyping(false), 3000);
-            }
-          }
-        } catch { /* ignore */ }
-      };
-
-      socket.onerror = () => socket.close();
-    } catch {
-      // WebSocket not available — polling handles everything
-    }
-  };
+    window.addEventListener("global_chat_message", handleGlobalMessage);
+    return () => window.removeEventListener("global_chat_message", handleGlobalMessage);
+  }, [peerId]);
 
   const sendTypingSignal = (typing: boolean) => {
-    if (wsRef.current?.readyState === WebSocket.OPEN) {
-      wsRef.current.send(JSON.stringify({ type: "typing", receiver_id: peerId, typing }));
-    }
+    window.dispatchEvent(new CustomEvent("send_ws_message", { 
+      detail: { type: "typing", receiver_id: peerId, typing } 
+    }));
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -211,43 +208,50 @@ export default function ChatRoom({ params }: { params: Promise<{ userId: string 
     setFile(null);
     sendTypingSignal(false);
 
-    try {
-      // Step 2: Save message via REST API (always works)
-      const res = await fetch("/api/chat/history", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          receiverId: peerId,
-          content: messageContent,
-          fileUrl: uploadedUrl,
-          fileType: uploadedType,
-        }),
-      });
+    // OPTIMISTIC UI: Instantly show the message on screen (0ms latency)
+    const tempId = `temp-${Date.now()}`;
+    const optimisticMessage: Message = {
+      id: tempId,
+      sender_id: myUserIdRef.current,
+      receiver_id: peerId,
+      content: messageContent || null,
+      file_url: uploadedUrl,
+      file_type: uploadedType,
+      created_at: new Date().toISOString(),
+    };
+    
+    setMessages(prev => [...prev, optimisticMessage]);
 
+    // Send asynchronously without blocking the UI
+    fetch("/api/chat/history", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        receiverId: peerId,
+        content: messageContent,
+        fileUrl: uploadedUrl,
+        fileType: uploadedType,
+      }),
+    }).then(async (res) => {
       if (res.ok) {
         const data = await res.json();
         const saved: Message = data.message;
-
-        // Immediately append to local state
-        setMessages(prev => {
-          if (prev.find(m => m.id === saved.id)) return prev;
-          return [...prev, saved];
-        });
         lastSeenRef.current = saved.created_at;
+        // GlobalChatManager handles the incoming WS broadcast to replace the temp message
       } else {
-        const errData = await res.json().catch(() => ({}));
-        alert(`Failed to send message: ${errData.error || res.statusText}`);
-        setInput(messageContent);
-        setFile(originalFile);
+        throw new Error("Server rejected message");
       }
-    } catch (err) {
+    }).catch((err) => {
       console.error("Failed to send message", err);
-      alert("Failed to send message due to a connection or server error.");
-      setInput(messageContent); // Restore input on failure
-      setFile(originalFile); // Restore file on failure
-    } finally {
+      alert("Failed to send message due to a network error.");
+      
+      // Rollback optimistic update
+      setMessages(prev => prev.filter(m => m.id !== tempId));
+      setInput(messageContent); 
+      setFile(originalFile); 
+    }).finally(() => {
       setIsSending(false);
-    }
+    });
   };
 
   const renderMedia = (url: string, type: string) => {

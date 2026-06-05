@@ -5,6 +5,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { getUserFromSessionToken } from "@/lib/auth/sessions";
 import { env } from "@/lib/env";
+import { GlobalChatManager } from "@/components/dashboard/GlobalChatManager";
 import styles from "./layout.module.css";
 
 export default async function DashboardLayout({
@@ -45,6 +46,7 @@ export default async function DashboardLayout({
         </main>
       </div>
       <ChatbotPanel />
+      <GlobalChatManager />
     </div>
   );
 }
