@@ -175,7 +175,8 @@ export default function UploadDnaPage() {
     const references = [
       { id: 'covid', urlKey: 'NC_045512', name: 'COVID-19', keywords: ['covid', 'sars', 'nc_045512'] },
       { id: 'hiv', urlKey: 'NC_001802', name: 'HIV-1', keywords: ['hiv', 'nc_001802'] },
-      { id: 'brca', urlKey: 'NM_007294', name: 'BRCA1', keywords: ['brca', 'nm_007294'] }
+      { id: 'brca', urlKey: 'NM_007294', name: 'BRCA1', keywords: ['brca', 'nm_007294'] },
+      { id: 'ebola', urlKey: 'NC_002549', name: 'Ebola virus', keywords: ['ebola', 'ebov', 'nc_002549'] }
     ];
 
     const selectedRef = references.find(ref => linkUrl.includes(ref.urlKey));
@@ -393,7 +394,8 @@ export default function UploadDnaPage() {
               {[
                 { id: 'covid', name: 'SARS-CoV-2 (COVID-19)', url: 'https://www.ncbi.nlm.nih.gov/nuccore/NC_045512.2?report=fasta', desc: 'NC_045512.2' },
                 { id: 'hiv', name: 'HIV-1', url: 'https://www.ncbi.nlm.nih.gov/nuccore/NC_001802.1?report=fasta', desc: 'NC_001802.1' },
-                { id: 'brca', name: 'Homo sapiens BRCA1', url: 'https://www.ncbi.nlm.nih.gov/nuccore/NM_007294.4?report=fasta', desc: 'NM_007294.4' }
+                { id: 'brca', name: 'Homo sapiens BRCA1', url: 'https://www.ncbi.nlm.nih.gov/nuccore/NM_007294.4?report=fasta', desc: 'NM_007294.4' },
+                { id: 'ebola', name: 'Ebola virus', url: 'https://www.ncbi.nlm.nih.gov/nuccore/NC_002549.1?report=fasta', desc: 'NC_002549.1' }
               ].map(opt => (
                 <div 
                   key={opt.id}

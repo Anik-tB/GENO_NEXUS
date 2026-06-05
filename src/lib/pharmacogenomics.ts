@@ -117,6 +117,7 @@ const PHARMACOGENES = [
   "HLA-B",
   "CYP2B6",
   "IL6R",
+  "NPC1",
 ];
 
 // ─── Clinical rule table ───────────────────────────────────────────────────
@@ -952,6 +953,52 @@ const GENE_RULES: GeneRule[] = [
         cpicLevel: "C",
         fdaWarning: false,
         dosingGuidance: "Monitor CRP and clinical response · dose adjustment per emerging protocols",
+      }
+    ],
+  },
+
+  // ── NPC1 (Ebola / Infectious Disease) ───────────────────────────────────
+  {
+    gene: "NPC1",
+    geneFullName: "Niemann-Pick C1 Intracellular Cholesterol Transporter",
+    baselineStatus: "Wild-type (assumed)",
+    baselinePhenotype: "normal_function",
+    baselineDiplotype: "Wild-type (assumed)",
+    baselineDescription:
+      "No actionable NPC1 variant detected. The host receptor for Ebola virus entry is fully functional. Standard susceptibility to Ebola virus infection.",
+    normalEvidence: "No actionable NPC1 variant detected in the latest completed comparison.",
+    affectedStatus: "Altered Viral Entry",
+    affectedPhenotype: "decreased_function",
+    affectedDiplotype: "Variant detected — reduced viral entry",
+    affectedDescription:
+      "An NPC1 variant was detected. Since NPC1 is the intracellular receptor required for Ebola virus entry, certain variants may confer reduced susceptibility to infection or alter the efficacy of host-directed antiviral therapies.",
+    favorableNormal: [
+      {
+        name: "Ebola Monoclonal Antibodies (Inmazeb/Ebanga)",
+        score: 80,
+        gene: "NPC1",
+        note: "Normal NPC1 function. Standard Ebola virus infectivity. Protocol-driven antiviral therapy is appropriate.",
+        pathways: ["Infectious Disease", "Ebola", "Antiviral"],
+        variantEvidence: "No actionable NPC1 marker detected.",
+        guideline: "Emerging PGx Research",
+        cpicLevel: "C",
+        fdaWarning: false,
+        dosingGuidance: "Standard protocol dosing for EVD",
+      }
+    ],
+    avoidAffected: [
+      {
+        name: "Ebola Monoclonal Antibodies (Inmazeb/Ebanga)",
+        score: 60,
+        gene: "NPC1",
+        note: "Altered NPC1 function may confer natural resistance to Ebola virus entry or affect the clinical course of disease. Treatment strategies may need individualised evaluation.",
+        pathways: ["Infectious Disease", "Ebola", "Antiviral"],
+        variantEvidence: "NPC1 variant detected.",
+        guideline: "Emerging PGx Research",
+        severity: "medium",
+        cpicLevel: "C",
+        fdaWarning: false,
+        dosingGuidance: "Monitor viral load closely · natural resistance factors may alter treatment impact",
       }
     ],
   },

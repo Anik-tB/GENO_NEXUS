@@ -251,6 +251,23 @@ export default function DrugsPage() {
 
   return (
     <div className={styles.container}>
+      <style media="print">{`
+        body { background: #ffffff !important; color: #000000 !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+        nav, aside:not([class*='sidebar']), header:not([class*='header']), #chatbot-panel, .chatbot { display: none !important; }
+        [class*='dashboardShell'], [class*='mainWrapper'], [class*='contentArea'] { display: block !important; height: auto !important; overflow: visible !important; padding: 0 !important; margin: 0 !important; }
+      `}</style>
+      
+      <div className={styles.printHeader}>
+        <h1>Pharmacogenomics Clinical Report</h1>
+        <div className={styles.printHeaderMeta}>
+          <span><strong>Patient:</strong> [Confidential]</span>
+          <span><strong>Report Date:</strong> {generatedAt}</span>
+        </div>
+        <div className={styles.printHeaderSource}>
+          GenoNexus Precision Prescribing Engine
+        </div>
+      </div>
+
       <header className={styles.header}>
         <div className={styles.headerContent}>
           <div className={styles.headerMeta}>
@@ -271,6 +288,9 @@ export default function DrugsPage() {
             guideline source, and variant evidence for each recommendation.
           </p>
         </div>
+        <button className={styles.actionBtn} onClick={() => window.print()}>
+          📑 Generate Clinical Report
+        </button>
       </header>
 
       {loading ? (
@@ -322,6 +342,20 @@ export default function DrugsPage() {
                   <strong>{generatedAt}</strong>
                 </div>
               </section>
+
+              {activeProfile.avoid.length > 0 && (
+                <div className={styles.alertPanel}>
+                  <div className={styles.alertLeft}>
+                    <div className={styles.alertIconBox}>
+                      <WarningIcon />
+                    </div>
+                    <div>
+                      <h3>High-Risk Prescriptions Flagged</h3>
+                      <p>Pharmacogenomic analysis has identified <strong>{activeProfile.avoid.length} medication{activeProfile.avoid.length !== 1 ? 's' : ''}</strong> with severe gene-drug interactions. Review contraindicated list immediately.</p>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {activeProfile.coverage.limitations.length > 0 && (
                 <section className={styles.alertInfo}>
