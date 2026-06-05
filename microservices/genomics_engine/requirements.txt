@@ -6,3 +6,6 @@ scikit-learn
 numpy
 psycopg2-binary
 websockets
+pytest==7.4.3
+pytest-asyncio==0.21.1
+httpx==0.25.1
