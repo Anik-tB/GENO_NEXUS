@@ -195,8 +195,10 @@ export async function GET() {
          JOIN dna_files q ON cr.query_file_id = q.id
          JOIN users u ON q.user_id = u.id
          WHERE cr.created_at >= NOW() - INTERVAL '1 year'
+           AND (q.user_id = $1 OR q.visibility = 'public')
          GROUP BY u.id, u.first_name, u.last_name, u.email, DATE(cr.created_at)
-         ORDER BY date ASC`
+         ORDER BY date ASC`,
+        [uid]
       );
 
       const userMap = new Map();
@@ -240,6 +242,7 @@ export async function GET() {
         activeUser: {
           id: String(user.id),
           name: activeUserName,
+          email: user.email,
           initials: activeUserInitials,
           role: "Researcher", // default role
           color: "#10b981"

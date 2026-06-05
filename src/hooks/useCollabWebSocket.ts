@@ -32,7 +32,7 @@ import {
   TEAM,
 } from "../app/dashboard/collaboration/collab-data";
 
-const WS_URL = "ws://localhost:8000/ws/collab";
+const WS_URL = "ws://127.0.0.1:8000/ws/collab";
 const MAX_RETRIES = 3; // Fewer retries — fail fast to real-data offline mode
 
 // No client-side alert simulation anymore
@@ -214,16 +214,17 @@ export function useCollabWebSocket(activeUser: TeamMember | null = null): Collab
 
 
   // ── Outbound API ───────────────────────────────────────────────────────────
-  const postNote = useCallback((text: string, noteType: ActivityEntry["type"], author = "You") => {
+  const postNote = useCallback((text: string, noteType: ActivityEntry["type"], author?: string) => {
+    const noteAuthor = author || activeUser?.email || activeUser?.name || "Unknown";
     if (wsRef.current?.readyState === WebSocket.OPEN) {
       // Real-time path — server broadcasts to all connected clients
-      wsSend({ type: "post_note", author, text, noteType });
+      wsSend({ type: "post_note", author: noteAuthor, text, noteType });
     } else {
       // Offline path — prepend locally so the user's note appears immediately
       const localEntry: ActivityEntry = {
         id: nextNoteId(),
         type: noteType,
-        author,
+        author: noteAuthor,
         desc: text,
         time: "just now",
         ts: Date.now(),
@@ -231,11 +232,14 @@ export function useCollabWebSocket(activeUser: TeamMember | null = null): Collab
       setStreams(prev => [localEntry, ...prev].slice(0, 50));
       setLatestStreamId(localEntry.id);
     }
-  }, [wsSend]);
+  }, [wsSend, activeUser]);
 
   const sendTyping = useCallback((memberId: string, typing: boolean) => {
-    wsSend({ type: "typing", memberId, typing });
-  }, [wsSend]);
+    const realId = memberId === "YOU" ? activeUser?.id : memberId;
+    if (realId) {
+      wsSend({ type: "typing", memberId: realId, typing });
+    }
+  }, [wsSend, activeUser]);
 
   const togglePipeline = useCallback((id: string, action: "pause" | "resume" | "stop") => {
     // Optimistic local update

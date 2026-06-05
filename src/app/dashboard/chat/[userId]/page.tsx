@@ -122,7 +122,7 @@ export default function ChatRoom({ params }: { params: Promise<{ userId: string 
   // Optional: WebSocket for instant delivery (falls back to polling gracefully)
   const tryConnectWs = (userId: string) => {
     try {
-      const socket = new WebSocket(`ws://localhost:8000/ws/chat/${userId}`);
+      const socket = new WebSocket(`ws://127.0.0.1:8000/ws/chat/${userId}`);
       wsRef.current = socket;
 
       socket.onmessage = (event) => {

@@ -79,8 +79,8 @@ export function TopNav({ userInitials, userName, userEmail, userAvatarUrl }: Top
     } catch (e) {
       console.error('Logout error:', e);
     }
-    // Regardless of API success, perform navigation redirect
-    router.push('/login');
+    // Force a full page reload to clear the client-side Next.js App Router cache
+    window.location.href = '/login';
   };
 
   const [timeString, setTimeString] = useState("12:37 PM, Wed");

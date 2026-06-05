@@ -9,6 +9,7 @@ export interface TeamMember {
   typing?: boolean;
   color: string;
   initials?: string;
+  email?: string;
 }
 
 export interface ChatMessage {

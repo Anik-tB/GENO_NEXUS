@@ -37,12 +37,12 @@ export default function CollaborationNexus() {
   const activeAlertCount = alerts.filter(a => !a.dismissed).length;
 
   // Merge WS streams (real-time additions) on top of API-fetched history
-  // WS streams have higher priority (newest entries from live collab)
+  // Sort them dynamically to guarantee chronological order (newest first)
   const mergedStreams = (() => {
-    if (wsStreams.length === 0) return apiStreams;
     const apiIds = new Set(apiStreams.map(s => s.id));
     const wsOnly = wsStreams.filter(s => !apiIds.has(s.id));
-    return [...wsOnly, ...apiStreams].slice(0, 50);
+    const combined = [...wsOnly, ...apiStreams];
+    return combined.sort((a, b) => (b.ts ?? 0) - (a.ts ?? 0)).slice(0, 50);
   })();
 
   return (

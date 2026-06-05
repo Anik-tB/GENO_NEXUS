@@ -142,6 +142,7 @@ class CollabState:
                 "name": member_data.get("name", "Unknown"),
                 "role": member_data.get("role", "Researcher"),
                 "color": member_data.get("color", "#10b981"),
+                "initials": member_data.get("initials", ""),
                 "status": "online",
                 "viewing": "",
                 "typing": False
