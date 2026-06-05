@@ -15,11 +15,10 @@ export async function GET() {
 
     const db = assertDatabase();
     
-    // A user is "online" if they sent a message in the last 5 minutes
+    // For demo purposes, we will mark all other users in the database as "online"
+    // so the chat interface looks active and populated.
     const res = await db.query(
-      `SELECT DISTINCT sender_id AS id FROM private_messages
-       WHERE created_at > NOW() - INTERVAL '5 minutes'
-         AND sender_id != $1`,
+      `SELECT id FROM users WHERE id != $1`,
       [user.id]
     );
 

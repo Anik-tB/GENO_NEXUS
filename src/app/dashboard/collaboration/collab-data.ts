@@ -52,6 +52,17 @@ export interface Pipeline {
   eta?: string;
   logs: string[];
   stages: PipelineStage[];
+  result?: {
+    organism: string;
+    mutations: Array<{
+      position: number;
+      reference: string;
+      query: string;
+      type: string;
+      severity: string;
+      gene: string;
+    }>;
+  };
 }
 
 export interface PipelineStage {

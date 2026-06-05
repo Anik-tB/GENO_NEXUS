@@ -181,33 +181,70 @@ export default function PipelineDetailPage({ params }: PageProps) {
         </div>
 
         {/* RIGHT ── logs */}
-        <div className="pdc" style={{ background:"rgba(255,255,255,0.02)", border:"1px solid rgba(255,255,255,0.07)", borderRadius:"14px", overflow:"hidden", animationDelay:"80ms" }}>
-          <div style={{ padding:"1rem 1.25rem", borderBottom:"1px solid rgba(255,255,255,0.06)", background:"rgba(255,255,255,0.02)" }}>
-            <h3 style={{ margin:0, fontSize:"0.78rem", fontWeight:700, color:"#f1f5f9", display:"flex", alignItems:"center", gap:"0.5rem" }}>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-              Execution Logs
-            </h3>
-            <div style={{ fontSize:"0.63rem", color:"#475569", marginTop:"0.2rem" }}>{pipe.logs.length} entries</div>
+        <div style={{ display:"flex", flexDirection:"column", gap:"1.25rem" }}>
+          <div className="pdc" style={{ background:"rgba(255,255,255,0.02)", border:"1px solid rgba(255,255,255,0.07)", borderRadius:"14px", overflow:"hidden", animationDelay:"80ms" }}>
+            <div style={{ padding:"1rem 1.25rem", borderBottom:"1px solid rgba(255,255,255,0.06)", background:"rgba(255,255,255,0.02)" }}>
+              <h3 style={{ margin:0, fontSize:"0.78rem", fontWeight:700, color:"#f1f5f9", display:"flex", alignItems:"center", gap:"0.5rem" }}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                Execution Logs
+              </h3>
+              <div style={{ fontSize:"0.63rem", color:"#475569", marginTop:"0.2rem" }}>{pipe.logs.length} entries</div>
+            </div>
+            <div style={{ padding:"0.85rem", display:"flex", flexDirection:"column", gap:"0.35rem", maxHeight: pipe.status === "completed" ? "300px" : "auto", overflowY: "auto" }}>
+              {pipe.logs.length === 0 && (
+                <div style={{ fontSize:"0.75rem", color:"#475569", textAlign:"center", padding:"1rem" }}>No log entries yet.</div>
+              )}
+              {pipe.logs.map((log, i) => (
+                <div key={i} style={{
+                  fontFamily:"'JetBrains Mono','Fira Code',monospace",
+                  fontSize:"0.7rem",
+                  padding:"0.45rem 0.7rem",
+                  borderRadius:"6px",
+                  background: log.includes("ERROR") ? "rgba(244,63,94,0.06)" : "rgba(255,255,255,0.02)",
+                  border: log.includes("ERROR") ? "1px solid rgba(244,63,94,0.18)" : "1px solid rgba(255,255,255,0.04)",
+                  color: log.includes("ERROR") ? "#f43f5e" : log.includes("completed") ? "#10b981" : "#64748b",
+                  lineHeight:1.5,
+                }}>
+                  {log}
+                </div>
+              ))}
+            </div>
           </div>
-          <div style={{ padding:"0.85rem", display:"flex", flexDirection:"column", gap:"0.35rem" }}>
-            {pipe.logs.length === 0 && (
-              <div style={{ fontSize:"0.75rem", color:"#475569", textAlign:"center", padding:"1rem" }}>No log entries yet.</div>
-            )}
-            {pipe.logs.map((log, i) => (
-              <div key={i} style={{
-                fontFamily:"'JetBrains Mono','Fira Code',monospace",
-                fontSize:"0.7rem",
-                padding:"0.45rem 0.7rem",
-                borderRadius:"6px",
-                background: log.includes("ERROR") ? "rgba(244,63,94,0.06)" : "rgba(255,255,255,0.02)",
-                border: log.includes("ERROR") ? "1px solid rgba(244,63,94,0.18)" : "1px solid rgba(255,255,255,0.04)",
-                color: log.includes("ERROR") ? "#f43f5e" : log.includes("completed") ? "#10b981" : "#64748b",
-                lineHeight:1.5,
-              }}>
-                {log}
+
+          {/* Results Card */}
+          {pipe.status === "completed" && pipe.result && (
+            <div className="pdc" style={{ background:"rgba(16, 185, 129, 0.05)", border:"1px solid rgba(16, 185, 129, 0.2)", borderRadius:"14px", overflow:"hidden", animationDelay:"120ms" }}>
+              <div style={{ padding:"1rem 1.25rem", borderBottom:"1px solid rgba(16, 185, 129, 0.1)", background:"rgba(16, 185, 129, 0.08)" }}>
+                <h3 style={{ margin:0, fontSize:"0.85rem", fontWeight:700, color:"#10b981", display:"flex", alignItems:"center", gap:"0.5rem" }}>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                  Discovered Variants ({pipe.result.organism})
+                </h3>
               </div>
-            ))}
-          </div>
+              <div style={{ padding: "1rem", display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                {pipe.result.mutations.map((m: any, i: number) => (
+                  <div key={i} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"0.6rem 0.8rem", background:"rgba(0,0,0,0.2)", borderRadius:"8px", border:"1px solid rgba(255,255,255,0.05)" }}>
+                    <div style={{ display:"flex", flexDirection:"column", gap:"0.2rem" }}>
+                      <span style={{ fontSize:"0.8rem", color:"#f8fafc", fontWeight:600 }}>Pos: {m.position} ({m.gene})</span>
+                      <span style={{ fontSize:"0.65rem", color:"#94a3b8", fontFamily:"monospace" }}>{m.reference} → {m.query}</span>
+                    </div>
+                    <span style={{ fontSize:"0.65rem", fontWeight:700, textTransform:"uppercase", letterSpacing:"0.05em", color: m.severity === "high" ? "#f43f5e" : m.severity === "medium" ? "#f59e0b" : "#10b981", background: m.severity === "high" ? "rgba(244,63,94,0.15)" : m.severity === "medium" ? "rgba(245,158,11,0.15)" : "rgba(16,185,129,0.15)", padding:"0.2rem 0.5rem", borderRadius:"4px" }}>
+                      {m.severity} RISK
+                    </span>
+                  </div>
+                ))}
+
+                <button 
+                  onClick={() => router.push("/dashboard/visualization")}
+                  style={{ marginTop: "0.5rem", width: "100%", padding: "0.75rem", background: "#10b981", color: "#022c22", fontWeight: 700, fontSize: "0.8rem", border: "none", borderRadius: "8px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem", transition: "background 0.2s" }}
+                  onMouseOver={(e) => e.currentTarget.style.background = "#059669"}
+                  onMouseOut={(e) => e.currentTarget.style.background = "#10b981"}
+                >
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                  View 3D Visualization
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

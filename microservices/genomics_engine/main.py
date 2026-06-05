@@ -79,9 +79,33 @@ class CollabState:
             if pipe["status"] == "running" and pipe["progress"] < 100:
                 inc = random.randint(1, 3)
                 pipe["progress"] = min(100, pipe["progress"] + inc)
+                
+                # Mock realistic logs based on progress
+                if pipe["progress"] == 20:
+                    pipe["logs"].append("QC passed. Removing adapters...")
+                elif pipe["progress"] == 40:
+                    pipe["logs"].append("Aligning reads to reference genome...")
+                elif pipe["progress"] == 60:
+                    pipe["logs"].append("Variant calling in progress (HaplotypeCaller)...")
+                elif pipe["progress"] == 80:
+                    pipe["logs"].append("Filtering low quality SNPs...")
+                    pipe["logs"].append("Detected potential mutations. Annotating...")
+
                 if pipe["progress"] >= 100:
                     pipe["status"] = "completed"
                     pipe["eta"] = None
+                    pipe["logs"].append("Pipeline completed successfully. Generated final report.")
+                    
+                    # Generate mock results
+                    organism = "SARS-CoV-2" if "SARS" in pipe["name"] else ("HIV-1" if "HIV" in pipe["name"] else "Human")
+                    pipe["result"] = {
+                        "organism": organism,
+                        "mutations": [
+                            {"position": random.randint(100, 5000), "reference": "A", "query": "G", "type": "Transition", "severity": "high", "gene": "Env"},
+                            {"position": random.randint(5000, 10000), "reference": "C", "query": "T", "type": "Transition", "severity": "medium", "gene": "Pol"},
+                            {"position": random.randint(10000, 15000), "reference": "G", "query": "C", "type": "Transversion", "severity": "low", "gene": "Gag"}
+                        ]
+                    }
                 else:
                     eta_min = max(0, (100 - pipe["progress"]) // 2)
                     pipe["eta"] = f"{eta_min} min"
@@ -151,13 +175,33 @@ class CollabState:
 
     def apply_pipeline_action(self, pipeline_id: str, action: str):
         if action == "spawn":
+            name = None
+            conn = _get_db_conn()
+            if conn:
+                try:
+                    with conn.cursor() as cur:
+                        cur.execute("SELECT file_name FROM dna_files ORDER BY created_at DESC LIMIT 1")
+                        row = cur.fetchone()
+                        if row and row[0]:
+                            # Strip extension if any
+                            base = row[0].rsplit(".", 1)[0]
+                            name = f"{base} Pipeline"
+                except Exception as e:
+                    print(f"Failed to fetch latest file: {e}")
+                finally:
+                    conn.close()
+
+            if not name:
+                names = ["SARS-CoV-2 Variant Calling", "HIV-1 Resistance Analysis", "BRCA1 Mutation Calling", "Influenza-A Strain Typing"]
+                name = random.choice(names)
+                
             new_pipe = {
                 "id": f"pipe-{_next_id()}",
-                "name": "WGS Variant Calling",
+                "name": name,
                 "status": "running",
                 "progress": 0,
                 "eta": "15 min",
-                "logs": ["Initializing pipeline...", "Starting Quality Control..."],
+                "logs": [f"Initializing {name} pipeline...", "Starting Quality Control..."],
                 "stages": [
                     {"name": "QC", "status": "active"},
                     {"name": "Align", "status": "pending"},
@@ -406,7 +450,7 @@ async def chat_ws(ws: WebSocket, user_id: str):
 # ---------------------------------------------------------------------------
 def _get_db_conn():
     """Optional PostgreSQL connection — engine degrades gracefully if unavailable."""
-    dsn = os.environ.get("DATABASE_URL") or os.environ.get("POSTGRES_URL")
+    dsn = os.environ.get("DATABASE_URL") or os.environ.get("POSTGRES_URL") or "postgresql://postgres:geno@localhost:5432/genonexus"
     if not dsn:
         return None
     try:

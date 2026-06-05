@@ -75,7 +75,7 @@
 }
 @keyframes flowDash { to { left: 45px; } }
 .stageLabel {
-  position: absolute; top: 14px; left: 50%; transform: translateX(-50%);
+  position: absolute; top: 14px; left: 5px; transform: translateX(-50%);
   font-size: 0.5rem; color: var(--gn-text-muted); white-space: nowrap; font-weight: 600;
 }
 .pipeLogs {
