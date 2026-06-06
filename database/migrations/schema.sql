@@ -153,6 +153,7 @@ ALTER TABLE sessions ADD COLUMN IF NOT EXISTS is_trusted BOOLEAN NOT NULL DEFAUL
 CREATE TABLE IF NOT EXISTS dna_files (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  patient_user_id UUID REFERENCES users(id) ON DELETE SET NULL,
   file_name TEXT NOT NULL,
   file_size BIGINT NOT NULL,
   file_type TEXT NOT NULL,
@@ -160,6 +161,7 @@ CREATE TABLE IF NOT EXISTS dna_files (
   status TEXT NOT NULL DEFAULT 'uploading',
   progress INTEGER DEFAULT 0,
   visibility TEXT NOT NULL DEFAULT 'private',
+  patient_metadata JSONB,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );

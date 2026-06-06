@@ -67,7 +67,15 @@ export async function POST(request: NextRequest) {
 
   const referenceUrl = formData.get("referenceUrl")?.toString() || null;
   const patientMetadataRaw = formData.get("patientMetadata")?.toString() || null;
+  const patientIdRaw = formData.get("patientId")?.toString() || null;
   const fileId = randomUUID();
+
+  let patientUserId = null;
+  if (user.accountCategory === "patient") {
+    patientUserId = user.id;
+  } else if (user.accountCategory === "caregiver" && patientIdRaw) {
+    patientUserId = patientIdRaw;
+  }
 
   // ── Process Upload ──────────────────────────────────────────────────────
   try {
@@ -95,10 +103,10 @@ export async function POST(request: NextRequest) {
 
     await db.query(`
       INSERT INTO dna_files
-        (id, user_id, file_name, file_size, file_type, storage_path, status, patient_metadata)
+        (id, user_id, patient_user_id, file_name, file_size, file_type, storage_path, status, patient_metadata)
       VALUES
-        ($1, $2, $3, $4, $5, $6, 'success', $7)
-    `, [fileId, user.id, file.name, file.size, ext, storagePath, patientMetadata]);
+        ($1, $2, $3, $4, $5, $6, $7, 'success', $8)
+    `, [fileId, user.id, patientUserId, file.name, file.size, ext, storagePath, patientMetadata]);
 
     await db.query(`
       INSERT INTO user_notifications (user_id, title, message, type, link)

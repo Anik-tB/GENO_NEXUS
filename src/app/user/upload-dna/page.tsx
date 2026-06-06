@@ -105,7 +105,23 @@ export default function UploadDnaPage() {
   const [fhBreast, setFhBreast] = useState("0");
   const [fhOvarian, setFhOvarian] = useState("0");
 
+  const [patients, setPatients] = useState<any[]>([]);
+  const [selectedPatientId, setSelectedPatientId] = useState<string>("");
+  const [isCoordinator, setIsCoordinator] = useState(false);
+
   const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    fetch("/api/patients")
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && data.patients) {
+          setIsCoordinator(true);
+          setPatients(data.patients);
+        }
+      })
+      .catch(console.error);
+  }, []);
 
   useEffect(() => {
     const savedLang = localStorage.getItem("language") || "en";
@@ -168,6 +184,10 @@ export default function UploadDnaPage() {
 
   function handleUpload() {
     if (!file) return;
+    if (isCoordinator && !selectedPatientId) {
+      setError(lang === "bn" ? "অনুগ্রহ করে একজন রোগী নির্বাচন করুন।" : "Please select a patient.");
+      return;
+    }
 
     // Validate filename against selected reference genome to prevent mismatches
     const filenameLower = file.name.toLowerCase();
@@ -201,6 +221,7 @@ export default function UploadDnaPage() {
     const formData = new FormData();
     formData.append("file", file);
     if (linkUrl) formData.append("referenceUrl", linkUrl);
+    if (selectedPatientId) formData.append("patientId", selectedPatientId);
 
     const isBrca = linkUrl === "https://www.ncbi.nlm.nih.gov/nuccore/NM_007294.4?report=fasta";
     if (isBrca) {
@@ -301,6 +322,29 @@ export default function UploadDnaPage() {
         </div>
       ) : (
         <>
+          {/* ── Patient Selection (Care Coordinator Only) ── */}
+          {isCoordinator && (
+            <div style={{ background: "#090e17", border: "1px solid #1e293b", borderRadius: "16px", padding: "1.5rem", boxShadow: "0 10px 25px -5px rgba(0,0,0,0.3)" }}>
+              <h3 style={{ fontSize: "1.1rem", fontWeight: "600", color: "var(--gn-primary)", display: 'flex', alignItems: 'center', gap: '0.5rem', margin: '0 0 1rem 0' }}>
+                <span style={{ background: 'rgba(16, 185, 129, 0.1)', padding: '6px', borderRadius: '8px' }}>👤</span>
+                {lang === "bn" ? "রোগী নির্বাচন করুন" : "Select Patient"}
+              </h3>
+              <p style={{ color: "var(--gn-text-secondary)", fontSize: "0.9rem", marginBottom: "1rem", lineHeight: 1.5 }}>
+                {lang === "bn" ? "আপনি কোন রোগীর জন্য এই ডিএনএ ফাইলটি আপলোড করছেন তা নির্বাচন করুন।" : "Select the patient you are uploading this DNA file for."}
+              </p>
+              <select 
+                value={selectedPatientId} 
+                onChange={(e) => setSelectedPatientId(e.target.value)}
+                style={{ width: '100%', padding: '0.85rem 1.25rem', borderRadius: '12px', background: 'var(--gn-surface)', border: '1px solid var(--gn-surface-border-strong)', color: 'var(--gn-text-primary)', fontSize: '0.95rem', cursor: 'pointer' }}
+              >
+                <option value="">{lang === "bn" ? "-- রোগী নির্বাচন করুন --" : "-- Select Patient --"}</option>
+                {patients.map(p => (
+                  <option key={p.id} value={p.id}>{p.first_name} {p.last_name} ({p.email})</option>
+                ))}
+              </select>
+            </div>
+          )}
+
           {/* ── Format Info Cards ── */}
           <div className={styles.formatRow}>
             {FORMAT_INFO.map((f) => (

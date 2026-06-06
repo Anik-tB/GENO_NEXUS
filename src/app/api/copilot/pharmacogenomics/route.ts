@@ -30,7 +30,7 @@ export async function GET() {
           df.file_name
         FROM comparison_results cr
         JOIN dna_files df ON cr.query_file_id = df.id
-        WHERE df.user_id = $1
+        WHERE (df.user_id = $1 OR df.patient_user_id = $1)
           AND cr.status = 'completed'
         ORDER BY cr.created_at DESC
         LIMIT 1

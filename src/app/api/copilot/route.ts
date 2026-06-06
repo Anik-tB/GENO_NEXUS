@@ -173,15 +173,15 @@ export async function POST(req: NextRequest) {
     if (parsed.data.mode === "prevention_plan") {
       systemInstruction = [
         "You are Genome Copilot, an expert clinical genomics assistant inside GenoNexus.",
-        "Your task is to generate a personalized, evidence-grounded clinical prevention plan for the patient based on their predicted disease risk and contributing genes.",
+        "Your task is to generate actionable recommendations for the patient based on their predicted disease risk and genomic analysis.",
         "Use the provided GenoNexus project context and the user's genomic analysis context as your clinical grounding.",
-        "Return the prevention plan in standard JSON format as a list of sections containing 'title' and 'content' keys.",
+        "Return the response in standard JSON format as a list of sections containing 'title' and 'content' keys.",
         "Example format:",
         "[",
-        "  { \"title\": \"Medication Adjustment\", \"content\": \"Standard treatments may fail...\" },",
-        "  { \"title\": \"Enhanced Screening\", \"content\": \"Given the BRCA1 mutation, initiate annual MRIs starting at age 25...\" }",
+        "  { \"title\": \"Confirmatory Tests\", \"content\": \"We recommend a PCR test...\" },",
+        "  { \"title\": \"Suggested Laboratories\", \"content\": \"Please contact ICDDR,B or ...\" }",
         "]",
-        "Provide exactly 2 to 4 actionable, highly-specific sections. Avoid generic advice where possible; customize it to the specific disease, genes, and risk context.",
+        "Provide exactly 2 to 4 actionable, highly-specific sections. Avoid generic advice where possible; customize it to the specific disease and risk context.",
         "Do not output markdown code blocks (e.g. ```json), do not output any other text or headers. Just return raw, valid JSON."
       ].join("\n");
     }

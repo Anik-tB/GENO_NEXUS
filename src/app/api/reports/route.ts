@@ -21,10 +21,12 @@ export async function GET() {
     const db = assertDatabase();
     
     const result = await db.query(
-      `SELECT id, name, patient_id, size_bytes, status, created_at 
-       FROM reports 
-       WHERE user_id = $1 
-       ORDER BY created_at DESC`,
+      `SELECT r.id, r.name, r.patient_id, r.size_bytes, r.status, r.created_at 
+       FROM reports r
+       LEFT JOIN comparison_results cr ON r.comparison_id = cr.id
+       LEFT JOIN dna_files df ON cr.query_file_id = df.id
+       WHERE r.user_id = $1 OR df.patient_user_id = $1
+       ORDER BY r.created_at DESC`,
       [user.id]
     );
 
@@ -55,7 +57,7 @@ export async function POST(req: NextRequest) {
       SELECT cr.id as comp_id, cr.mutations_found, cr.match_percentage, df.file_name, cr.detected_organism
       FROM comparison_results cr
       JOIN dna_files df ON cr.query_file_id = df.id
-      WHERE df.user_id = $1 AND cr.status = 'completed'
+      WHERE (df.user_id = $1 OR df.patient_user_id = $1) AND cr.status = 'completed'
       ORDER BY cr.created_at DESC LIMIT 1
     `, [user.id]);
 

@@ -15,12 +15,12 @@ export async function GET(req: NextRequest) {
 
     const db = assertDatabase();
     
-    // 1. Find the user's latest local file upload
-    const latestFile = await db.query(`
-      SELECT id FROM dna_files
-      WHERE user_id = $1 AND storage_path NOT LIKE 'http%'
-      ORDER BY created_at DESC LIMIT 1
-    `, [user.id]);
+    // 1. Find the latest local file upload based on role
+    const query = user.accountCategory === 'patient' 
+      ? `SELECT id FROM dna_files WHERE patient_user_id = $1 AND storage_path NOT LIKE 'http%' ORDER BY created_at DESC LIMIT 1`
+      : `SELECT id FROM dna_files WHERE user_id = $1 AND storage_path NOT LIKE 'http%' ORDER BY created_at DESC LIMIT 1`;
+      
+    const latestFile = await db.query(query, [user.id]);
 
     if (latestFile.rowCount === 0) {
       return NextResponse.json({ error: "No uploaded file found. Please upload a genomic file first." }, { status: 404 });
@@ -81,7 +81,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({
       success: true,
       predictions: data.predictions,
-      meta: { fileName, matchPct, mutationCount: mutations.length }
+      meta: { fileName, matchPct, mutationCount: mutations.length, organism }
     });
 
   } catch (error: any) {

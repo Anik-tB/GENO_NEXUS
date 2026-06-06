@@ -13,7 +13,7 @@ export const DEFAULT_ACCOUNT_CATEGORY: AccountCategory = "other";
 
 export const ACCOUNT_CATEGORY_LABELS: Record<AccountCategory, string> = {
   patient: "Patient",
-  caregiver: "Caregiver",
+  caregiver: "Care Coordinator",
   clinician: "Clinician",
   researcher: "Researcher",
   lab_staff: "Lab staff",

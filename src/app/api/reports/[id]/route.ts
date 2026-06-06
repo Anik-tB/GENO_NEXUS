@@ -28,7 +28,10 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     const db = assertDatabase();
     
     const result = await db.query(
-      `SELECT * FROM reports WHERE id = $1 AND user_id = $2`,
+      `SELECT r.* FROM reports r
+       LEFT JOIN comparison_results cr ON r.comparison_id = cr.id
+       LEFT JOIN dna_files df ON cr.query_file_id = df.id
+       WHERE r.id = $1 AND (r.user_id = $2 OR df.patient_user_id = $2)`,
       [id, user.id]
     );
 

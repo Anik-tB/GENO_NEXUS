@@ -24,19 +24,21 @@ export default async function UserDashboardPage() {
   let filesCount = 0;
   let analysesCount = 0;
   let markersChecked: number | string = "—";
+  let userRole = "patient";
 
   if (sessionToken) {
     try {
       const user = await getUserFromSessionToken(sessionToken);
       if (user) {
         firstName = user.firstName || "there";
+        userRole = user.accountCategory || "patient";
         const db = assertDatabase();
         const res = await db.query(
           `SELECT
-            (SELECT COUNT(*) FROM dna_files WHERE user_id = $1) AS files_count,
+            (SELECT COUNT(*) FROM dna_files WHERE user_id = $1 OR patient_user_id = $1) AS files_count,
             (SELECT COUNT(*) FROM comparison_results cr
              JOIN dna_files df ON df.id = cr.query_file_id
-             WHERE df.user_id = $1) AS analyses_count
+             WHERE df.user_id = $1 OR df.patient_user_id = $1) AS analyses_count
           `,
           [user.id]
         );
@@ -61,6 +63,7 @@ export default async function UserDashboardPage() {
       filesCount={filesCount}
       analysesCount={analysesCount}
       markersChecked={markersChecked.toString()}
+      userRole={userRole}
     />
   );
 }

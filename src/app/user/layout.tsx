@@ -44,7 +44,7 @@ export default async function UserPortalLayout({
 
   return (
     <div className={styles.dashboardShell}>
-      <UserSidebar />
+      <UserSidebar userRole={user.accountCategory} />
       <div className={styles.mainWrapper}>
         <UserTopNav userInitials={initials} userName={fullName || firstName} userEmail={user.email} />
         <main className={styles.contentArea}>

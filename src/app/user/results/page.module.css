@@ -488,6 +488,88 @@
   white-space: pre-wrap;
 }
 
+/* ─── Recommended Clinical Tests ───────────────────────────────────────────── */
+.testsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1.25rem;
+}
+
+.testCard {
+  display: flex;
+  flex-direction: column;
+  padding: 1.5rem;
+  border-radius: var(--border-radius-lg);
+  background: var(--gn-surface);
+  border: 1px solid var(--gn-surface-border);
+  transition: border-color 200ms, transform 200ms;
+}
+
+.testCard:hover {
+  border-color: var(--gn-blue);
+  transform: translateY(-2px);
+}
+
+.testHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.testIcon {
+  font-size: 1.5rem;
+  background: rgba(14, 165, 233, 0.1);
+  padding: 0.5rem;
+  border-radius: 12px;
+}
+
+.testName {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--gn-text-primary);
+  margin: 0;
+}
+
+.testDesc {
+  font-size: 0.88rem;
+  color: var(--gn-text-secondary);
+  line-height: 1.6;
+  margin: 0 0 1.5rem 0;
+  flex-grow: 1;
+}
+
+.testFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px solid var(--gn-surface-border);
+  padding-top: 1rem;
+}
+
+.testPrice {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: var(--gn-text-primary);
+}
+
+.testBtn {
+  background: transparent;
+  border: 1px solid var(--gn-blue);
+  color: var(--gn-blue);
+  padding: 0.5rem 1rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.testBtn:hover {
+  background: var(--gn-blue);
+  color: white;
+}
+
 /* ─── Print Styles ───────────────────────────────────────────────────────── */
 @media print {
   /* Hide elements that shouldn't be printed */
@@ -495,6 +577,7 @@
   .btnDownload, 
   .btnSecondary, 
   .back, 
+  .reportActions,
   .modalOverlay {
     display: none !important;
   }
@@ -504,25 +587,17 @@
     max-width: 100% !important;
     padding: 0 !important;
     margin: 0 !important;
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
   }
 
-  .riskCard {
+  .riskCard, .overallCard, .ancestryCard, .disclaimer {
     break-inside: avoid;
     box-shadow: none !important;
-    border: 1px solid #ddd !important;
-    background: white !important;
-    color: black !important;
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
+    border-width: 1px !important;
+    border-style: solid !important;
   }
   
-  .overallCard {
-    break-inside: avoid;
-    box-shadow: none !important;
-    border: 1px solid #ddd !important;
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
+  .riskAction {
+    background: #f8f9fa !important;
+    border: 1px solid #e5e7eb !important;
   }
 }

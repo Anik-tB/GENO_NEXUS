@@ -21,9 +21,9 @@ export async function GET(req: NextRequest) {
     const db = assertDatabase();
 
     const result = await db.query(`
-      SELECT id, file_name, file_size, file_type, storage_path, status, created_at
+      SELECT id, file_name as name, file_size as size, status, progress, storage_path, created_at
       FROM dna_files 
-      WHERE user_id = $1
+      WHERE user_id = $1 OR patient_user_id = $1
       ORDER BY created_at DESC
     `, [user.id]);
 

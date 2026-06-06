@@ -16,21 +16,32 @@ const Icons = {
   ChevronLeft: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
 };
 
-const MENU_CATEGORIES = [
-  {
-    title: "MENU",
-    items: [
-      { label: "Home", href: "/user/dashboard", icon: Icons.Home },
-      { label: "Upload DNA", href: "/user/upload-dna", icon: Icons.Upload },
-      { label: "My Results", href: "/user/results", icon: Icons.Results },
-      { label: "Find Specialists", href: "/user/specialists", icon: Icons.Specialists },
-      { label: "Reports", href: "/user/reports", icon: Icons.Reports },
-    ]
-  }
-];
+interface UserSidebarProps {
+  userRole?: string;
+}
 
-export function UserSidebar() {
+export function UserSidebar({ userRole = "patient" }: UserSidebarProps) {
   const pathname = usePathname();
+
+  const menuItems = [
+    { label: "Home", href: "/user/dashboard", icon: Icons.Home },
+    userRole === "caregiver" && { label: "Upload Patient DNA", href: "/user/upload-dna", icon: Icons.Upload },
+    { 
+      label: userRole === "caregiver" ? "Patient Results" : "My Health Insights", 
+      href: "/user/results", 
+      icon: Icons.Results 
+    },
+    { label: "Find Specialists", href: "/user/specialists", icon: Icons.Specialists },
+    { label: "Reports", href: "/user/reports", icon: Icons.Reports },
+  ].filter((item): item is Exclude<typeof item, false | undefined> => !!item);
+
+  const menuCategories = [
+    {
+      title: "MENU",
+      items: menuItems
+    }
+  ];
+
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [openCategories, setOpenCategories] = useState<Record<string, boolean>>({
     MENU: true,
@@ -58,7 +69,7 @@ export function UserSidebar() {
       </div>
 
       <nav className={styles.nav}>
-        {MENU_CATEGORIES.map((category) => {
+        {menuCategories.map((category) => {
           const isOpen = openCategories[category.title];
 
           return (

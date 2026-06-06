@@ -435,9 +435,32 @@ h6 {
 }
 
 @media print {
+  :root, * {
+    --gn-bg: #ffffff !important;
+    --gn-bg-soft: #ffffff !important;
+    --gn-paper: #ffffff !important;
+    --gn-paper-strong: #ffffff !important;
+    --gn-surface: #ffffff !important;
+    --gn-surface-hover: #ffffff !important;
+    
+    --gn-text-primary: #000000 !important;
+    --gn-text-secondary: #333333 !important;
+    --gn-text-muted: #555555 !important;
+    
+    --gn-surface-border: #dddddd !important;
+    --gn-surface-border-strong: #aaaaaa !important;
+    --gn-bg-glass-light: transparent !important;
+    --gn-border-light: transparent !important;
+    
+    color: #000000 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
   aside, header, nav {
     display: none !important;
   }
+  
   body, html {
     background: white !important;
     color: black !important;
