@@ -26,9 +26,8 @@ export default function OutbreakPage() {
   const [horizon, setHorizon]  = useState("6 Months");
   
   const isHiv = disease === "HIV";
-  const currentLabels = isHiv
-    ? ["2018", "2019", "2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027", "2028"]
-    : ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov"];
+  // currentLabels will be generated dynamically below
+
 
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<OutbreakData>({
@@ -43,7 +42,7 @@ export default function OutbreakPage() {
   });
   const [deploying, setDeploying] = useState(false);
 
-  // Fetch AI Prediction Data
+  // Fetch ML Prediction Data
   useEffect(() => {
     async function fetchData() {
       setLoading(true);
@@ -93,6 +92,34 @@ export default function OutbreakPage() {
   );
   const MAX = Math.max(150, maxVal * 1.2); // Give 20% headroom above highest point
 
+  const totalPoints = data.historical_points.length + data.future_points.length;
+  const currentLabels = [];
+  if (isHiv) {
+    const currentYear = new Date().getFullYear();
+    const startYear = currentYear - data.historical_points.length + 1;
+    for (let i = 0; i < totalPoints; i++) {
+      const yr = startYear + i;
+      if (totalPoints > 15) {
+        currentLabels.push(yr % 5 === 0 ? yr.toString() : "");
+      } else {
+        currentLabels.push(yr.toString());
+      }
+    }
+  } else {
+    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const currentMonth = new Date().getMonth();
+    let startMonth = currentMonth - data.historical_points.length + 1;
+    for (let i = 0; i < totalPoints; i++) {
+      let m = (startMonth + i) % 12;
+      if (m < 0) m += 12;
+      if (totalPoints > 24) {
+        currentLabels.push(i % 12 === 0 ? `Year ${Math.floor(i/12)}` : "");
+      } else {
+        currentLabels.push(monthNames[m]);
+      }
+    }
+  }
+
   const pastPts = mkPoints(data.historical_points, 0, W, H, MAX, currentLabels.length);
   const futPts  = mkPoints(data.future_points, data.historical_points.length - 1, W, H, MAX, currentLabels.length);
   const joinedFuture = pastPts.length > 0 ? [pastPts[pastPts.length - 1], ...futPts.slice(1)] : futPts;
@@ -108,7 +135,7 @@ export default function OutbreakPage() {
         <div className={styles.headerContent}>
           <div className={styles.eyebrow}>🗺️ Epidemiological Intelligence</div>
           <h1 className={styles.title}>Global Outbreak Prediction</h1>
-          <p className={styles.subtitle}>AI-driven transmission forecasting based on genomic surveillance, mobility patterns, and variant tracking.</p>
+          <p className={styles.subtitle}>Machine Learning-driven transmission forecasting based on genomic surveillance, mobility patterns, and variant tracking.</p>
         </div>
         <button className={styles.deployBtn} onClick={handleDeployProtocol} disabled={deploying}>
           {deploying ? "Deploying..." : "🚨 Deploy Response Protocol"}
@@ -161,14 +188,14 @@ export default function OutbreakPage() {
           </div>
           <div className={styles.legend}>
             <span className={styles.legendItem}><span className={styles.dotPast} /> Historical</span>
-            <span className={styles.legendItem}><span className={styles.dotFuture} /> AI Forecast</span>
+            <span className={styles.legendItem}><span className={styles.dotFuture} /> ML Forecast</span>
           </div>
         </div>
 
         <div className={styles.svgWrapper} style={{ opacity: loading ? 0.5 : 1, transition: "opacity 0.3s" }}>
           {loading && (
             <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", color: "var(--gn-primary)" }}>
-              AI Generating Forecast...
+              ML Generating Forecast...
             </div>
           )}
           <svg viewBox={`0 0 ${W} ${H}`} className={styles.chartSvg}>
@@ -204,7 +231,7 @@ export default function OutbreakPage() {
             {joinedFuture.slice(1).map((p, i) => <circle key={`f${i}`} cx={p.x} cy={p.y} r="5" fill="var(--gn-bg)" stroke="var(--gn-danger)" strokeWidth="2"/>)}
           </svg>
           <div className={styles.xLabels}>
-            {currentLabels.map((l) => <span key={l}>{l}</span>)}
+            {currentLabels.map((l, idx) => <span key={`lbl-${idx}`}>{l}</span>)}
           </div>
         </div>
       </div>
