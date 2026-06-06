@@ -229,3 +229,34 @@ CREATE TABLE IF NOT EXISTS hypothesis_messages (
 
 CREATE INDEX IF NOT EXISTS idx_hypotheses_user_id ON hypotheses(user_id);
 CREATE INDEX IF NOT EXISTS idx_hypothesis_messages_hypo_id ON hypothesis_messages(hypothesis_id);
+
+-- ============================================================================
+-- CLINICAL TEST BOOKINGS
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS test_bookings (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  patient_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  test_name TEXT NOT NULL,
+  price TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'booked',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- ============================================================================
+-- CLINICAL APPOINTMENTS
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS appointments (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  patient_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  doctor_name TEXT NOT NULL,
+  specialist_type TEXT NOT NULL,
+  hospital_name TEXT NOT NULL,
+  appointment_date DATE NOT NULL,
+  appointment_time TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'scheduled',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+

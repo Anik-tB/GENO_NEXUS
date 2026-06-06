@@ -28,7 +28,7 @@ export async function GET(req: NextRequest) {
 
     // 2. Find a completed comparison for the latest file specifically
     const latestComparison = await db.query(`
-      SELECT cr.mutations_found, cr.match_percentage, df.file_name, cr.detected_organism, df.patient_metadata
+      SELECT cr.mutations_found, cr.match_percentage, df.file_name, cr.detected_organism, df.patient_metadata, df.patient_user_id
       FROM comparison_results cr
       JOIN dna_files df ON cr.query_file_id = df.id
       WHERE cr.query_file_id = $1 AND cr.status = 'completed'
@@ -81,7 +81,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({
       success: true,
       predictions: data.predictions,
-      meta: { fileName, matchPct, mutationCount: mutations.length, organism }
+      meta: { fileName, matchPct, mutationCount: mutations.length, organism, patientId: latestComparison.rows[0].patient_user_id }
     });
 
   } catch (error: any) {
