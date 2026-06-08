@@ -15,18 +15,30 @@ export async function GET(req: NextRequest) {
 
     const db = assertDatabase();
     
-    // 1. Find the latest local file upload based on role
-    const query = user.accountCategory === 'patient' 
-      ? `SELECT id FROM dna_files WHERE patient_user_id = $1 AND storage_path NOT LIKE 'http%' ORDER BY created_at DESC LIMIT 1`
-      : `SELECT id FROM dna_files WHERE user_id = $1 AND storage_path NOT LIKE 'http%' ORDER BY created_at DESC LIMIT 1`;
-      
-    const latestFile = await db.query(query, [user.id]);
+    const { searchParams } = new URL(req.url);
+    const fileId = searchParams.get('fileId');
+
+    // 1. Find the local file upload based on role
+    let latestFile;
+    if (fileId) {
+      // Fetch specific file
+      const query = user.accountCategory === 'patient' 
+        ? `SELECT id FROM dna_files WHERE id = $1 AND patient_user_id = $2 AND storage_path NOT LIKE 'http%' LIMIT 1`
+        : `SELECT id FROM dna_files WHERE id = $1 AND user_id = $2 AND storage_path NOT LIKE 'http%' LIMIT 1`;
+      latestFile = await db.query(query, [fileId, user.id]);
+    } else {
+      // Fallback to latest
+      const query = user.accountCategory === 'patient' 
+        ? `SELECT id FROM dna_files WHERE patient_user_id = $1 AND storage_path NOT LIKE 'http%' ORDER BY created_at DESC LIMIT 1`
+        : `SELECT id FROM dna_files WHERE user_id = $1 AND storage_path NOT LIKE 'http%' ORDER BY created_at DESC LIMIT 1`;
+      latestFile = await db.query(query, [user.id]);
+    }
 
     if (latestFile.rowCount === 0) {
       return NextResponse.json({ error: "No uploaded file found. Please upload a genomic file first." }, { status: 404 });
     }
 
-    // 2. Find a completed comparison for the latest file specifically
+    // 2. Find a completed comparison for the file specifically
     const latestComparison = await db.query(`
       SELECT cr.mutations_found, cr.match_percentage, df.file_name, cr.detected_organism, df.patient_metadata, df.patient_user_id
       FROM comparison_results cr
@@ -81,7 +93,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({
       success: true,
       predictions: data.predictions,
-      meta: { fileName, matchPct, mutationCount: mutations.length, organism, patientId: latestComparison.rows[0].patient_user_id }
+      meta: { fileName, matchPct, mutationCount: mutations.length, organism, patientId: latestComparison.rows[0].patient_user_id, fileId: latestFile.rows[0].id }
     });
 
   } catch (error: any) {

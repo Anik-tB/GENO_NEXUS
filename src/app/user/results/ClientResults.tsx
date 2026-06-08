@@ -26,6 +26,7 @@ interface PredictionResponse {
     matchPct: number;
     mutationCount: number;
     organism?: string;
+    fileId?: string;
   };
 }
 
@@ -470,6 +471,9 @@ export default function ClientResults({
   const [meta, setMeta] = useState<PredictionResponse["meta"] | null>(null);
   const [bookings, setBookings] = useState<any[]>([]);
 
+  const [files, setFiles] = useState<any[]>([]);
+  const [selectedFileId, setSelectedFileId] = useState<string | null>(null);
+
   const [showPreventionPlan, setShowPreventionPlan] = useState(false);
   const [loadingPlan, setLoadingPlan] = useState(false);
   const [customPlan, setCustomPlan] = useState<
@@ -520,6 +524,18 @@ export default function ClientResults({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [showPreventionPlan]);
 
+  // Fetch all user's files for the dropdown
+  useEffect(() => {
+    fetch("/api/files/list")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && data.files) {
+          setFiles(data.files);
+        }
+      })
+      .catch(console.error);
+  }, []);
+
   useEffect(() => {
     let pollTimer: ReturnType<typeof setTimeout>;
 
@@ -529,13 +545,17 @@ export default function ClientResults({
         setError(null);
 
         // Step 1: Try to fetch existing predictions
-        const res = await fetch("/api/predictions");
+        const url = selectedFileId ? `/api/predictions?fileId=${selectedFileId}` : "/api/predictions";
+        const res = await fetch(url);
         const data = await res.json();
 
         if (res.status === 200) {
           // Results are ready
           setPredictions(data.predictions || []);
           setMeta(data.meta || null);
+          if (!selectedFileId && data.meta?.fileId) {
+            setSelectedFileId(data.meta.fileId);
+          }
           setLoading(false);
           return;
         }
@@ -568,11 +588,11 @@ export default function ClientResults({
 
     triggerAndPoll();
     return () => clearTimeout(pollTimer);
-  }, []);
+  }, [selectedFileId]);
 
   useEffect(() => {
-    if (userRole === "patient") {
-      fetch("/api/clinical-tests/book")
+    if (userRole === "patient" && meta?.fileId) {
+      fetch(`/api/clinical-tests/book?fileId=${meta.fileId}`)
         .then((res) => res.json())
         .then((data) => {
           if (data.success && data.bookings) {
@@ -581,14 +601,14 @@ export default function ClientResults({
         })
         .catch(console.error);
     }
-  }, [userRole]);
+  }, [userRole, meta?.fileId]);
 
   const handleBookTest = async (testName: string, price: string) => {
     try {
       const res = await fetch("/api/clinical-tests/book", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ testName, price }),
+        body: JSON.stringify({ testName, price, fileId: meta?.fileId }),
       });
       const data = await res.json();
       if (data.success) {
@@ -875,6 +895,7 @@ Format example:
             alignItems: "flex-start",
             flexWrap: "wrap",
             gap: "1rem",
+            width: "100%",
           }}
         >
           <div>
@@ -895,6 +916,28 @@ Format example:
               </p>
             )}
           </div>
+
+          {files.length > 0 && (
+            <select
+              value={selectedFileId || meta?.fileId || ""}
+              onChange={(e) => setSelectedFileId(e.target.value)}
+              style={{
+                padding: "0.5rem 1rem",
+                borderRadius: "8px",
+                background: "var(--gn-surface)",
+                color: "var(--gn-text-primary)",
+                border: "1px solid var(--gn-surface-border-strong)",
+                fontSize: "0.9rem",
+                cursor: "pointer",
+              }}
+            >
+              {files.map(f => (
+                <option key={f.id} value={f.id}>
+                  {f.name} ({new Date(f.created_at).toLocaleDateString()})
+                </option>
+              ))}
+            </select>
+          )}
         </div>
       </div>
 

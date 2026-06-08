@@ -162,6 +162,11 @@ const BN_COORDINATOR = {
 
 export function ClientDashboard({ firstName, filesCount, analysesCount, markersChecked, userRole = "patient" }: ClientDashboardProps) {
   const [lang, setLang] = useState("en");
+  const [dnaAppointments, setDnaAppointments] = useState<any[]>([]);
+  const [selectedAnalysis, setSelectedAnalysis] = useState("Homo sapiens BRCA1");
+  const [patientName, setPatientName] = useState(firstName || "");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [bookingMessage, setBookingMessage] = useState("");
 
   useEffect(() => {
     const savedLang = localStorage.getItem("language") || "en";
@@ -175,7 +180,58 @@ export function ClientDashboard({ firstName, filesCount, analysesCount, markersC
     return () => window.removeEventListener("languageChange", handleLangEvent);
   }, []);
 
+  useEffect(() => {
+    if (firstName) setPatientName(firstName);
+  }, [firstName]);
+
   const isCoordinator = userRole === "caregiver";
+
+  useEffect(() => {
+    if (!isCoordinator) {
+      fetch("/api/dna-appointments")
+        .then(res => res.json())
+        .then(data => {
+          if (data.success && data.appointments) {
+            setDnaAppointments(data.appointments);
+          }
+        })
+        .catch(console.error);
+    }
+  }, [isCoordinator]);
+
+  const handleBookDnaAnalysis = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!patientName || !selectedAnalysis) return;
+
+    setIsSubmitting(true);
+    setBookingMessage("");
+    try {
+      const res = await fetch("/api/dna-appointments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          patientName,
+          analysisType: selectedAnalysis
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setDnaAppointments(prev => [data.appointment, ...prev]);
+        setBookingMessage(lang === "bn" ? "অনুরোধ সফল হয়েছে!" : "Request successfully booked!");
+        setTimeout(() => {
+          setBookingMessage("");
+        }, 3000);
+      } else {
+        setBookingMessage(data.error || "Failed to book request");
+      }
+    } catch (e) {
+      console.error(e);
+      setBookingMessage("Error occurred");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const d = lang === "bn"
     ? (isCoordinator ? BN_COORDINATOR : BN_PATIENT)
     : (isCoordinator ? EN_COORDINATOR : EN_PATIENT);
@@ -233,6 +289,147 @@ export function ClientDashboard({ firstName, filesCount, analysesCount, markersC
           <span className={styles.statSub}>{d.dataEncrypted}</span>
         </div>
       </div>
+
+      {!isCoordinator && (
+        <section style={{ margin: "2.5rem 0" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr", gap: "2rem" }}>
+            {/* Booking Form Card */}
+            <div style={{ background: "rgba(16, 185, 129, 0.03)", border: "1px solid rgba(16, 185, 129, 0.15)", borderRadius: "16px", padding: "2rem" }}>
+              <h3 style={{ margin: "0 0 0.5rem 0", color: "#10b981", fontSize: "1.2rem", fontWeight: "700", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                <span>🧬</span> {lang === "bn" ? "ডিএনএ বিশ্লেষণ অনুরোধ" : "Request DNA Analysis"}
+              </h3>
+              <p style={{ margin: "0 0 1.5rem 0", color: "var(--gn-text-secondary)", fontSize: "0.88rem", lineHeight: 1.5 }}>
+                {lang === "bn"
+                  ? "ডিএনএ বিশ্লেষণের অনুরোধ জানাতে আপনার নাম ও কাঙ্ক্ষিত প্যানেলটি নির্বাচন করে বুকিং করুন। আপনার কেয়ার কোঅর্ডিনেটর স্যাম্পল সংগ্রহ করে আপলোড করবেন।"
+                  : "Request a DNA analysis by selecting the analysis type. Your care coordinator will upload and run your sequence."}
+              </p>
+              <form onSubmit={handleBookDnaAnalysis} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
+                  <label style={{ fontSize: "0.8rem", color: "var(--gn-text-muted)", fontWeight: "600" }}>
+                    {lang === "bn" ? "রোগীর নাম" : "Patient Name"}
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={patientName}
+                    onChange={e => {
+                      setPatientName(e.target.value);
+                      setBookingMessage("");
+                    }}
+                    style={{
+                      background: "rgba(255,255,255,0.03)",
+                      border: "1px solid var(--gn-surface-border-strong)",
+                      padding: "0.75rem",
+                      borderRadius: "8px",
+                      color: "#fff",
+                      fontSize: "0.9rem",
+                      outline: "none"
+                    }}
+                  />
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
+                  <label style={{ fontSize: "0.8rem", color: "var(--gn-text-muted)", fontWeight: "600" }}>
+                    {lang === "bn" ? "ডিএনএ বিশ্লেষণের ধরন" : "DNA Analysis Type"}
+                  </label>
+                  <select
+                    value={selectedAnalysis}
+                    onChange={e => {
+                      setSelectedAnalysis(e.target.value);
+                      setBookingMessage("");
+                    }}
+                    style={{
+                      background: "rgba(0,0,0,0.4)",
+                      border: "1px solid var(--gn-surface-border-strong)",
+                      padding: "0.75rem",
+                      borderRadius: "8px",
+                      color: "#fff",
+                      fontSize: "0.9rem",
+                      outline: "none",
+                      cursor: "pointer"
+                    }}
+                  >
+                    <option style={{ background: "#111" }} value="Homo sapiens BRCA1">Homo sapiens BRCA1 (Cancer Risk)</option>
+                    <option style={{ background: "#111" }} value="SARS-CoV-2 (COVID-19)">SARS-CoV-2 (COVID-19) Detection</option>
+                    <option style={{ background: "#111" }} value="HIV-1">HIV-1 Mutation Profiling</option>
+                    <option style={{ background: "#111" }} value="Ebola virus">Ebola Virus Genomic Alignment</option>
+                  </select>
+                </div>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  style={{
+                    background: "var(--gn-primary)",
+                    color: "#000",
+                    border: "none",
+                    padding: "0.75rem",
+                    borderRadius: "8px",
+                    fontWeight: "700",
+                    cursor: "pointer",
+                    marginTop: "0.5rem",
+                    transition: "opacity 0.2s"
+                  }}
+                >
+                  {isSubmitting ? (lang === "bn" ? "অনুরোধ করা হচ্ছে..." : "Requesting...") : (lang === "bn" ? "অনুরোধ বুক করুন" : "Book Analysis Request")}
+                </button>
+                {bookingMessage && (
+                  <p style={{ margin: "0.5rem 0 0 0", fontSize: "0.85rem", color: "#10b981", fontWeight: "600" }}>
+                    {bookingMessage}
+                  </p>
+                )}
+              </form>
+            </div>
+
+            {/* List Card */}
+            <div style={{ background: "rgba(0,0,0,0.15)", border: "1px solid var(--gn-surface-border)", borderRadius: "16px", padding: "2rem" }}>
+              <h3 style={{ margin: "0 0 1rem 0", color: "#fff", fontSize: "1.2rem", fontWeight: "700" }}>
+                📋 {lang === "bn" ? "অনুরোধকৃত ডিএনএ বিশ্লেষণসমূহ" : "Requested DNA Analyses"}
+              </h3>
+              {dnaAppointments.length === 0 ? (
+                <p style={{ color: "var(--gn-text-muted)", fontSize: "0.9rem" }}>
+                  {lang === "bn" ? "কোনো ডিএনএ অনুরোধ নেই।" : "No DNA requests booked yet."}
+                </p>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", maxHeight: "250px", overflowY: "auto" }}>
+                  {dnaAppointments.map((appt, idx) => (
+                    <div
+                      key={idx}
+                      style={{
+                        background: "rgba(255,255,255,0.02)",
+                        border: "1px solid rgba(255,255,255,0.05)",
+                        borderRadius: "10px",
+                        padding: "1rem",
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center"
+                      }}
+                    >
+                      <div>
+                        <h4 style={{ margin: "0 0 0.25rem 0", color: "#fff", fontSize: "0.95rem" }}>
+                          {appt.analysis_type}
+                        </h4>
+                        <p style={{ margin: 0, color: "var(--gn-text-muted)", fontSize: "0.8rem" }}>
+                          {lang === "bn" ? "রোগী: " : "Patient: "} {appt.patient_name}
+                        </p>
+                      </div>
+                      <div>
+                        {appt.status === 'pending' ? (
+                          <span style={{ background: "rgba(245, 158, 11, 0.15)", color: "#f59e0b", border: "1px solid rgba(245, 158, 11, 0.3)", padding: "0.25rem 0.65rem", borderRadius: "999px", fontSize: "0.75rem", fontWeight: "700" }}>
+                            {lang === "bn" ? "আপলোডের অপেক্ষায়" : "Awaiting Ingestion"}
+                          </span>
+                        ) : (
+                          <span style={{ background: "rgba(16, 185, 129, 0.15)", color: "#10b981", border: "1px solid rgba(16, 185, 129, 0.3)", padding: "0.25rem 0.65rem", borderRadius: "999px", fontSize: "0.75rem", fontWeight: "700" }}>
+                            {lang === "bn" ? "আপলোড সম্পন্ন" : "Ingested"}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* ── Quick Actions ─────────────────────────────────────────────── */}
       <section>

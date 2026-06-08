@@ -237,6 +237,7 @@ CREATE INDEX IF NOT EXISTS idx_hypothesis_messages_hypo_id ON hypothesis_message
 CREATE TABLE IF NOT EXISTS test_bookings (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   patient_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  file_id UUID REFERENCES dna_files(id) ON DELETE CASCADE,
   test_name TEXT NOT NULL,
   price TEXT NOT NULL,
   status TEXT NOT NULL DEFAULT 'booked',
@@ -246,7 +247,6 @@ CREATE TABLE IF NOT EXISTS test_bookings (
 -- ============================================================================
 -- CLINICAL APPOINTMENTS
 -- ============================================================================
-
 CREATE TABLE IF NOT EXISTS appointments (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   patient_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -259,4 +259,31 @@ CREATE TABLE IF NOT EXISTS appointments (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+-- ============================================================================
+-- DNA APPOINTMENTS FOR PATIENTS
+-- ============================================================================
 
+CREATE TABLE IF NOT EXISTS dna_appointments (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  patient_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  patient_name TEXT NOT NULL,
+  analysis_type TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'pending',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+
+-- ============================================================================
+-- SPECIALIST REFERRALS
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS specialist_referrals (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  patient_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  coordinator_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  file_id UUID REFERENCES dna_files(id) ON DELETE CASCADE,
+  specialist_name TEXT NOT NULL,
+  specialist_type TEXT NOT NULL,
+  hospital_name TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);

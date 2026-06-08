@@ -98,7 +98,7 @@ export default function UploadDnaPage() {
   const [progress, setProgress] = useState(0);
   const [done, setDone] = useState(false);
   const [linkUrl, setLinkUrl] = useState("");
-  
+
   // Patient Profile fields (required for BRCA)
   const [patientAge, setPatientAge] = useState("");
   const [patientSex, setPatientSex] = useState<"female" | "male" | "">("");
@@ -106,10 +106,21 @@ export default function UploadDnaPage() {
   const [fhOvarian, setFhOvarian] = useState("0");
 
   const [patients, setPatients] = useState<any[]>([]);
+  const [dnaAppointments, setDnaAppointments] = useState<any[]>([]);
   const [selectedPatientId, setSelectedPatientId] = useState<string>("");
+  const [selectedDnaAppointmentId, setSelectedDnaAppointmentId] = useState<string>("");
   const [isCoordinator, setIsCoordinator] = useState(false);
 
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const getRefUrlFromAnalysisType = (type: string): string => {
+    const t = type.toLowerCase();
+    if (t.includes("covid") || t.includes("sars")) return "https://www.ncbi.nlm.nih.gov/nuccore/NC_045512.2?report=fasta";
+    if (t.includes("hiv")) return "https://www.ncbi.nlm.nih.gov/nuccore/NC_001802.1?report=fasta";
+    if (t.includes("brca") || t.includes("breast") || t.includes("ovarian") || t.includes("cancer")) return "https://www.ncbi.nlm.nih.gov/nuccore/NM_007294.4?report=fasta";
+    if (t.includes("ebola")) return "https://www.ncbi.nlm.nih.gov/nuccore/NC_002549.1?report=fasta";
+    return "";
+  };
 
   useEffect(() => {
     fetch("/api/patients")
@@ -118,6 +129,15 @@ export default function UploadDnaPage() {
         if (data.success && data.patients) {
           setIsCoordinator(true);
           setPatients(data.patients);
+        }
+      })
+      .catch(console.error);
+
+    fetch("/api/dna-appointments")
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && data.appointments) {
+          setDnaAppointments(data.appointments);
         }
       })
       .catch(console.error);
@@ -191,7 +211,7 @@ export default function UploadDnaPage() {
 
     // Validate filename against selected reference genome to prevent mismatches
     const filenameLower = file.name.toLowerCase();
-    
+
     const references = [
       { id: 'covid', urlKey: 'NC_045512', name: 'COVID-19', keywords: ['covid', 'sars', 'nc_045512'] },
       { id: 'hiv', urlKey: 'NC_001802', name: 'HIV-1', keywords: ['hiv', 'nc_001802'] },
@@ -205,9 +225,9 @@ export default function UploadDnaPage() {
       for (const ref of references) {
         if (ref.id !== selectedRef.id && ref.keywords.some(kw => filenameLower.includes(kw))) {
           setError(
-            lang === "bn" 
-            ? `আপনি ${selectedRef.name} রেফারেন্স জিনোম নির্বাচন করেছেন, কিন্তু ${ref.name} এর জন্য ফাইল আপলোড করেছেন। আপনি ভুল ফাইল সাবমিট করেছেন।` 
-            : `You selected the ${selectedRef.name} reference genome, but uploaded a file for ${ref.name}. You have submitted the wrong file.`
+            lang === "bn"
+              ? `আপনি ${selectedRef.name} রেফারেন্স জিনোম নির্বাচন করেছেন, কিন্তু ${ref.name} এর জন্য ফাইল আপলোড করেছেন। আপনি ভুল ফাইল সাবমিট করেছেন।`
+              : `You selected the ${selectedRef.name} reference genome, but uploaded a file for ${ref.name}. You have submitted the wrong file.`
           );
           return;
         }
@@ -222,6 +242,7 @@ export default function UploadDnaPage() {
     formData.append("file", file);
     if (linkUrl) formData.append("referenceUrl", linkUrl);
     if (selectedPatientId) formData.append("patientId", selectedPatientId);
+    if (selectedDnaAppointmentId) formData.append("dnaAppointmentId", selectedDnaAppointmentId);
 
     const isBrca = linkUrl === "https://www.ncbi.nlm.nih.gov/nuccore/NM_007294.4?report=fasta";
     if (isBrca) {
@@ -236,7 +257,7 @@ export default function UploadDnaPage() {
     }
 
     const xhr = new XMLHttpRequest();
-    
+
     // Track actual upload progress
     xhr.upload.addEventListener("progress", (e) => {
       if (e.lengthComputable) {
@@ -257,7 +278,7 @@ export default function UploadDnaPage() {
         try {
           const res = JSON.parse(xhr.responseText);
           errMsg = res.error || errMsg;
-        } catch {}
+        } catch { }
         setError(errMsg);
         setProgress(0);
       }
@@ -267,9 +288,9 @@ export default function UploadDnaPage() {
     xhr.addEventListener("error", () => {
       setUploading(false);
       setError(
-        lang === "bn" 
-        ? "আপলোড করার সময় একটি নেটওয়ার্ক সমস্যা হয়েছে। অনুগ্রহ করে ইন্টারনেট সংযোগ চেক করুন।" 
-        : "Network error occurred during upload. Please check your connection."
+        lang === "bn"
+          ? "আপলোড করার সময় একটি নেটওয়ার্ক সমস্যা হয়েছে। অনুগ্রহ করে ইন্টারনেট সংযোগ চেক করুন।"
+          : "Network error occurred during upload. Please check your connection."
       );
       setProgress(0);
     });
@@ -324,24 +345,54 @@ export default function UploadDnaPage() {
         <>
           {/* ── Patient Selection (Care Coordinator Only) ── */}
           {isCoordinator && (
-            <div style={{ background: "#090e17", border: "1px solid #1e293b", borderRadius: "16px", padding: "1.5rem", boxShadow: "0 10px 25px -5px rgba(0,0,0,0.3)" }}>
-              <h3 style={{ fontSize: "1.1rem", fontWeight: "600", color: "var(--gn-primary)", display: 'flex', alignItems: 'center', gap: '0.5rem', margin: '0 0 1rem 0' }}>
-                <span style={{ background: 'rgba(16, 185, 129, 0.1)', padding: '6px', borderRadius: '8px' }}>👤</span>
-                {lang === "bn" ? "রোগী নির্বাচন করুন" : "Select Patient"}
-              </h3>
-              <p style={{ color: "var(--gn-text-secondary)", fontSize: "0.9rem", marginBottom: "1rem", lineHeight: 1.5 }}>
-                {lang === "bn" ? "আপনি কোন রোগীর জন্য এই ডিএনএ ফাইলটি আপলোড করছেন তা নির্বাচন করুন।" : "Select the patient you are uploading this DNA file for."}
-              </p>
-              <select 
-                value={selectedPatientId} 
-                onChange={(e) => setSelectedPatientId(e.target.value)}
-                style={{ width: '100%', padding: '0.85rem 1.25rem', borderRadius: '12px', background: 'var(--gn-surface)', border: '1px solid var(--gn-surface-border-strong)', color: 'var(--gn-text-primary)', fontSize: '0.95rem', cursor: 'pointer' }}
-              >
-                <option value="">{lang === "bn" ? "-- রোগী নির্বাচন করুন --" : "-- Select Patient --"}</option>
-                {patients.map(p => (
-                  <option key={p.id} value={p.id}>{p.first_name} {p.last_name} ({p.email})</option>
-                ))}
-              </select>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', background: "#090e17", border: "1px solid #1e293b", borderRadius: "16px", padding: "1.5rem", boxShadow: "0 10px 25px -5px rgba(0,0,0,0.3)" }}>
+              
+              {/* Pending DNA Ingestion Requests */}
+              <div>
+                <h3 style={{ fontSize: "1.1rem", fontWeight: "600", color: "var(--gn-primary)", display: 'flex', alignItems: 'center', gap: '0.5rem', margin: '0 0 1rem 0' }}>
+                  <span style={{ background: 'rgba(16, 185, 129, 0.1)', padding: '6px', borderRadius: '8px' }}>📋</span>
+                  {lang === "bn" ? "বুক করা ডিএনএ বিশ্লেষণ অনুরোধসমূহ" : "Booked DNA Ingestion Requests"}
+                </h3>
+                {dnaAppointments.length === 0 ? (
+                  <p style={{ color: "var(--gn-text-muted)", fontSize: "0.85rem", margin: 0 }}>
+                    {lang === "bn" ? "কোনো বুক করা ডিএনএ অনুরোধ নেই।" : "No pending DNA analysis bookings."}
+                  </p>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', maxHeight: '200px', overflowY: 'auto' }}>
+                    {dnaAppointments.map((appt) => (
+                      <div
+                        key={appt.id}
+                        onClick={() => {
+                          setSelectedDnaAppointmentId(appt.id);
+                          setSelectedPatientId(appt.patient_id);
+                          const refUrl = getRefUrlFromAnalysisType(appt.analysis_type);
+                          setLinkUrl(refUrl);
+                        }}
+                        style={{
+                          padding: '0.85rem 1rem',
+                          borderRadius: '10px',
+                          border: `1px solid ${selectedDnaAppointmentId === appt.id ? 'var(--gn-primary)' : 'rgba(255, 255, 255, 0.05)'}`,
+                          background: selectedDnaAppointmentId === appt.id ? 'rgba(16, 185, 129, 0.05)' : 'rgba(255, 255, 255, 0.01)',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          transition: 'all 0.2s'
+                        }}
+                      >
+                        <div>
+                          <span style={{ fontWeight: '600', color: '#fff', fontSize: '0.9rem' }}>{appt.patient_name}</span>
+                          <span style={{ color: 'var(--gn-text-muted)', fontSize: '0.8rem', marginLeft: '0.75rem' }}>({appt.analysis_type})</span>
+                        </div>
+                        {selectedDnaAppointmentId === appt.id && (
+                          <span style={{ fontSize: '0.85rem', color: 'var(--gn-primary)', fontWeight: 'bold' }}>✓ Selected</span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
             </div>
           )}
 
@@ -441,7 +492,7 @@ export default function UploadDnaPage() {
                 { id: 'brca', name: 'Homo sapiens BRCA1', url: 'https://www.ncbi.nlm.nih.gov/nuccore/NM_007294.4?report=fasta', desc: 'NM_007294.4' },
                 { id: 'ebola', name: 'Ebola virus', url: 'https://www.ncbi.nlm.nih.gov/nuccore/NC_002549.1?report=fasta', desc: 'NC_002549.1' }
               ].map(opt => (
-                <div 
+                <div
                   key={opt.id}
                   onClick={() => setLinkUrl(opt.url)}
                   style={{
@@ -466,7 +517,7 @@ export default function UploadDnaPage() {
                   </div>
                   {linkUrl === opt.url && (
                     <div style={{ width: '20px', height: '20px', borderRadius: '50%', background: 'var(--gn-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
                     </div>
                   )}
                 </div>
@@ -571,8 +622,8 @@ export default function UploadDnaPage() {
                   disabled={disabled}
                   style={
                     !disabled
-                    ? { width: "auto", padding: "1rem 2.5rem" } 
-                    : { width: "auto", padding: "1rem 2.5rem", background: "rgba(100,116,139,0.1)", color: "var(--gn-text-muted)", boxShadow: "none", border: "1px solid #1e293b", cursor: "not-allowed" }
+                      ? { width: "auto", padding: "1rem 2.5rem" }
+                      : { width: "auto", padding: "1rem 2.5rem", background: "rgba(100,116,139,0.1)", color: "var(--gn-text-muted)", boxShadow: "none", border: "1px solid #1e293b", cursor: "not-allowed" }
                   }
                 >
                   {linkUrl ? d.uploadSubmit : d.uploadSelectRef}

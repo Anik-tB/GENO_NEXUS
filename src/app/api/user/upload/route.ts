@@ -68,6 +68,7 @@ export async function POST(request: NextRequest) {
   const referenceUrl = formData.get("referenceUrl")?.toString() || null;
   const patientMetadataRaw = formData.get("patientMetadata")?.toString() || null;
   const patientIdRaw = formData.get("patientId")?.toString() || null;
+  const dnaAppointmentId = formData.get("dnaAppointmentId")?.toString() || null;
   const fileId = randomUUID();
 
   let patientUserId = null;
@@ -92,11 +93,11 @@ export async function POST(request: NextRequest) {
     await fs.promises.writeFile(filePath, buffer);
 
     const db = assertDatabase();
-    
+
     // Store referenceUrl and patientMetadata for later use in analysis
     let metadataObj: any = {};
     if (patientMetadataRaw) {
-      try { metadataObj = JSON.parse(patientMetadataRaw); } catch {}
+      try { metadataObj = JSON.parse(patientMetadataRaw); } catch { }
     }
     if (referenceUrl) metadataObj.referenceUrl = referenceUrl;
     const patientMetadata = Object.keys(metadataObj).length > 0 ? JSON.stringify(metadataObj) : null;
@@ -108,10 +109,31 @@ export async function POST(request: NextRequest) {
         ($1, $2, $3, $4, $5, $6, $7, 'success', $8)
     `, [fileId, user.id, patientUserId, file.name, file.size, ext, storagePath, patientMetadata]);
 
+    if (dnaAppointmentId) {
+      await db.query(`
+        UPDATE dna_appointments
+        SET status = 'uploaded'
+        WHERE id = $1
+      `, [dnaAppointmentId]);
+    }
+
     await db.query(`
       INSERT INTO user_notifications (user_id, title, message, type, link)
       VALUES ($1, $2, $3, $4, $5)
     `, [user.id, "DNA Sequence Uploaded", `Your DNA sequence file '${file.name}' was successfully uploaded and is ready for analysis.`, "info", "/user/results"]);
+
+    if (patientUserId && patientUserId !== user.id) {
+      await db.query(`
+        INSERT INTO user_notifications (user_id, title, message, type, link)
+        VALUES ($1, $2, $3, $4, $5)
+      `, [
+        patientUserId,
+        "DNA Analysis Results Ready",
+        `Your care coordinator has uploaded and processed your DNA sequence. View your genetic health reports.`,
+        "success",
+        "/user/results"
+      ]);
+    }
 
     return NextResponse.json({
       ok: true,

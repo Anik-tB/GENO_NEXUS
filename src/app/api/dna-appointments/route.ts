@@ -14,43 +14,51 @@ export async function POST(req: NextRequest) {
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     if (user.accountCategory !== 'patient') {
-      return NextResponse.json({ error: "Only patients can book clinical tests" }, { status: 403 });
+      return NextResponse.json({ error: "Only patients can request DNA analysis appointments" }, { status: 403 });
     }
 
-    const { testName, price, fileId } = await req.json();
-    if (!testName || !price) {
-      return NextResponse.json({ error: "Missing test name or price" }, { status: 400 });
+    const { patientName, analysisType } = await req.json();
+    if (!patientName || !analysisType) {
+      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
     const db = assertDatabase();
 
     // Ensure the table exists
     await db.query(`
-      CREATE TABLE IF NOT EXISTS test_bookings (
+      CREATE TABLE IF NOT EXISTS dna_appointments (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         patient_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-        file_id UUID REFERENCES dna_files(id) ON DELETE CASCADE,
-        test_name TEXT NOT NULL,
-        price TEXT NOT NULL,
-        status TEXT NOT NULL DEFAULT 'booked',
+        patient_name TEXT NOT NULL,
+        analysis_type TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'pending',
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       );
     `);
-    
-    // Ensure column exists for older dbs
-    await db.query(`ALTER TABLE test_bookings ADD COLUMN IF NOT EXISTS file_id UUID REFERENCES dna_files(id) ON DELETE CASCADE;`);
 
-    // Insert the booking
+    // Insert booking
     const result = await db.query(`
-      INSERT INTO test_bookings (patient_id, file_id, test_name, price, status)
-      VALUES ($1, $2, $3, $4, 'booked')
+      INSERT INTO dna_appointments (patient_id, patient_name, analysis_type, status)
+      VALUES ($1, $2, $3, 'pending')
       RETURNING *
-    `, [user.id, fileId || null, testName, price]);
+    `, [user.id, patientName, analysisType]);
 
-    return NextResponse.json({ success: true, booking: result.rows[0] });
+    // Send a notification to the user
+    await db.query(`
+      INSERT INTO user_notifications (user_id, title, message, type, link)
+      VALUES ($1, $2, $3, $4, $5)
+    `, [
+      user.id,
+      "DNA Ingestion Requested",
+      `Your request for ${analysisType} DNA Analysis has been booked. A care coordinator will upload your DNA sample soon.`,
+      "info",
+      "/user/dashboard"
+    ]);
+
+    return NextResponse.json({ success: true, appointment: result.rows[0] });
 
   } catch (error: any) {
-    console.error("Error booking test:", error);
+    console.error("Error creating DNA appointment:", error);
     return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 });
   }
 }
@@ -68,41 +76,34 @@ export async function GET(req: NextRequest) {
 
     // Ensure table exists
     await db.query(`
-      CREATE TABLE IF NOT EXISTS test_bookings (
+      CREATE TABLE IF NOT EXISTS dna_appointments (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         patient_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-        file_id UUID REFERENCES dna_files(id) ON DELETE CASCADE,
-        test_name TEXT NOT NULL,
-        price TEXT NOT NULL,
-        status TEXT NOT NULL DEFAULT 'booked',
+        patient_name TEXT NOT NULL,
+        analysis_type TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'pending',
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       );
     `);
 
-    // Ensure column exists for older dbs
-    await db.query(`ALTER TABLE test_bookings ADD COLUMN IF NOT EXISTS file_id UUID REFERENCES dna_files(id) ON DELETE CASCADE;`);
-
-    const { searchParams } = new URL(req.url);
-    const fileId = searchParams.get('fileId');
-
     let query = "";
     let params: any[] = [];
 
-    // Fetch user's bookings
-    if (fileId) {
-      query = `SELECT * FROM test_bookings WHERE patient_id = $1 AND file_id = $2 ORDER BY created_at DESC`;
-      params = [user.id, fileId];
-    } else {
-      query = `SELECT * FROM test_bookings WHERE patient_id = $1 ORDER BY created_at DESC`;
+    if (user.accountCategory === 'patient') {
+      query = `SELECT * FROM dna_appointments WHERE patient_id = $1 ORDER BY created_at DESC`;
       params = [user.id];
+    } else if (user.accountCategory === 'caregiver') {
+      // Caregiver sees all pending requests to process them
+      query = `SELECT * FROM dna_appointments WHERE status = 'pending' ORDER BY created_at DESC`;
+    } else {
+      return NextResponse.json({ success: true, appointments: [] });
     }
 
     const result = await db.query(query, params);
-
-    return NextResponse.json({ success: true, bookings: result.rows });
+    return NextResponse.json({ success: true, appointments: result.rows });
 
   } catch (error: any) {
-    console.error("Error fetching bookings:", error);
+    console.error("Error fetching DNA appointments:", error);
     return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 });
   }
 }

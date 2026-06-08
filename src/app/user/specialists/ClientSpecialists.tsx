@@ -166,6 +166,7 @@ export default function ClientSpecialists({
   const [recommendations, setRecommendations] = useState<SpecialistRec[]>([]);
   const [needsAnalysis, setNeedsAnalysis] = useState(false);
   const [patientId, setPatientId] = useState<string | null>(null);
+  const [fileId, setFileId] = useState<string | null>(null);
   const [referrals, setReferrals] = useState<any[]>([]);
   const [referring, setReferring] = useState<string | null>(null);
 
@@ -216,6 +217,9 @@ export default function ClientSpecialists({
         if (predData.meta?.patientId) {
           setPatientId(predData.meta.patientId);
         }
+        if (predData.meta?.fileId) {
+          setFileId(predData.meta.fileId);
+        }
 
         // Step 2: Map predictions to static doctors
         const diseaseStr = predData.predictions
@@ -255,9 +259,14 @@ export default function ClientSpecialists({
 
     async function fetchReferrals() {
       try {
-        const url = isCoordinator
-          ? `/api/specialist-referrals?patientId=${patientId}`
-          : "/api/specialist-referrals";
+        let url = `/api/specialist-referrals`;
+        const params = new URLSearchParams();
+        if (fileId) params.append("fileId", fileId);
+        if (isCoordinator && patientId) params.append("patientId", patientId);
+        
+        const qs = params.toString();
+        if (qs) url += `?${qs}`;
+
         const res = await fetch(url);
         const data = await res.json();
         if (data.success && data.referrals) {
@@ -266,7 +275,7 @@ export default function ClientSpecialists({
       } catch (e) {}
     }
     fetchReferrals();
-  }, [patientId, isCoordinator]);
+  }, [patientId, fileId, isCoordinator]);
 
   useEffect(() => {
     if (!isCoordinator) {
@@ -339,6 +348,7 @@ export default function ClientSpecialists({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           patientId,
+          fileId,
           specialistName: rec.name,
           specialistType: rec.specialistType,
           hospitalName: rec.hospitalName,
