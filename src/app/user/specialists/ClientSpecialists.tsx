@@ -685,116 +685,118 @@ export default function ClientSpecialists({
                   </p>
                 </div>
               </div>
-              {isCoordinator && (
-                <div style={{ marginLeft: "auto", alignSelf: "flex-start" }}>
-                  <button
-                    onClick={() => handleRefer(rec)}
-                    disabled={
-                      referring === rec.name ||
-                      referrals.some((r) => r.specialist_name === rec.name)
-                    }
-                    style={{
-                      background: referrals.some(
-                        (r) => r.specialist_name === rec.name,
-                      )
-                        ? "rgba(16, 185, 129, 0.2)"
-                        : "var(--gn-primary)",
-                      color: referrals.some(
-                        (r) => r.specialist_name === rec.name,
-                      )
-                        ? "#10b981"
-                        : "#000",
-                      border: "none",
-                      padding: "0.5rem 1rem",
-                      borderRadius: "6px",
-                      fontWeight: "600",
-                      cursor: referrals.some(
-                        (r) => r.specialist_name === rec.name,
-                      )
-                        ? "default"
-                        : "pointer",
-                      opacity: referring === rec.name ? 0.7 : 1,
-                    }}
-                  >
-                    {referrals.some((r) => r.specialist_name === rec.name)
-                      ? lang === "bn"
-                        ? "রেফার করা হয়েছে"
-                        : "Referred"
-                      : referring === rec.name
-                        ? lang === "bn"
-                          ? "অপেক্ষা করুন..."
-                          : "Referring..."
-                        : lang === "bn"
-                          ? "রোগীকে রেফার করুন"
-                          : "Refer Patient"}
-                  </button>
-                </div>
-              )}
-              {!isCoordinator && (
-                <div style={{ marginLeft: "auto", alignSelf: "flex-start" }}>
-                  <button
-                    onClick={() =>
-                      openBookingModal({
-                        name: lang === "bn" ? rec.nameBn : rec.name,
-                        specialistType:
-                          lang === "bn"
-                            ? rec.specialistTypeBn
-                            : rec.specialistType,
-                        hospitalName:
-                          lang === "bn" ? rec.hospitalNameBn : rec.hospitalName,
-                      })
-                    }
-                    disabled={appointments.some(
-                      (a) =>
-                        a.doctor_name ===
-                        (lang === "bn" ? rec.nameBn : rec.name),
-                    )}
-                    style={{
-                      background: appointments.some(
-                        (a) =>
-                          a.doctor_name ===
-                          (lang === "bn" ? rec.nameBn : rec.name),
-                      )
-                        ? "rgba(14, 165, 233, 0.2)"
-                        : "var(--gn-blue)",
-                      color: appointments.some(
-                        (a) =>
-                          a.doctor_name ===
-                          (lang === "bn" ? rec.nameBn : rec.name),
-                      )
-                        ? "#0ea5e9"
-                        : "#fff",
-                      border: "none",
-                      padding: "0.5rem 1rem",
-                      borderRadius: "6px",
-                      fontWeight: "600",
-                      cursor: appointments.some(
-                        (a) =>
-                          a.doctor_name ===
-                          (lang === "bn" ? rec.nameBn : rec.name),
-                      )
-                        ? "default"
-                        : "pointer",
-                    }}
-                  >
-                    {appointments.some(
-                      (a) =>
-                        a.doctor_name ===
-                        (lang === "bn" ? rec.nameBn : rec.name),
-                    )
-                      ? lang === "bn"
-                        ? "বুকড"
-                        : "Booked"
-                      : lang === "bn"
-                        ? "অ্যাপয়েন্টমেন্ট বুক করুন"
-                        : "Book Appointment"}
-                  </button>
-                </div>
-              )}
             </div>
             <p className={styles.reasoning}>
               {lang === "bn" ? rec.reasoningBn : rec.reasoning}
             </p>
+            {isCoordinator && (
+              <div style={{ marginTop: "auto", paddingTop: "0.5rem", display: "flex", justifyContent: "flex-start" }}>
+                <button
+                  onClick={() => handleRefer(rec)}
+                  disabled={
+                    referring === rec.name ||
+                    referrals.some((r) => r.specialist_name === rec.name)
+                  }
+                  style={{
+                    width: "100%",
+                    background: referrals.some(
+                      (r) => r.specialist_name === rec.name,
+                    )
+                      ? "rgba(16, 185, 129, 0.2)"
+                      : "var(--gn-primary)",
+                    color: referrals.some(
+                      (r) => r.specialist_name === rec.name,
+                    )
+                      ? "#10b981"
+                      : "#000",
+                    border: "none",
+                    padding: "0.75rem 1rem",
+                    borderRadius: "8px",
+                    fontWeight: "600",
+                    cursor: referrals.some(
+                      (r) => r.specialist_name === rec.name,
+                    )
+                      ? "default"
+                      : "pointer",
+                    opacity: referring === rec.name ? 0.7 : 1,
+                  }}
+                >
+                  {referrals.some((r) => r.specialist_name === rec.name)
+                    ? lang === "bn"
+                      ? "রেফার করা হয়েছে"
+                      : "Referred"
+                    : referring === rec.name
+                      ? lang === "bn"
+                        ? "অপেক্ষা করুন..."
+                        : "Referring..."
+                      : lang === "bn"
+                        ? "রোগীকে রেফার করুন"
+                        : "Refer Patient"}
+                </button>
+              </div>
+            )}
+            {!isCoordinator && (
+              <div style={{ marginTop: "auto", paddingTop: "0.5rem", display: "flex", justifyContent: "flex-start" }}>
+                <button
+                  onClick={() =>
+                    openBookingModal({
+                      name: lang === "bn" ? rec.nameBn : rec.name,
+                      specialistType:
+                        lang === "bn"
+                          ? rec.specialistTypeBn
+                          : rec.specialistType,
+                      hospitalName:
+                        lang === "bn" ? rec.hospitalNameBn : rec.hospitalName,
+                    })
+                  }
+                  disabled={appointments.some(
+                    (a) =>
+                      a.doctor_name ===
+                      (lang === "bn" ? rec.nameBn : rec.name),
+                  )}
+                  style={{
+                    width: "100%",
+                    background: appointments.some(
+                      (a) =>
+                        a.doctor_name ===
+                        (lang === "bn" ? rec.nameBn : rec.name),
+                    )
+                      ? "rgba(14, 165, 233, 0.2)"
+                      : "var(--gn-blue)",
+                    color: appointments.some(
+                      (a) =>
+                        a.doctor_name ===
+                        (lang === "bn" ? rec.nameBn : rec.name),
+                    )
+                      ? "#0ea5e9"
+                      : "#fff",
+                    border: "none",
+                    padding: "0.75rem 1rem",
+                    borderRadius: "8px",
+                    fontWeight: "600",
+                    cursor: appointments.some(
+                      (a) =>
+                        a.doctor_name ===
+                        (lang === "bn" ? rec.nameBn : rec.name),
+                    )
+                      ? "default"
+                      : "pointer",
+                  }}
+                >
+                  {appointments.some(
+                    (a) =>
+                      a.doctor_name ===
+                      (lang === "bn" ? rec.nameBn : rec.name),
+                  )
+                    ? lang === "bn"
+                      ? "বুকড"
+                      : "Booked"
+                    : lang === "bn"
+                      ? "অ্যাপয়েন্টমেন্ট বুক করুন"
+                      : "Book Appointment"}
+                </button>
+              </div>
+            )}
           </div>
         ))}
       </div>
