@@ -5,6 +5,7 @@ import { env } from "@/lib/env";
 import { assertDatabase } from "@/lib/db";
 import { randomUUID } from "node:crypto";
 import path from "path";
+import fs from "fs";
 
 export async function POST(req: NextRequest) {
   try {
@@ -41,24 +42,29 @@ export async function POST(req: NextRequest) {
     const refPathOrUrl = refFileRes.rows[0].storage_path;
 
     const absoluteQueryPath = path.join(process.cwd(), "public", queryDbPath);
-    
-    let pythonReqBody: any = {};
-    if (process.env.NEXT_PUBLIC_APP_URL) {
-      // In production (Render), pass a public URL so the separate Python server can download it
-      const baseUrl = process.env.NEXT_PUBLIC_APP_URL.replace(/\/$/, "");
-      pythonReqBody.query_url = `${baseUrl}/${queryDbPath}`;
-    } else {
-      // In local dev, they might share the same disk, or we just fallback to path
-      pythonReqBody.query_path = absoluteQueryPath;
+    let querySequence = "";
+    try {
+      querySequence = fs.readFileSync(absoluteQueryPath, "utf-8");
+    } catch (err) {
+      console.error("Failed to read query sequence from disk:", err);
+      return NextResponse.json({ error: "Failed to read query file. It may have been deleted during a server restart." }, { status: 404 });
     }
+    
+    let pythonReqBody: any = {
+      query_sequence: querySequence
+    };
 
     if (refPathOrUrl.startsWith("http")) {
       pythonReqBody.reference_url = refPathOrUrl;
-    } else if (process.env.NEXT_PUBLIC_APP_URL) {
-      const baseUrl = process.env.NEXT_PUBLIC_APP_URL.replace(/\/$/, "");
-      pythonReqBody.reference_url = `${baseUrl}/${refPathOrUrl}`;
     } else {
-      pythonReqBody.reference_path = path.join(process.cwd(), "public", refPathOrUrl);
+      const absoluteRefPath = path.join(process.cwd(), "public", refPathOrUrl);
+      try {
+        const refSequence = fs.readFileSync(absoluteRefPath, "utf-8");
+        pythonReqBody.reference_sequence = refSequence;
+      } catch (err) {
+        console.error("Failed to read reference sequence from disk:", err);
+        return NextResponse.json({ error: "Failed to read reference file." }, { status: 404 });
+      }
     }
 
     // Create a processing record

@@ -518,8 +518,10 @@ KNOWN_DR_POSITIONS = {
 class CompareRequest(BaseModel):
     query_path: Optional[str] = None
     query_url: Optional[str] = None
+    query_sequence: Optional[str] = None
     reference_url: Optional[str] = None
     reference_path: Optional[str] = None
+    reference_sequence: Optional[str] = None
 
 class PredictDiseaseRequest(BaseModel):
     mutations: list[dict]
@@ -722,8 +724,13 @@ async def compare_sequences(req: CompareRequest):
         ref_seq, ref_header = "", ""
         query_seq, query_header = "", ""
 
-        if req.reference_url and "http" in req.reference_url:
-            ref_seq, ref_header = _fetch_ncbi(req.reference_url)
+        if req.reference_sequence:
+            ref_seq, ref_header = _parse_sequence_from_text(req.reference_sequence)
+        elif req.reference_url:
+            if "ncbi.nlm.nih.gov" in req.reference_url or not req.reference_url.startswith("http"):
+                ref_seq, ref_header = _fetch_ncbi(req.reference_url)
+            else:
+                ref_seq, ref_header = _fetch_url(req.reference_url)
         elif req.reference_path:
             if not os.path.exists(req.reference_path):
                 raise HTTPException(status_code=404, detail="Reference file not found")
@@ -731,7 +738,9 @@ async def compare_sequences(req: CompareRequest):
         else:
             raise HTTPException(status_code=400, detail="Provide reference_url or reference_path")
 
-        if req.query_url and req.query_url.startswith("http"):
+        if req.query_sequence:
+            query_seq, query_header = _parse_sequence_from_text(req.query_sequence)
+        elif req.query_url and req.query_url.startswith("http"):
             query_seq, query_header = _fetch_url(req.query_url)
         elif req.query_path:
             if not os.path.exists(req.query_path):
