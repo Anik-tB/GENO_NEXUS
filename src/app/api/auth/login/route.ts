@@ -21,7 +21,8 @@ import {
 import { handleDatabaseError } from "@/lib/error/service-errors";
 
 function redirectTo(request: NextRequest, path: string) {
-  return NextResponse.redirect(new URL(path, request.url));
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || request.url;
+  return NextResponse.redirect(new URL(path, baseUrl));
 }
 
 function getClientIp(request: NextRequest): string {
