@@ -32,7 +32,8 @@ export function GlobalChatManager() {
         
         if (!userId || !active) return;
 
-        const socket = new WebSocket(`ws://127.0.0.1:8000/ws/chat/${userId}`);
+        const wsBase = process.env.NEXT_PUBLIC_PYTHON_WS_URL || "ws://127.0.0.1:8000";
+        const socket = new WebSocket(`${wsBase}/ws/chat/${userId}`);
         wsRef.current = socket;
 
         socket.onmessage = async (event) => {

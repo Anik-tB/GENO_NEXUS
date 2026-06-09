@@ -236,7 +236,7 @@ export async function GET() {
     // ── 7. Fetch real-time online researchers ───────────────────────────────
     let onlineCount = contributors.length || 1;
     try {
-      const presenceRes = await fetch("http://127.0.0.1:8000/api/chat/presence", { cache: 'no-store' });
+      const presenceRes = await fetch(`${process.env.PYTHON_API_URL || "http://127.0.0.1:8000"}/api/chat/presence`, { cache: 'no-store' });
       if (presenceRes.ok) {
         const presence = await presenceRes.json();
         if (presence.onlineIds && presence.onlineIds.length > 0) {

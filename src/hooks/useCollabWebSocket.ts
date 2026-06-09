@@ -32,7 +32,7 @@ import {
   TEAM,
 } from "../app/dashboard/collaboration/collab-data";
 
-const WS_URL = "ws://127.0.0.1:8000/ws/collab";
+const WS_URL = `${process.env.NEXT_PUBLIC_PYTHON_WS_URL || "ws://127.0.0.1:8000"}/ws/collab`;
 const MAX_RETRIES = 3; // Fewer retries — fail fast to real-data offline mode
 
 // No client-side alert simulation anymore

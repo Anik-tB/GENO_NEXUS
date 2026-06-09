@@ -85,7 +85,7 @@ export async function POST(req: NextRequest) {
 
     // Notify FastAPI to broadcast the real-time message
     try {
-      await fetch("http://127.0.0.1:8000/api/chat/broadcast", {
+      await fetch(`${process.env.PYTHON_API_URL || "http://127.0.0.1:8000"}/api/chat/broadcast`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

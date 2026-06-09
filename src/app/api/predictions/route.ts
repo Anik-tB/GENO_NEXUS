@@ -79,7 +79,7 @@ export async function GET(req: NextRequest) {
     };
 
     // Send to Python FastAPI Engine
-    const pyRes = await fetch("http://127.0.0.1:8000/predict_disease", {
+    const pyRes = await fetch(`${process.env.PYTHON_API_URL || "http://127.0.0.1:8000"}/predict_disease`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ mutations, organism, matchPct, patient_profile }),

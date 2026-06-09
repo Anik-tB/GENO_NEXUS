@@ -14,7 +14,7 @@ export async function GET() {
     if (!user) return NextResponse.json({ onlineIds: [] });
 
     // Fetch actual online presence from the FastAPI WebSocket hub
-    const fastapiRes = await fetch("http://127.0.0.1:8000/api/chat/presence", {
+    const fastapiRes = await fetch(`${process.env.PYTHON_API_URL || "http://127.0.0.1:8000"}/api/chat/presence`, {
       next: { revalidate: 0 },
     });
     
