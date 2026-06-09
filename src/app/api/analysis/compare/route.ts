@@ -45,7 +45,8 @@ export async function POST(req: NextRequest) {
     let pythonReqBody: any = {};
     if (process.env.NEXT_PUBLIC_APP_URL) {
       // In production (Render), pass a public URL so the separate Python server can download it
-      pythonReqBody.query_url = `${process.env.NEXT_PUBLIC_APP_URL}${queryDbPath}`;
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL.replace(/\/$/, "");
+      pythonReqBody.query_url = `${baseUrl}/${queryDbPath}`;
     } else {
       // In local dev, they might share the same disk, or we just fallback to path
       pythonReqBody.query_path = absoluteQueryPath;
@@ -53,6 +54,9 @@ export async function POST(req: NextRequest) {
 
     if (refPathOrUrl.startsWith("http")) {
       pythonReqBody.reference_url = refPathOrUrl;
+    } else if (process.env.NEXT_PUBLIC_APP_URL) {
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL.replace(/\/$/, "");
+      pythonReqBody.reference_url = `${baseUrl}/${refPathOrUrl}`;
     } else {
       pythonReqBody.reference_path = path.join(process.cwd(), "public", refPathOrUrl);
     }
