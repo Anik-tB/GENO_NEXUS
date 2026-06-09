@@ -42,9 +42,14 @@ export async function POST(req: NextRequest) {
 
     const absoluteQueryPath = path.join(process.cwd(), "public", queryDbPath);
     
-    let pythonReqBody: any = {
-      query_path: absoluteQueryPath
-    };
+    let pythonReqBody: any = {};
+    if (process.env.NEXT_PUBLIC_APP_URL) {
+      // In production (Render), pass a public URL so the separate Python server can download it
+      pythonReqBody.query_url = `${process.env.NEXT_PUBLIC_APP_URL}${queryDbPath}`;
+    } else {
+      // In local dev, they might share the same disk, or we just fallback to path
+      pythonReqBody.query_path = absoluteQueryPath;
+    }
 
     if (refPathOrUrl.startsWith("http")) {
       pythonReqBody.reference_url = refPathOrUrl;

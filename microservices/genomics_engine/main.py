@@ -516,7 +516,8 @@ KNOWN_DR_POSITIONS = {
 # Pydantic models
 # ---------------------------------------------------------------------------
 class CompareRequest(BaseModel):
-    query_path: str
+    query_path: Optional[str] = None
+    query_url: Optional[str] = None
     reference_url: Optional[str] = None
     reference_path: Optional[str] = None
 
@@ -705,6 +706,12 @@ def _fetch_ncbi(accession_or_url: str) -> tuple[str, str]:
         raise HTTPException(status_code=400, detail=f"NCBI fetch failed for {acc}")
     return _parse_sequence_from_text(resp.text)
 
+def _fetch_url(url: str) -> tuple[str, str]:
+    resp = requests.get(url, timeout=30)
+    if resp.status_code != 200:
+        raise HTTPException(status_code=400, detail=f"URL fetch failed for {url}")
+    return _parse_sequence_from_text(resp.text)
+
 # ---------------------------------------------------------------------------
 # Core endpoint
 # ---------------------------------------------------------------------------
@@ -724,9 +731,14 @@ async def compare_sequences(req: CompareRequest):
         else:
             raise HTTPException(status_code=400, detail="Provide reference_url or reference_path")
 
-        if not os.path.exists(req.query_path):
-            raise HTTPException(status_code=404, detail="Query file not found")
-        query_seq, query_header = _parse_sequence(req.query_path)
+        if req.query_url and req.query_url.startswith("http"):
+            query_seq, query_header = _fetch_url(req.query_url)
+        elif req.query_path:
+            if not os.path.exists(req.query_path):
+                raise HTTPException(status_code=404, detail="Query file not found")
+            query_seq, query_header = _parse_sequence(req.query_path)
+        else:
+            raise HTTPException(status_code=400, detail="Provide query_url or query_path")
 
         if not ref_seq or not query_seq:
             raise HTTPException(status_code=400, detail="One or both sequences are empty")
