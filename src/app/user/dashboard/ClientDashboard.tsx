@@ -291,21 +291,21 @@ export function ClientDashboard({ firstName, filesCount, analysesCount, markersC
       </div>
 
       {!isCoordinator && (
-        <section style={{ margin: "2.5rem 0" }}>
-          <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr", gap: "2rem" }}>
+        <section className={styles.bookingSection}>
+          <div className={styles.bookingGrid}>
             {/* Booking Form Card */}
-            <div style={{ background: "rgba(16, 185, 129, 0.03)", border: "1px solid rgba(16, 185, 129, 0.15)", borderRadius: "16px", padding: "2rem" }}>
-              <h3 style={{ margin: "0 0 0.5rem 0", color: "#10b981", fontSize: "1.2rem", fontWeight: "700", display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                <span>🧬</span> {lang === "bn" ? "ডিএনএ বিশ্লেষণ অনুরোধ" : "Request DNA Analysis"}
+            <div className={styles.bookingCard}>
+              <h3 className={styles.bookingTitle}>
+                <span role="img" aria-label="dna">🧬</span> {lang === "bn" ? "ডিএনএ বিশ্লেষণ অনুরোধ" : "Request DNA Analysis"}
               </h3>
-              <p style={{ margin: "0 0 1.5rem 0", color: "var(--gn-text-secondary)", fontSize: "0.88rem", lineHeight: 1.5 }}>
+              <p className={styles.bookingDesc}>
                 {lang === "bn"
                   ? "ডিএনএ বিশ্লেষণের অনুরোধ জানাতে আপনার নাম ও কাঙ্ক্ষিত প্যানেলটি নির্বাচন করে বুকিং করুন। আপনার কেয়ার কোঅর্ডিনেটর স্যাম্পল সংগ্রহ করে আপলোড করবেন।"
                   : "Request a DNA analysis by selecting the analysis type. Your care coordinator will upload and run your sequence."}
               </p>
-              <form onSubmit={handleBookDnaAnalysis} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-                <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
-                  <label style={{ fontSize: "0.8rem", color: "var(--gn-text-muted)", fontWeight: "600" }}>
+              <form onSubmit={handleBookDnaAnalysis} className={styles.bookingForm}>
+                <div className={styles.inputGroup}>
+                  <label className={styles.inputLabel}>
                     {lang === "bn" ? "রোগীর নাম" : "Patient Name"}
                   </label>
                   <input
@@ -316,19 +316,12 @@ export function ClientDashboard({ firstName, filesCount, analysesCount, markersC
                       setPatientName(e.target.value);
                       setBookingMessage("");
                     }}
-                    style={{
-                      background: "rgba(255,255,255,0.03)",
-                      border: "1px solid var(--gn-surface-border-strong)",
-                      padding: "0.75rem",
-                      borderRadius: "8px",
-                      color: "#fff",
-                      fontSize: "0.9rem",
-                      outline: "none"
-                    }}
+                    className={styles.inputField}
+                    placeholder="Enter patient name..."
                   />
                 </div>
-                <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
-                  <label style={{ fontSize: "0.8rem", color: "var(--gn-text-muted)", fontWeight: "600" }}>
+                <div className={styles.inputGroup}>
+                  <label className={styles.inputLabel}>
                     {lang === "bn" ? "ডিএনএ বিশ্লেষণের ধরন" : "DNA Analysis Type"}
                   </label>
                   <select
@@ -337,87 +330,59 @@ export function ClientDashboard({ firstName, filesCount, analysesCount, markersC
                       setSelectedAnalysis(e.target.value);
                       setBookingMessage("");
                     }}
-                    style={{
-                      background: "rgba(0,0,0,0.4)",
-                      border: "1px solid var(--gn-surface-border-strong)",
-                      padding: "0.75rem",
-                      borderRadius: "8px",
-                      color: "#fff",
-                      fontSize: "0.9rem",
-                      outline: "none",
-                      cursor: "pointer"
-                    }}
+                    className={styles.inputField}
                   >
-                    <option style={{ background: "#111" }} value="Homo sapiens BRCA1">Homo sapiens BRCA1 (Cancer Risk)</option>
-                    <option style={{ background: "#111" }} value="SARS-CoV-2 (COVID-19)">SARS-CoV-2 (COVID-19) Detection</option>
-                    <option style={{ background: "#111" }} value="HIV-1">HIV-1 Mutation Profiling</option>
-                    <option style={{ background: "#111" }} value="Ebola virus">Ebola Virus Genomic Alignment</option>
+                    <option value="Homo sapiens BRCA1">Homo sapiens BRCA1 (Cancer Risk)</option>
+                    <option value="SARS-CoV-2 (COVID-19)">SARS-CoV-2 (COVID-19) Detection</option>
+                    <option value="HIV-1">HIV-1 Mutation Profiling</option>
+                    <option value="Ebola virus">Ebola Virus Genomic Alignment</option>
                   </select>
                 </div>
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  style={{
-                    background: "var(--gn-primary)",
-                    color: "#000",
-                    border: "none",
-                    padding: "0.75rem",
-                    borderRadius: "8px",
-                    fontWeight: "700",
-                    cursor: "pointer",
-                    marginTop: "0.5rem",
-                    transition: "opacity 0.2s"
-                  }}
+                  className={styles.bookingSubmit}
                 >
-                  {isSubmitting ? (lang === "bn" ? "অনুরোধ করা হচ্ছে..." : "Requesting...") : (lang === "bn" ? "অনুরোধ বুক করুন" : "Book Analysis Request")}
+                  {isSubmitting 
+                    ? (lang === "bn" ? "অনুরোধ করা হচ্ছে..." : "Requesting...") 
+                    : (lang === "bn" ? "অনুরোধ বুক করুন" : "Book Analysis Request")}
                 </button>
                 {bookingMessage && (
-                  <p style={{ margin: "0.5rem 0 0 0", fontSize: "0.85rem", color: "#10b981", fontWeight: "600" }}>
+                  <div className={styles.bookingMessage}>
                     {bookingMessage}
-                  </p>
+                  </div>
                 )}
               </form>
             </div>
 
             {/* List Card */}
-            <div style={{ background: "rgba(0,0,0,0.15)", border: "1px solid var(--gn-surface-border)", borderRadius: "16px", padding: "2rem" }}>
-              <h3 style={{ margin: "0 0 1rem 0", color: "#fff", fontSize: "1.2rem", fontWeight: "700" }}>
-                📋 {lang === "bn" ? "অনুরোধকৃত ডিএনএ বিশ্লেষণসমূহ" : "Requested DNA Analyses"}
+            <div className={styles.requestsCard}>
+              <h3 className={styles.requestsTitle}>
+                <span role="img" aria-label="clipboard">📋</span> {lang === "bn" ? "অনুরোধকৃত ডিএনএ বিশ্লেষণসমূহ" : "Requested DNA Analyses"}
               </h3>
               {dnaAppointments.length === 0 ? (
-                <p style={{ color: "var(--gn-text-muted)", fontSize: "0.9rem" }}>
+                <p className={styles.requestsEmpty}>
                   {lang === "bn" ? "কোনো ডিএনএ অনুরোধ নেই।" : "No DNA requests booked yet."}
                 </p>
               ) : (
-                <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", maxHeight: "250px", overflowY: "auto" }}>
+                <div className={styles.requestsList}>
                   {dnaAppointments.map((appt, idx) => (
-                    <div
-                      key={idx}
-                      style={{
-                        background: "rgba(255,255,255,0.02)",
-                        border: "1px solid rgba(255,255,255,0.05)",
-                        borderRadius: "10px",
-                        padding: "1rem",
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center"
-                      }}
-                    >
+                    <div key={idx} className={styles.requestItem}>
                       <div>
-                        <h4 style={{ margin: "0 0 0.25rem 0", color: "#fff", fontSize: "0.95rem" }}>
+                        <h4 className={styles.requestItemType}>
                           {appt.analysis_type}
                         </h4>
-                        <p style={{ margin: 0, color: "var(--gn-text-muted)", fontSize: "0.8rem" }}>
-                          {lang === "bn" ? "রোগী: " : "Patient: "} {appt.patient_name}
+                        <p className={styles.requestItemPatient}>
+                          {lang === "bn" ? "রোগী: " : "Patient: "} <strong>{appt.patient_name}</strong>
                         </p>
                       </div>
                       <div>
                         {appt.status === 'pending' ? (
-                          <span style={{ background: "rgba(245, 158, 11, 0.15)", color: "#f59e0b", border: "1px solid rgba(245, 158, 11, 0.3)", padding: "0.25rem 0.65rem", borderRadius: "999px", fontSize: "0.75rem", fontWeight: "700" }}>
+                          <span className={`${styles.statusBadge} ${styles.statusPending}`}>
                             {lang === "bn" ? "আপলোডের অপেক্ষায়" : "Awaiting Ingestion"}
                           </span>
                         ) : (
-                          <span style={{ background: "rgba(16, 185, 129, 0.15)", color: "#10b981", border: "1px solid rgba(16, 185, 129, 0.3)", padding: "0.25rem 0.65rem", borderRadius: "999px", fontSize: "0.75rem", fontWeight: "700" }}>
+                          <span className={`${styles.statusBadge} ${styles.statusCompleted}`}>
                             {lang === "bn" ? "আপলোড সম্পন্ন" : "Ingested"}
                           </span>
                         )}

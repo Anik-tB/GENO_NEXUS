@@ -330,18 +330,45 @@ export default function UploadPage() {
 
       {/* ── Visibility Toggle ── */}
       <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '2rem' }}>
-        <div style={{ background: '#090e17', border: '1px solid #1e293b', borderRadius: '12px', padding: '0.5rem', display: 'flex', gap: '0.5rem' }}>
+        <div style={{ background: '#0a0f1a', border: '1px solid #1e293b', borderRadius: '12px', padding: '4px', display: 'flex', alignItems: 'center' }}>
           <button
             onClick={() => setVisibility("private")}
-            style={{ padding: '0.6rem 1.5rem', borderRadius: '8px', border: 'none', background: visibility === "private" ? 'rgba(59,130,246,0.15)' : 'transparent', color: visibility === "private" ? '#3b82f6' : 'var(--gn-text-muted)', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+            style={{ 
+              padding: '0.6rem 1.25rem', 
+              borderRadius: '8px', 
+              border: 'none', 
+              background: visibility === "private" ? '#17253d' : 'transparent', 
+              color: visibility === "private" ? '#3b82f6' : '#64748b', 
+              fontWeight: 600, 
+              fontSize: '0.95rem',
+              cursor: 'pointer', 
+              transition: 'all 0.2s', 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '0.5rem' 
+            }}
           >
-            🔒 Private Dataset
+            <span style={{ fontSize: '1.1rem' }}>🔒</span> Private Dataset
           </button>
           <button
             onClick={() => setVisibility("public")}
-            style={{ padding: '0.6rem 1.5rem', borderRadius: '8px', border: 'none', background: visibility === "public" ? 'rgba(16,185,129,0.15)' : 'transparent', color: visibility === "public" ? '#10b981' : 'var(--gn-text-muted)', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+            style={{ 
+              padding: '0.6rem 1.25rem', 
+              borderRadius: '8px', 
+              border: 'none', 
+              background: visibility === "public" ? '#17253d' : 'transparent', 
+              color: visibility === "public" ? '#3b82f6' : '#64748b', 
+              fontWeight: 600, 
+              fontSize: '0.95rem',
+              cursor: 'pointer', 
+              transition: 'all 0.2s', 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '0.5rem' 
+            }}
           >
-            🌐 Public (Collab Nexus)
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+            Public (Collab Nexus)
           </button>
         </div>
       </div>
@@ -377,19 +404,19 @@ export default function UploadPage() {
         </div>
 
         {/* ── Link Remote Dataset Component (Acts as Analysis Trigger) ── */}
-        <div style={{ marginTop: "1.5rem", background: "#090e17", border: "1px solid #1e293b", borderRadius: "16px", padding: "1.5rem", boxShadow: "0 10px 25px -5px rgba(0,0,0,0.3)" }}>
+        <div style={{ marginTop: "1.5rem", background: "#090e17", border: "1px solid #1e293b", borderRadius: "12px", padding: "1.5rem", boxShadow: "0 10px 25px -5px rgba(0,0,0,0.3)" }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-            <h3 style={{ fontSize: "1.1rem", fontWeight: "600", color: "var(--gn-primary)", display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <span style={{ background: 'rgba(16, 185, 129, 0.1)', padding: '6px', borderRadius: '8px' }}>🧬</span>
+            <h3 style={{ fontSize: "1.1rem", fontWeight: "600", color: "#10b981", display: 'flex', alignItems: 'center', gap: '0.75rem', margin: 0 }}>
+              <span style={{ background: 'rgba(16, 185, 129, 0.1)', padding: '6px 8px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>🧬</span>
               Launch Sequence Alignment
             </h3>
           </div>
 
-          <p style={{ color: "var(--gn-text-secondary)", fontSize: "0.9rem", marginBottom: "1.25rem", lineHeight: 1.5 }}>
+          <p style={{ color: "#64748b", fontSize: "0.9rem", margin: "0 0 1.5rem 0", lineHeight: 1.5 }}>
             Select an NCBI reference genome below. We will instantly compare it against the sequence you uploaded above!
           </p>
 
-          <form onSubmit={handleLinkSubmit} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+          <form onSubmit={handleLinkSubmit} style={{ display: "flex", flexDirection: "column", gap: "1rem", margin: 0 }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
               {[
                 { id: 'covid', name: 'SARS-CoV-2 (COVID-19)', url: 'https://www.ncbi.nlm.nih.gov/nuccore/NC_045512.2?report=fasta', desc: 'NC_045512.2' },
@@ -402,8 +429,8 @@ export default function UploadPage() {
                   onClick={() => setLinkUrl(opt.url)}
                   style={{
                     padding: '1rem 1.25rem',
-                    borderRadius: '12px',
-                    border: `2px solid ${linkUrl === opt.url ? 'var(--gn-primary)' : '#1e293b'}`,
+                    borderRadius: '8px',
+                    border: `1px solid ${linkUrl === opt.url ? '#10b981' : '#1e293b'}`,
                     background: linkUrl === opt.url ? 'rgba(16, 185, 129, 0.05)' : '#05080d',
                     cursor: 'pointer',
                     display: 'flex',
@@ -413,15 +440,15 @@ export default function UploadPage() {
                   }}
                 >
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                    <span style={{ color: linkUrl === opt.url ? 'var(--gn-primary)' : 'var(--gn-white)', fontWeight: '600', fontSize: '0.95rem' }}>
+                    <span style={{ color: linkUrl === opt.url ? '#10b981' : '#f8fafc', fontWeight: '600', fontSize: '0.95rem' }}>
                       {opt.name}
                     </span>
-                    <span style={{ color: 'var(--gn-text-muted)', fontSize: '0.8rem' }}>
+                    <span style={{ color: '#475569', fontSize: '0.8rem' }}>
                       {opt.desc}
                     </span>
                   </div>
                   {linkUrl === opt.url && (
-                    <div style={{ width: '20px', height: '20px', borderRadius: '50%', background: 'var(--gn-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div style={{ width: '20px', height: '20px', borderRadius: '50%', background: '#10b981', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                     </div>
                   )}
