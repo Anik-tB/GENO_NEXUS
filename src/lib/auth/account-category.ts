@@ -1,21 +1,15 @@
 export const ACCOUNT_CATEGORIES = [
   "patient",
   "caregiver",
-  "clinician",
-  "researcher",
-  "lab_staff",
-  "other"
+  "researcher"
 ] as const;
 
 export type AccountCategory = (typeof ACCOUNT_CATEGORIES)[number];
 
-export const DEFAULT_ACCOUNT_CATEGORY: AccountCategory = "other";
+export const DEFAULT_ACCOUNT_CATEGORY: AccountCategory = "patient";
 
 export const ACCOUNT_CATEGORY_LABELS: Record<AccountCategory, string> = {
-  patient: "Patient",
-  caregiver: "Care Coordinator",
-  clinician: "Clinician",
-  researcher: "Researcher",
-  lab_staff: "Lab staff",
-  other: "Other"
+  patient: "Patient (Personal Health Insights)",
+  caregiver: "Care Coordinator (Clinical Ingestion & Referrals)",
+  researcher: "Researcher (Command Center & AI Analysis)"
 };

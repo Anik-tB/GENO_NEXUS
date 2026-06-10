@@ -1,6 +1,16 @@
 # GenoNexus
 
-GenoNexus is a comprehensive, enterprise-grade bioinformatics and genomics platform. Designed with a premium "Matte Dark" glassmorphic aesthetic, the platform unifies next-generation DNA analysis, artificial intelligence predictions, 3D visualizations, and secure biomedical research collaboration into a single Command Center.
+GenoNexus is a comprehensive, enterprise-grade bioinformatics and genomics platform designed to bridge the gap between genomic research and everyday healthcare. Featuring a revolutionary **Three-Portal Architecture**, it seamlessly connects the lab, the clinic, and the patient. Designed with a premium "Matte Dark" glassmorphic aesthetic, the platform unifies next-generation DNA analysis, artificial intelligence predictions, 3D visualizations, and secure biomedical research collaboration.
+
+---
+
+## 🌐 The Three-Portal Ecosystem
+
+To eliminate the fragmentation in modern healthcare, GenoNexus operates across three dedicated interfaces:
+
+1. **Researcher Portal (`/dashboard`)**: A powerful Command Center for scientists featuring AI-driven DNA analysis, 3D genome visualization, and real-time global collaboration.
+2. **Clinical & Caregiver Portal (`/dashboard` / ingestion routes)**: A streamlined interface for doctors and caregivers to seamlessly ingest patient genomic files and coordinate specialist referrals.
+3. **Patient Portal (`/user/dashboard`)**: A secure, intuitive dashboard empowering everyday users to easily understand their personal genetic health insights and track their results.
 
 ---
 
@@ -134,18 +144,23 @@ GENO_NEXUS/
 │       │       │   └── [id]/        # Poll comparison result by ID
 │       │       ├── history/         # Past analysis runs
 │       │       └── dismiss/[id]/    # Dismiss a failed analysis
-│       └── dashboard/
-│           ├── analysis/            # AI mutation analysis dashboard
-│           ├── upload/              # Dual-source sequence upload station
-│           ├── collaboration/       # Research Collaboration Hub (Hypotheses, Activity Stream, Pipelines)
-│           ├── history/             # Dedicated Analysis History Page
-│           ├── drugs/               # Drug-Gene interaction predictions
-│           ├── outbreak/            # Epidemic & Viral trackers
-│           ├── predictions/         # ncRNA and Health Trajectories
-│           ├── processing/          # Pipeline executions
-│           ├── reports/             # Research readouts
-│           ├── visualization/       # 3D Genome Browsers
-│           └── profile/             # User & security settings
+│       ├── dashboard/               # Researcher & Clinical Portal
+│       │   ├── analysis/            # AI mutation analysis dashboard
+│       │   ├── upload/              # Dual-source sequence upload station
+│       │   ├── collaboration/       # Research Collaboration Hub (Hypotheses, Activity Stream, Pipelines)
+│       │   ├── history/             # Dedicated Analysis History Page
+│       │   ├── drugs/               # Drug-Gene interaction predictions
+│       │   ├── outbreak/            # Epidemic & Viral trackers
+│       │   ├── predictions/         # ncRNA and Health Trajectories
+│       │   ├── processing/          # Pipeline executions
+│       │   ├── reports/             # Research readouts
+│       │   ├── visualization/       # 3D Genome Browsers
+│       │   └── profile/             # User & security settings
+│       └── user/                    # Patient Portal
+│           ├── dashboard/           # Personal Health Insights & Activity
+│           ├── results/             # Simplified genetic test results
+│           ├── upload-dna/          # Patient DNA submission (Caregiver use)
+│           └── specialists/         # Specialist care coordination
 │
 ├── microservices/
 │   └── genomics_engine/
@@ -254,13 +269,14 @@ You need **2 terminals running simultaneously**:
 
 ## 🧬 How to Run a Genomic Analysis
 
-1. Go to **Dashboard → Upload Genomic Data**
-2. Drag & drop your **query sequence** (FASTA/FASTQ/VCF/BAM) into the upload zone
-3. In the **"Launch Sequence Alignment"** section, choose your reference source:
+1. Access the **Researcher or Clinical Portal** via `/dashboard`
+2. Go to **Dashboard → Upload Genomic Data**
+3. Drag & drop your **query sequence** (FASTA/FASTQ/VCF/BAM) into the upload zone
+4. In the **"Launch Sequence Alignment"** section, choose your reference source:
    - **NCBI Link** — paste an NCBI Nuccore URL (e.g., `https://www.ncbi.nlm.nih.gov/nuccore/NC_001802.1?report=fasta`)
    - **Local File** — upload your own reference FASTA file
-4. Click **"Launch Comparative Pipeline"**
-5. You are automatically redirected to the **Analysis Dashboard** where:
+5. Click **"Launch Comparative Pipeline"**
+6. You are automatically redirected to the **Analysis Dashboard** where:
    - The organism is **auto-detected** from the FASTA header
    - Mutations are listed in the **SNPs tab** with AI severity + confidence scores
    - Insertions/Deletions are listed in the **Indels tab**
@@ -306,7 +322,7 @@ FROM known_mutations WHERE severity = 'high';
 
 | Table | Purpose |
 |:---|:---|
-| `users` | Registered accounts with OAuth + password support |
+| `users` | Registered accounts with roles (Patient, Caregiver, Clinician, Researcher) |
 | `sessions` | Secure session tokens |
 | `dna_files` | All uploaded / linked genomic files |
 | `comparison_results` | Analysis results with mutations, indels, organism, AI metadata |

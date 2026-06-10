@@ -1,11 +1,16 @@
 GenoNexus Platform: Comprehensive
 Technical Implementation Guide
 Executive Summary
-This report provides a detailed analysis of the 15 core GenoNexus features, including their
+This report provides a detailed analysis of the GenoNexus platform, which is built upon a revolutionary Three-Portal Architecture connecting Researchers, Clinicians, and Patients into a unified ecosystem. It evaluates the 15 core GenoNexus features, including their
 documented success rates from recent academic research (2024-2025), latest peer-reviewed
 references, and recommended backend technologies and frameworks for implementation. The
 analysis is based on extensive research from Google Scholar, peer-reviewed journals, and industry
 reports published between 2024 and 2025.
+
+The Three-Portal Architecture:
+1. Researcher Portal: A powerful command center for scientists featuring AI-driven DNA analysis and global collaboration.
+2. Clinical Portal: A streamlined interface for doctors to ingest patient genomic files and coordinate specialist referrals.
+3. Patient Portal: A secure dashboard empowering everyday users to understand their personal genetic health insights.
 
 Part 1: Feature Success Rates & Recent References
 Group A — Genomics & Core Analysis
@@ -633,6 +638,13 @@ Reproducible infrastructure
 provisioning
 
 Part 3: Implementation Architecture
+
+Three-Portal Ecosystem (Next.js App Router)
+The frontend of GenoNexus is divided into three distinct portals to seamlessly connect all stakeholders:
+1. Researcher Portal (/dashboard): Command center for advanced AI and genomics analysis.
+2. Clinical Portal (/dashboard + clinical scopes): Ingestion pipelines and specialist referrals.
+3. Patient Portal (/user): Intuitive dashboards for personal health tracking.
+
 Microservices Architecture
 The GenoNexus platform is recommended to be implemented using a microservices architecture
 with the following core services:

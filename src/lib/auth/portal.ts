@@ -8,7 +8,7 @@ import type { AccountCategory } from "@/lib/auth/account-category";
  */
 
 export const NORMAL_USER_CATEGORIES: AccountCategory[] = ["patient", "caregiver"];
-export const RESEARCHER_CATEGORIES: AccountCategory[] = ["clinician", "researcher", "lab_staff", "other"];
+export const RESEARCHER_CATEGORIES: AccountCategory[] = ["researcher"];
 
 export function getPortalForCategory(category: AccountCategory): "user" | "researcher" {
   if ((NORMAL_USER_CATEGORIES as string[]).includes(category)) {
