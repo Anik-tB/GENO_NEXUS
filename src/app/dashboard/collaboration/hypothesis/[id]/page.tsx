@@ -3,6 +3,7 @@
 import { use, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { TEAM } from "../../collab-data";
+import { useCollabStats } from "@/hooks/useCollabStats";
 import styles from "./HypothesisDetail.module.css";
 
 interface ChatMessage {
@@ -35,6 +36,8 @@ export default function HypothesisDetailPage({ params }: PageProps) {
   const router = useRouter();
   const { id } = use(params);
 
+  const { activeUser } = useCollabStats();
+
   const [hypo, setHypo]         = useState<Hypothesis | null>(null);
   const [messages, setMessages]  = useState<ChatMessage[]>([]);
   const [inputText, setInputText] = useState("");
@@ -60,12 +63,19 @@ export default function HypothesisDetailPage({ params }: PageProps) {
 
   const getMemberColor = (authorId: string) => {
     const member = TEAM.find(m => m.id === authorId);
-    return member?.color;
+    if (member) return member.color;
+    // Generate a nice consistent HSL color based on the initials/authorId
+    let hash = 0;
+    for (let i = 0; i < authorId.length; i++) {
+      hash = authorId.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const h = Math.abs(hash) % 360;
+    return `hsl(${h}, 70%, 60%)`;
   };
 
   const handleSend = async () => {
     if (!inputText.trim()) return;
-    const userInitials = "AU"; // from session ideally
+    const userInitials = activeUser?.initials || "AU";
     const newMsg: ChatMessage = {
       id:     Date.now(),
       author: userInitials,
@@ -77,11 +87,15 @@ export default function HypothesisDetailPage({ params }: PageProps) {
     setInputText("");
 
     // Persist to DB
-    await fetch(`/api/collaboration/hypotheses/${id}`, {
+    const res = await fetch(`/api/collaboration/hypotheses/${id}`, {
       method:  "PATCH",
       headers: { "Content-Type": "application/json" },
       body:    JSON.stringify({ message: { author: userInitials, text: inputText, isAI: false } }),
     });
+    const json = await res.json();
+    if (json.success && json.chatMessages) {
+      setMessages(json.chatMessages);
+    }
   };
 
   // ── Loading state ─────────────────────────────────────────────

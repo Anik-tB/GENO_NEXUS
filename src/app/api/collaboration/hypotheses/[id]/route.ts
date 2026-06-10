@@ -3,6 +3,8 @@ import { assertDatabase } from "@/lib/db";
 import { getUserFromSessionToken } from "@/lib/auth/sessions";
 import { cookies } from "next/headers";
 import { env } from "@/lib/env";
+import { getCopilotContext } from "@/lib/copilot/context";
+import { askGeminiCopilot } from "@/lib/copilot/gemini";
 
 async function getUser() {
   const cookieStore = await cookies();
@@ -104,6 +106,48 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
          VALUES ($1, $2, $3, $4)`,
         [id, author, text, isAI]
       );
+
+      // Trigger AI reply if user message starts with /
+      if (text.startsWith("/")) {
+        const hypoRes = await db.query("SELECT * FROM hypotheses WHERE id = $1 AND active = TRUE", [id]);
+        if (hypoRes.rows.length > 0) {
+          const hypo = hypoRes.rows[0];
+          const context = await getCopilotContext(user.id, db);
+          const cleanMsgText = text.replace(/^\/[a-zA-Z0-9_-]+\s*/, "");
+          const prompt = [
+            `The user is asking a question inside the discussion thread of a hypothesis board.`,
+            `Hypothesis Title: "${hypo.title}"`,
+            `Confidence Score: ${hypo.confidence}%`,
+            `Version: ${hypo.version}`,
+            `Active Status: ${hypo.active ? "Active" : "Archived"}`,
+            `Tags: ${JSON.stringify(hypo.tags ?? [])}`,
+            `Annotations: ${JSON.stringify(hypo.annotations ?? [])}`,
+            ``,
+            `User's question: "${cleanMsgText}"`,
+          ].join("\n");
+
+          try {
+            const replyText = await askGeminiCopilot({
+              context,
+              message: prompt,
+            });
+
+            await db.query(
+              `INSERT INTO hypothesis_messages (hypothesis_id, author, text, is_ai)
+               VALUES ($1, $2, $3, $4)`,
+              [id, "AI", replyText, true]
+            );
+          } catch (geminiErr) {
+            console.error("Gemini copilot reply error in hypothesis chat:", geminiErr);
+            await db.query(
+              `INSERT INTO hypothesis_messages (hypothesis_id, author, text, is_ai)
+               VALUES ($1, $2, $3, $4)`,
+              [id, "AI", `I encountered an issue processing that command: ${geminiErr instanceof Error ? geminiErr.message : String(geminiErr)}`, true]
+            );
+          }
+        }
+      }
+
       // Update comment count
       await db.query(
         `UPDATE hypotheses SET comments = (
@@ -111,7 +155,23 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
          ), updated_at = NOW() WHERE id = $1`,
         [id]
       );
-      return NextResponse.json({ success: true });
+
+      // Fetch updated messages list and return
+      const msgRes = await db.query(
+        `SELECT id, author, text, is_ai, created_at
+         FROM hypothesis_messages WHERE hypothesis_id = $1
+         ORDER BY created_at ASC`,
+        [id]
+      );
+      const chatMessages = msgRes.rows.map((m: any) => ({
+        id:     m.id,
+        author: m.author,
+        text:   m.text,
+        isAI:   m.is_ai,
+        time:   new Date(m.created_at).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }),
+      }));
+
+      return NextResponse.json({ success: true, chatMessages });
     }
 
     if (sets.length === 0) {

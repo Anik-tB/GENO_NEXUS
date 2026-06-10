@@ -96,76 +96,7 @@ export const TEAM: TeamMember[] = [
   { id: "AI", name: "Nexus Copilot", role: "AI Engine v3.2", status: "active", viewing: "Global Mutation Index", color: "#06b6d4" },
 ];
 
-export const HYPOTHESES: Hypothesis[] = [
-  {
-    id: "H-402",
-    title: "Targeted CRISPR knock-out efficiency in lung organoids",
-    confidence: 84,
-    active: true,
-    comments: 3,
-    avatars: ["EH", "AI"],
-    tags: ["CRISPR", "Lung", "Organoid"],
-    version: 4,
-    lastEdited: "12 min ago",
-    annotations: ["chr17:7674220 — TP53 splice variant", "Batch 3 shows 2.4x knock-out resilience"],
-    chatMessages: [
-      { id: 1, author: "EH", text: "I've isolated the organoid batches. Seeing high resilience in batch 3.", time: "10:04 AM", isAI: false },
-      { id: 2, author: "AI", text: "Analysis confirmed. Batch 3 exhibits anomalous expression of target gene 4B. Statistical significance: p < 0.001. Recommend expanding sample size to n=200.", time: "10:05 AM", isAI: true },
-      { id: 3, author: "MO", text: "I can set up an automated pipeline to process the expanded batch. Should I use the WGS or targeted panel?", time: "10:12 AM", isAI: false },
-      { id: 4, author: "AI", text: "Recommendation: Use targeted panel for cost efficiency. WGS coverage data from batch 3 suggests 40x depth is sufficient for this variant class.", time: "10:13 AM", isAI: true },
-    ]
-  },
-  {
-    id: "H-401",
-    title: "Elevated expression of marker genes in drug-resistant strains",
-    confidence: 62,
-    active: true,
-    comments: 7,
-    avatars: ["MO", "RV", "AI"],
-    tags: ["Drug Resistance", "Expression", "AMR"],
-    version: 8,
-    lastEdited: "2 hours ago",
-    annotations: ["MDR1 overexpression confirmed in 3/5 isolates"],
-    chatMessages: [
-      { id: 1, author: "RV", text: "The new RNA-seq data from the resistant strains is up. Overexpression of MDR1 is very clear.", time: "08:15 AM", isAI: false },
-      { id: 2, author: "AI", text: "Cross-referencing with previous cohorts: MDR1 overexpression is correlated with 72% reduction in drug efficacy.", time: "08:16 AM", isAI: true },
-      { id: 3, author: "MO", text: "Could there be an upstream regulatory mutation? Let's check the promoter regions.", time: "08:45 AM", isAI: false },
-    ]
-  },
-  {
-    id: "H-399",
-    title: "Patient batch 12 covariance anomaly mapping",
-    confidence: 91,
-    active: false,
-    comments: 1,
-    avatars: ["RV"],
-    tags: ["Covariance", "QC"],
-    version: 2,
-    lastEdited: "Yesterday",
-    annotations: [],
-    chatMessages: [
-      { id: 1, author: "RV", text: "Noticing a strong batch effect in the PCA plots for batch 12. Anyone else see this?", time: "Yesterday", isAI: false },
-      { id: 2, author: "AI", text: "Running QC diagnostics... Batch 12 samples show varying GC content bias. Suggested action: apply strict GC correction.", time: "Yesterday", isAI: true },
-    ]
-  },
-  {
-    id: "H-398",
-    title: "Novel SARS-CoV-2 spike protein mutation cluster analysis",
-    confidence: 73,
-    active: true,
-    comments: 5,
-    avatars: ["SK", "AI", "EH"],
-    tags: ["COVID-19", "Spike", "Phylogenetics"],
-    version: 6,
-    lastEdited: "4 hours ago",
-    annotations: ["S:E484K + S:N501Y co-occurrence in 12% of samples"],
-    chatMessages: [
-      { id: 1, author: "SK", text: "We have a new cluster showing E484K and N501Y co-occurrence.", time: "Yesterday", isAI: false },
-      { id: 2, author: "AI", text: "Structural modeling predicts enhanced ACE2 binding affinity by 2.3 kcal/mol.", time: "Yesterday", isAI: true },
-      { id: 3, author: "EH", text: "Are there any neutralizing assay results available for this lineage yet?", time: "4 hours ago", isAI: false },
-    ]
-  },
-];
+export const HYPOTHESES: Hypothesis[] = [];
 
 function minsAgo(m: number) { return Date.now() - m * 60_000; }
 
