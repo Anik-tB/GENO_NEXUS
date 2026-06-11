@@ -47,6 +47,18 @@ export async function POST(req: NextRequest) {
       RETURNING *
     `, [user.id, fileId || null, testName, price]);
 
+    // Notify Care Coordinators
+    await db.query(`
+      INSERT INTO user_notifications (user_id, title, message, type, link)
+      SELECT id, $1, $2, 'info', $3
+      FROM users
+      WHERE account_category = 'caregiver'
+    `, [
+      "New Test Booking",
+      `Patient ${user.firstName} ${user.lastName} has booked a ${testName}.`,
+      "/user/dashboard"
+    ]);
+
     return NextResponse.json({ success: true, booking: result.rows[0] });
 
   } catch (error: any) {
