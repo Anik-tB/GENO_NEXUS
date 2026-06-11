@@ -866,16 +866,20 @@ Format example:
         <div className={styles.emptyState}>
           <span className={styles.emptyIcon}>🧬</span>
           <h2 className={styles.emptyTitle}>
-            {error ? UI.errorTitle : UI.noResultsTitle}
+            {error && userRole !== 'patient' ? UI.errorTitle : UI.noResultsTitle}
           </h2>
-          <p className={styles.emptyDesc}>{error ?? UI.noResultsDesc}</p>
-          <Link
-            href="/user/upload-dna"
-            className={styles.btnPrimary}
-            id="results-upload-cta"
-          >
-            {UI.uploadBtn}
-          </Link>
+          <p className={styles.emptyDesc}>
+            {error && userRole !== 'patient' ? error : UI.noResultsDesc}
+          </p>
+          {userRole !== 'patient' && (
+            <Link
+              href="/user/upload-dna"
+              className={styles.btnPrimary}
+              id="results-upload-cta"
+            >
+              {UI.uploadBtn}
+            </Link>
+          )}
         </div>
       </div>
     );
