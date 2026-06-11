@@ -55,6 +55,18 @@ export async function POST(req: NextRequest) {
       "/user/dashboard"
     ]);
 
+    // Notify Care Coordinators
+    await db.query(`
+      INSERT INTO user_notifications (user_id, title, message, type, link)
+      SELECT id, $1, $2, 'info', $3
+      FROM users
+      WHERE account_category = 'caregiver'
+    `, [
+      "New Analysis Request",
+      `Patient ${user.firstName} ${user.lastName} requested ${analysisType} DNA Analysis.`,
+      "/user/dashboard"
+    ]);
+
     return NextResponse.json({ success: true, appointment: result.rows[0] });
 
   } catch (error: any) {
