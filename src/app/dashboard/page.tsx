@@ -180,7 +180,7 @@ export default function DashboardPage() {
       <div className={styles.summaryGrid}>
         {[
           {
-            label: "Total Bases Aligned",
+            label: stats?.analyzedNote === "sequences analyzed" ? "Sequences Analyzed" : "Total Bases Aligned",
             value: stats?.genesAnalyzed || "0",
             delta: "Live",
             deltaDir: "up",
