@@ -6,11 +6,15 @@ GenoNexus is a comprehensive, enterprise-grade bioinformatics and genomics platf
 
 ## 🌐 The Three-Portal Ecosystem
 
-To eliminate the fragmentation in modern healthcare, GenoNexus operates across three dedicated interfaces:
+GenoNexus operates across three dedicated interfaces, each tailored to a specific user role:
 
-1. **Researcher Portal (`/dashboard`)**: A powerful Command Center for scientists featuring AI-driven DNA analysis, 3D genome visualization, and real-time global collaboration.
-2. **Clinical & Caregiver Portal (`/dashboard` / ingestion routes)**: A streamlined interface for doctors and caregivers to seamlessly ingest patient genomic files and coordinate specialist referrals.
-3. **Patient Portal (`/user/dashboard`)**: A secure, intuitive dashboard empowering everyday users to easily understand their personal genetic health insights and track their results.
+| Portal | Route | Intended For |
+|:---|:---|:---|
+| **Researcher & Clinical Portal** | `/dashboard` | Scientists, Clinicians, Lab Staff — full access to AI analysis, collaboration, and all system tools |
+| **Patient Portal** | `/user/dashboard` | Patients & Caregivers — simplified, personal health-focused view of results and appointments |
+| **Public / Auth** | `/`, `/login`, `/register`, `/reset-password` | All visitors — marketing landing page and authentication flows |
+
+Role-based routing is enforced by `middleware.ts`, which protects both `/dashboard/*` and `/user/*` and redirects unauthenticated users to login.
 
 ---
 
@@ -26,19 +30,19 @@ The platform is architected around 15 cutting-edge capabilities divided into fou
 - **Non-Coding RNA Function Predictor**: Deep learning architecture for predicting ncRNA interactions and pathways.
 
 ### Group B: AI & Machine Learning
-- **AI Gene Chatbot**: An LLM-powered assistant (RAG-based) for interactive biomedical knowledge retrieval.
-- **Drug-Gene Interaction Predictor**: Graph Neural Network-based prediction of pharmacological responses based on genome profiles.
+- **AI Gene Chatbot (Genome Copilot)**: A Gemini 2.5 Flash-powered assistant for interactive biomedical knowledge retrieval, context-aware analysis summaries, and AI-generated clinical prevention plans.
+- **Pharmacogenomics Engine**: CPIC/FDA-guideline-based drug-gene interaction analysis. Maps detected variants to metabolic enzymes (CYP2C19, CYP2D6, etc.), flagging favorable drugs and contraindicated medications.
 - **Longitudinal Health Trajectory**: Time-series integration of EHR, wearable data, and DNA for personalized health tracking.
-- **Disease Outbreak Predictor**: Epidemic forecasting using global sequencing data streams and time-series ML models.
+- **Disease Outbreak Predictor**: Epidemic forecasting using global sequencing data streams (disease.sh, WHO GHO API) and a Python Random Forest ML microservice on port 8001.
 
 ### Group C: Visualization
-- **3D / VR Genome Browser**: Interactive WebGL-based visualization of complex genomic sequences and chromosomes.
+- **Chromosome Map Viewer (3D Genome Browser)**: An interactive WebGL-based chromosome visualizer built with a custom React canvas component (`GenomeBrowser`). Renders mutation pins across chromosome strands from real analysis data.
 - **Digital Cell Twin**: High-fidelity digital simulations of cellular responses and drug interactions.
 - **Phylogenetic Tree Builder**: Automated evolutionary tree inference from DNA sequences.
 - **Real-Time Virus Mutation Tracker**: Global interactive map tracking emerging viral mutations in real-time.
 
 ### Group D: Collaboration & Privacy
-- **Research Collaboration Hub**: A bioinformatics-focused "Command Center" merging repository functionality with active computational data streams.
+- **Research Collaboration Hub**: A real-time hub with a live Activity Stream, Hypothesis Board (with AI chat per hypothesis), and Pipeline Tracker — all powered by WebSocket broadcasts from the FastAPI engine.
 - **Drag & Drop Pipeline Builder**: No-code workflow orchestrator for non-programmers to build bioinformatics pipelines.
 - **Blockchain Data Sovereignty & ZKP**: Secure genomic data sharing leveraging Zero-Knowledge Proofs and immutable ledger audits.
 
@@ -50,12 +54,19 @@ The platform is architected around 15 cutting-edge capabilities divided into fou
 |:---|:---|
 | **Frontend** | Next.js 15 App Router, React 19, TypeScript |
 | **Styling** | Custom CSS token system — "Matte Dark / Liquid Glass" aesthetic |
-| **Authentication** | Next.js Middleware + Firebase Auth (SSO/OAuth) + PostgreSQL sessions |
-| **Database** | PostgreSQL via `pg` client, raw SQL schema |
+| **Authentication** | Next.js Middleware + Firebase Auth (Email/Password + Google OAuth) + PostgreSQL sessions |
+| **Database** | PostgreSQL via `pg` client, raw SQL schema (no ORM) |
 | **Validation** | Zod across all API endpoints |
-| **Python Engine** | FastAPI + Biopython + scikit-learn (Random Forest) |
-| **Alignment Algorithm** | Needleman-Wunsch Global Gapped Alignment |
+| **AI Copilot** | Google Gemini 2.5 Flash (`gemini-2.5-flash`) via Gemini API |
+| **Python Genomics Engine** | FastAPI + Biopython + scikit-learn (Random Forest) + WebSockets |
+| **Python Epidemiology Engine** | FastAPI + scikit-learn (Random Forest Regressor/Classifier) + Pydantic |
+| **Visualization Microservice** | Node.js + Express.js + WebSocket (`ws`) + Redis (`ioredis`) |
+| **Alignment Algorithm** | Needleman-Wunsch Global Gapped Alignment (via Biopython) |
 | **AI Severity Model** | Random Forest Classifier (scikit-learn) |
+| **Pharmacogenomics** | Built-in CPIC/FDA dataset in `src/lib/pharmacogenomics.ts` |
+| **Email / 2FA** | Nodemailer (SMTP) + otplib (TOTP) |
+| **Testing** | Jest + ts-jest + @testing-library/react |
+| **Containerization** | Docker + docker-compose (Visualization Service) |
 
 ---
 
@@ -89,6 +100,12 @@ Random Forest Classifier (per-mutation severity scoring)
        │
        ▼
 Enriched JSON → Next.js API → PostgreSQL → Analysis Dashboard
+       │
+       ▼
+Pharmacogenomics Engine (maps variants → drug interactions)
+       │
+       ▼
+Genome Copilot (Gemini) generates AI summary & prevention plans
 ```
 
 ### Supported Organisms (Auto-Detected)
@@ -128,53 +145,232 @@ Each detected mutation is scored by a **Random Forest Classifier** trained on bi
 
 ---
 
+## 🗺️ Disease Outbreak Predictor
+
+The Outbreak system is a full end-to-end forecasting pipeline with real data ingestion:
+
+1. **Real Data Sources**: Fetches live COVID-19 data from `disease.sh` and HIV prevalence data from the WHO GHO API
+2. **Caching Layer**: Forecasts are cached in the `outbreak_forecasts` PostgreSQL table for 1 hour to reduce API calls
+3. **Python ML Microservice**: The Next.js API route (`/api/outbreak`) calls the Epidemiology Engine on `http://127.0.0.1:8001/forecast` which runs a Random Forest Regressor on the time-series data to extrapolate future trends
+4. **Alert Stats**: The ML model also predicts R₀ (reproduction number), hotspot classification, and trend direction
+
+**Supported Pathogens**: COVID-19 (with real data), HIV (with WHO GHO data), Influenza Strain A (with synthetic baseline data)
+
+---
+
+## 💊 Pharmacogenomics Engine
+
+The Precision Prescribing Engine (`/dashboard/drugs`) maps your genomic variants to real drug-gene interactions:
+
+- **Source**: Based on CPIC (Clinical Pharmacogenomics Implementation Consortium) and FDA Pharmacogenomics guidelines
+- **Metabolic Enzymes Covered**: CYP2C19, CYP2D6, CYP3A5, TPMT, DPYD, SLCO1B1, VKORC1, G6PD, HLA-B, CFTR
+- **Output**: Favorable response drugs vs. contraindicated medications, each with CPIC level (A/B/C), FDA warning flag, and dosing guidance
+- **Print Support**: Generates a printable clinical pharmacogenomics report
+
+---
+
+## 🤖 Genome Copilot (AI Assistant)
+
+The Genome Copilot is a Gemini-powered AI assistant integrated throughout the platform:
+
+- **Context-Aware**: Reads from the user's most recent analysis results, uploads, and pipeline history before responding
+- **Dual-Mode**: Operates in `chat` mode (free-form conversation) and `prevention_plan` mode (structured JSON output for clinical plans)
+- **Role-Aware**: Patients receive bilingual (English + Bangla) simplified summaries; researchers receive technical analysis summaries
+- **Rate-Limited**: 24 requests per 60-second window per user
+- **Endpoint**: `GET /api/copilot` (initial greeting), `POST /api/copilot` (chat)
+
+---
+
+## 💬 Private Messaging System
+
+A full private chat system between users:
+- **Routes**: `/dashboard/chat/[userId]`
+- **API**: `/api/chat/history`, `/api/chat/presence`, `/api/chat/read`, `/api/chat/unread`, `/api/chat/files`
+- **Features**: File attachments, read receipts, real-time presence
+
+---
+
 ## 📁 Application Structure Map
 
 ```text
 GENO_NEXUS/
 ├── src/
-│   └── app/
-│       ├── (auth)/                  # Login, register, password reset
-│       ├── api/
-│       │   ├── files/               # File upload & listing routes
-│       │   ├── collaboration/       # Collaboration APIs (Pipelines, Stats, WebSockets, Hypotheses)
-│       │   └── analysis/
-│       │       ├── auto/            # Auto-pair latest query + reference
-│       │       ├── compare/         # Explicit file-pair comparison
-│       │       │   └── [id]/        # Poll comparison result by ID
-│       │       ├── history/         # Past analysis runs
-│       │       └── dismiss/[id]/    # Dismiss a failed analysis
-│       ├── dashboard/               # Researcher & Clinical Portal
-│       │   ├── analysis/            # AI mutation analysis dashboard
-│       │   ├── upload/              # Dual-source sequence upload station
-│       │   ├── collaboration/       # Research Collaboration Hub (Hypotheses, Activity Stream, Pipelines)
-│       │   ├── history/             # Dedicated Analysis History Page
-│       │   ├── drugs/               # Drug-Gene interaction predictions
-│       │   ├── outbreak/            # Epidemic & Viral trackers
-│       │   ├── predictions/         # ncRNA and Health Trajectories
-│       │   ├── processing/          # Pipeline executions
-│       │   ├── reports/             # Research readouts
-│       │   ├── visualization/       # 3D Genome Browsers
-│       │   └── profile/             # User & security settings
-│       └── user/                    # Patient Portal
-│           ├── dashboard/           # Personal Health Insights & Activity
-│           ├── results/             # Simplified genetic test results
-│           ├── upload-dna/          # Patient DNA submission (Caregiver use)
-│           └── specialists/         # Specialist care coordination
+│   ├── app/
+│   │   ├── (auth)/
+│   │   │   ├── login/
+│   │   │   ├── register/
+│   │   │   └── reset-password/
+│   │   │
+│   │   ├── api/
+│   │   │   ├── auth/                     # Sign-in, sign-up, session management
+│   │   │   ├── analysis/
+│   │   │   │   ├── auto/                 # Auto-pair latest query + reference
+│   │   │   │   ├── compare/              # Explicit file-pair comparison
+│   │   │   │   │   └── [id]/             # Poll comparison result by ID
+│   │   │   │   ├── history/              # Past analysis runs
+│   │   │   │   └── dismiss/[id]/         # Dismiss a failed analysis
+│   │   │   ├── chat/
+│   │   │   │   ├── files/                # File attachments in chat
+│   │   │   │   ├── history/              # Chat history
+│   │   │   │   ├── presence/             # Online presence
+│   │   │   │   ├── read/                 # Mark as read
+│   │   │   │   └── unread/               # Unread count
+│   │   │   ├── collaboration/
+│   │   │   │   ├── alerts/               # Collab alerts CRUD
+│   │   │   │   ├── hypotheses/           # Hypotheses board CRUD
+│   │   │   │   ├── invite/               # Invite collaborators
+│   │   │   │   ├── pipelines/            # Pipeline runs management
+│   │   │   │   └── stats/                # Collaboration statistics
+│   │   │   ├── copilot/
+│   │   │   │   ├── route.ts              # Gemini AI chat & prevention plans
+│   │   │   │   └── pharmacogenomics/     # CPIC/FDA drug-gene profiles
+│   │   │   ├── dashboard/                # Dashboard KPI stats
+│   │   │   ├── files/                    # File upload & listing
+│   │   │   ├── notifications/            # User notifications
+│   │   │   ├── outbreak/                 # Epidemic forecasting (→ port 8001)
+│   │   │   ├── patients/                 # Patient management (caregivers)
+│   │   │   ├── predictions/              # AI disease risk predictions
+│   │   │   ├── profile/                  # User profile CRUD
+│   │   │   ├── reports/                  # Report generation & management
+│   │   │   ├── search/                   # Global search
+│   │   │   ├── settings/                 # User settings
+│   │   │   ├── specialist-referrals/     # Referral coordination
+│   │   │   ├── user/                     # User info APIs
+│   │   │   ├── users/                    # Admin user management
+│   │   │   └── visualization/            # Chromosome visualization data
+│   │   │
+│   │   ├── dashboard/                    # Researcher & Clinical Portal
+│   │   │   ├── analysis/                 # AI mutation analysis dashboard
+│   │   │   ├── chat/                     # Private messaging
+│   │   │   │   └── [userId]/             # Individual conversation
+│   │   │   ├── collaboration/            # Research Collaboration Hub
+│   │   │   ├── drugs/                    # Pharmacogenomics prescribing engine
+│   │   │   ├── history/                  # Analysis history
+│   │   │   ├── org/                      # Organization management
+│   │   │   ├── outbreak/                 # Epidemic & viral trackers
+│   │   │   ├── predictions/              # AI disease predictions + Copilot plans
+│   │   │   ├── processing/               # Pipeline execution viewer
+│   │   │   ├── profile/                  # User profile & security settings
+│   │   │   ├── reports/                  # Clinical report center
+│   │   │   ├── settings/                 # Account settings
+│   │   │   ├── upload/                   # Dual-source sequence upload station
+│   │   │   └── visualization/            # Chromosome Map Viewer
+│   │   │
+│   │   └── user/                         # Patient Portal
+│   │       ├── dashboard/                # Personal health insights & activity
+│   │       ├── history/                  # Patient analysis history
+│   │       ├── profile/                  # Patient profile
+│   │       ├── reports/                  # Simplified genetic test reports
+│   │       ├── results/                  # Test results view
+│   │       ├── specialists/              # Specialist care coordination
+│   │       └── upload-dna/               # Patient DNA submission (Caregiver use)
+│   │
+│   ├── components/
+│   │   ├── auth/                         # Auth forms & guards
+│   │   ├── dashboard/                    # Researcher dashboard components
+│   │   ├── error/                        # Error boundary components
+│   │   ├── marketing/                    # Landing page components
+│   │   ├── user/                         # Patient portal components
+│   │   └── visualization/
+│   │       └── GenomeBrowser.tsx         # WebGL chromosome canvas renderer
+│   │
+│   ├── hooks/                            # Custom React hooks
+│   │
+│   └── lib/
+│       ├── auth/                         # Session management, portal guards
+│       ├── copilot/                      # Gemini API client, context builder, greeting logic
+│       ├── db.ts                         # PostgreSQL Pool singleton
+│       ├── env.ts                        # Environment variable validation
+│       ├── error/                        # Error handling utilities
+│       ├── firebase/                     # Firebase client & admin config
+│       ├── pharmacogenomics.ts           # Full CPIC/FDA pharmacogenomics dataset (53KB)
+│       ├── scripts/                      # One-off utility scripts
+│       ├── security/                     # CSRF, rate-limiting, audit logging
+│       └── validation/                   # Zod schemas
 │
 ├── microservices/
-│   └── genomics_engine/
-│       ├── main.py                  # FastAPI v2 engine with WebSocket Collaboration broadcasting
-│       ├── virus_classifier.py      # Random Forest severity classifier module
-│       └── requirements.txt         # Python dependencies
+│   ├── genomics_engine/                  # Python / FastAPI — Core Genomics
+│   │   ├── main.py                       # FastAPI app with all bioinformatics endpoints + WebSocket
+│   │   ├── virus_classifier.py           # Random Forest severity classifier module
+│   │   ├── canrisk_client.py             # CanRisk/BOADICEA oncology risk API integration
+│   │   └── requirements.txt
+│   │
+│   ├── epidemiology/                     # Python / FastAPI — Outbreak Prediction (Port 8001)
+│   │   ├── main.py                       # ML-based epidemic forecasting (RF Regressor/Classifier)
+│   │   └── requirements.txt
+│   │
+│   └── visualization_service/            # Node.js / Express — Visualization Backend
+│       ├── src/                          # TypeScript Express app
+│       ├── Dockerfile
+│       ├── docker-compose.yml
+│       └── package.json
 │
-└── database/
-    ├── schema.sql                   # Core PostgreSQL schema
-    └── migrations/
-        ├── 001_create_notifications.sql
-        ├── 002_genomics_engine_v2.sql   # reference_genomes, known_mutations + comparison_results v2
-        └── collab_schema.sql            # WebSockets, Collaboration, Hypotheses, Pipeline Runs
+├── database/
+│   └── migrations/
+│       ├── schema.sql                    # Core schema: users, sessions, dna_files, comparison_results, etc.
+│       ├── genomics_engine_v2.sql        # reference_genomes + known_mutations + 10 organisms seeded
+│       ├── collab_schema.sql             # hypotheses, collab_alerts, pipeline_runs, hypothesis_messages
+│       ├── outbreak_forecasts.sql        # outbreak_forecasts cache table
+│       ├── private_chat.sql              # private_messages table
+│       ├── patient_metadata.sql          # patient_metadata JSONB column on dna_files
+│       ├── profile_settings.sql          # user profile columns + user_settings table
+│       ├── create_notifications.sql      # user_notifications table
+│       └── view.sql                      # vw_geno_nexus_matrix: 9-CTE analytics view
+│
+├── __tests__/                            # Jest test suites
+├── middleware.ts                         # Route guards & security headers (CSP, HSTS, XSS)
+├── .env.example                          # Template for all required environment variables
+└── guideline.md                          # Machine setup guide for new installs
 ```
+
+---
+
+## 🗄️ Database Schema Overview
+
+### Core Tables (schema.sql)
+| Table | Purpose |
+|:---|:---|
+| `users` | Registered accounts with roles: `patient`, `caregiver`, `clinician`, `researcher`, `lab_staff`, `other`. Includes 2FA fields. |
+| `sessions` | Secure session tokens with IP address and user agent tracking |
+| `password_reset_tokens` | Time-limited password reset flow |
+| `verification_tokens` | Email verification tokens |
+| `rate_limit_attempts` | Brute-force protection for login/register/password_reset |
+| `csrf_tokens` | CSRF token storage |
+| `audit_logs` | Compliance event logging (user actions, IPs, event types) |
+| `dna_files` | All uploaded / linked genomic files, with optional `patient_metadata` JSONB |
+| `comparison_results` | Analysis results with mutations, indels, organism, alignment score |
+| `reports` | Clinical reports linked to comparison results |
+| `hypotheses` | Interactive hypothesis board with confidence scores and AI chat |
+| `hypothesis_messages` | Per-hypothesis threaded messages (researcher + AI) |
+| `test_bookings` | Clinical test booking records for patients |
+| `appointments` | Doctor appointment scheduling |
+| `dna_appointments` | Patient DNA appointment requests |
+| `specialist_referrals` | Caregiver-to-specialist referral coordination |
+
+### Genomics Engine v2 Tables (genomics_engine_v2.sql)
+| Table | Purpose |
+|:---|:---|
+| `reference_genomes` | 10 seeded viral reference genomes with NCBI accessions and gene maps |
+| `known_mutations` | HIVDB / ClinVar known high-severity mutation catalog |
+
+### Collaboration Tables (collab_schema.sql)
+| Table | Purpose |
+|:---|:---|
+| `collab_alerts` | Real-time global alerts (critical/warning/info) for the research network |
+| `pipeline_runs` | Logs of all genomic analysis pipelines with stages, logs, and progress |
+
+### Additional Migrations
+| Table | Purpose |
+|:---|:---|
+| `outbreak_forecasts` | Cached ML epidemic forecasts (region × pathogen × horizon, 1-hour TTL) |
+| `private_messages` | Direct peer-to-peer messages with file attachment support |
+| `user_settings` | Per-user settings: notifications, auto-analysis, theme, data-sharing |
+| `user_notifications` | System-generated notification feed |
+
+### Analytics View
+| View | Purpose |
+|:---|:---|
+| `vw_geno_nexus_matrix` | 9-CTE comprehensive analytics matrix joining user activity, storage, pipelines, collaboration, genomic results, alerts, chat, notifications, sessions, and outbreak forecasts |
 
 ---
 
@@ -183,20 +379,43 @@ GENO_NEXUS/
 ### Prerequisites
 - Node.js 18+
 - Python 3.10+
-- PostgreSQL 14+
+- PostgreSQL 18 (also compatible with 14+)
 
 ---
 
 ### 1. Environment Configuration
+
 Copy `.env.example` to `.env.local` and configure:
 ```env
-# PostgreSQL connection
-DATABASE_URL=postgresql://<username>:<password>@localhost:5432/genonexus
+NEXT_PUBLIC_APP_URL=http://localhost:3000
 
-# Firebase (required for Google/GitHub OAuth)
+# PostgreSQL connection
+DATABASE_URL=postgresql://postgres:YOUR_PASSWORD@localhost:5432/genonexus
+SESSION_COOKIE_NAME=geno_session
+
+# Genome Copilot — Required for AI Chatbot & Prevention Plans
+GEMINI_API_KEY=your_gemini_api_key
+GEMINI_MODEL=gemini-2.5-flash
+
+# Firebase (required for Google OAuth)
 NEXT_PUBLIC_FIREBASE_API_KEY=...
-# ... (all other Firebase keys from .env.example)
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=...
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=...
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=...
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=...
+NEXT_PUBLIC_FIREBASE_APP_ID=...
+
+# Firebase Admin SDK (required for server-side token verification)
+FIREBASE_PROJECT_ID=...
+FIREBASE_CLIENT_EMAIL=...
+FIREBASE_PRIVATE_KEY=...
+
+# Optional: GitHub OAuth
+GITHUB_CLIENT_ID=...
+GITHUB_CLIENT_SECRET=...
 ```
+
+> **Tip**: `DATABASE_URL` defaults to `postgresql://geno:geno@localhost:5432/genonexus` in the example. Update with your actual credentials.
 
 ---
 
@@ -204,17 +423,28 @@ NEXT_PUBLIC_FIREBASE_API_KEY=...
 
 **Step 1 — Create the database:**
 ```sql
-CREATE DATABASE genonexus;
+psql -U postgres -c "CREATE DATABASE genonexus;"
 ```
 
-**Step 2 — Apply the base schema:**
+**Step 2 — Apply the base schema** (creates all core tables, security tables, and genomic data tables):
 ```bash
-psql -U your_postgres_username -d genonexus -f database/schema.sql
+psql -U postgres -d genonexus -f database/migrations/schema.sql
 ```
 
-**Step 3 — Apply the v2 genomics engine migration** (adds `reference_genomes`, `known_mutations` tables and seeds 10 reference genomes + HIVDB mutations):
+**Step 3 — Apply the Genomics Engine v2 migration** (seeds 10 reference genomes + HIVDB/ClinVar mutations):
 ```bash
-psql -U your_postgres_username -d genonexus -f database/migrations/002_genomics_engine_v2.sql
+psql -U postgres -d genonexus -f database/migrations/genomics_engine_v2.sql
+```
+
+**Step 4 — Apply all remaining migrations** (collaboration, outbreak, chat, profile, notifications, analytics view):
+```bash
+psql -U postgres -d genonexus -f database/migrations/collab_schema.sql
+psql -U postgres -d genonexus -f database/migrations/outbreak_forecasts.sql
+psql -U postgres -d genonexus -f database/migrations/private_chat.sql
+psql -U postgres -d genonexus -f database/migrations/patient_metadata.sql
+psql -U postgres -d genonexus -f database/migrations/profile_settings.sql
+psql -U postgres -d genonexus -f database/migrations/create_notifications.sql
+psql -U postgres -d genonexus -f database/migrations/view.sql
 ```
 
 ---
@@ -230,7 +460,7 @@ Frontend live at: **`http://localhost:3000`**
 
 ---
 
-### 4. Install & Run the Python Genomics Microservice
+### 4. Install & Run the Python Genomics Microservice (Port 8000)
 
 Open a **second terminal**:
 
@@ -241,7 +471,7 @@ cd microservices/genomics_engine
 Install dependencies (**use `python -m pip`** instead of `pip` if your system has Application Control policies):
 ```bash
 python -m pip install biopython scikit-learn numpy psycopg2-binary --prefer-binary
-python -m pip install fastapi==0.103.2 uvicorn==0.23.2 requests==2.31.0
+python -m pip install fastapi==0.103.2 uvicorn==0.23.2 requests==2.31.0 websockets
 ```
 
 Start the engine:
@@ -249,21 +479,47 @@ Start the engine:
 python -m uvicorn main:app --reload --port 8000
 ```
 
-Engine live at: **`http://localhost:8000`**  
+Engine live at: **`http://localhost:8000`**
 Swagger docs at: **`http://localhost:8000/docs`**
 
 > **Health check:** `GET http://localhost:8000/health` → `{"status": "ok", "version": "2.0.0"}`
 
 ---
 
-### 5. Running Both Services Together
+### 5. Install & Run the Python Epidemiology Microservice (Port 8001)
 
-You need **2 terminals running simultaneously**:
+Open a **third terminal**:
 
-| Terminal | Command | URL |
-|:---|:---|:---|
-| **Terminal 1** (Python) | `python -m uvicorn main:app --reload --port 8000` | `http://localhost:8000` |
-| **Terminal 2** (Next.js) | `npm run dev` | `http://localhost:3000` |
+```bash
+cd microservices/epidemiology
+```
+
+```bash
+python -m pip install fastapi uvicorn pydantic scikit-learn numpy python-dotenv
+```
+
+Start the engine:
+```bash
+python -m uvicorn main:app --reload --port 8001
+```
+
+Epidemiology engine live at: **`http://localhost:8001`**
+
+> The Next.js outbreak API (`/api/outbreak`) calls this service at `http://127.0.0.1:8001/forecast`. If this service is offline, the dashboard will display `ML SERVER OFFLINE` in the alert stats.
+
+---
+
+### 6. Running All Services Together
+
+You need **3 terminals running simultaneously**:
+
+| Terminal | Service | Command | URL |
+|:---|:---|:---|:---|
+| **Terminal 1** | Next.js Frontend | `npm run dev` | `http://localhost:3000` |
+| **Terminal 2** | Genomics Engine | `cd microservices/genomics_engine && python -m uvicorn main:app --reload --port 8000` | `http://localhost:8000` |
+| **Terminal 3** | Epidemiology Engine | `cd microservices/epidemiology && python -m uvicorn main:app --reload --port 8001` | `http://localhost:8001` |
+
+> The Visualization Service (`microservices/visualization_service`) is optional and can be started with Docker: `npm run docker:up` from that directory.
 
 ---
 
@@ -282,6 +538,8 @@ You need **2 terminals running simultaneously**:
    - Insertions/Deletions are listed in the **Indels tab**
    - A **Drug Resistance** counter highlights known resistance sites (HIVDB/ClinVar)
    - A **Chromosome Heatmap** shows mutation density across the genome
+7. Navigate to **Predictions** to view AI-generated disease risk scores and generate clinical prevention plans via the Genome Copilot
+8. Navigate to **Drugs** to view your personalized pharmacogenomics prescribing profile
 
 ---
 
@@ -289,7 +547,7 @@ You need **2 terminals running simultaneously**:
 
 Connect to the database:
 ```bash
-psql -U your_postgres_username -d genonexus
+psql -U postgres -d genonexus
 ```
 
 ### Useful Queries
@@ -307,6 +565,13 @@ SELECT organism, ncbi_accession, genome_length FROM reference_genomes;
 -- View known high-severity mutation seeds
 SELECT organism, position, reference_base, query_base, severity, drug_resistance, source
 FROM known_mutations WHERE severity = 'high';
+
+-- View cached outbreak forecasts
+SELECT region, pathogen, horizon, created_at FROM outbreak_forecasts ORDER BY created_at DESC;
+
+-- Query the comprehensive analytics matrix
+SELECT full_name, account_category, total_dna_files, last_detected_pathogen, security_status
+FROM vw_geno_nexus_matrix;
 ```
 
 ### Essential psql Commands
@@ -314,26 +579,8 @@ FROM known_mutations WHERE severity = 'high';
 |:---|:---|
 | `\dt` | List all tables |
 | `\d table_name` | Inspect columns and types |
+| `\dv` | List all views |
 | `\q` | Exit psql |
-
----
-
-## 🗄️ Database Schema Overview
-
-| Table | Purpose |
-|:---|:---|
-| `users` | Registered accounts with roles (Patient, Caregiver, Clinician, Researcher) |
-| `sessions` | Secure session tokens |
-| `dna_files` | All uploaded / linked genomic files |
-| `comparison_results` | Analysis results with mutations, indels, organism, AI metadata |
-| `reference_genomes` | Seeded viral reference genome library with gene maps |
-| `known_mutations` | HIVDB / ClinVar known high-severity mutation catalog |
-| `collab_alerts` | Real-time global alerts for the research network |
-| `pipeline_runs` | Logs of all genomic analysis pipelines and their execution status |
-| `hypotheses` | Interactive hypothesis board for researchers to track hunches |
-| `audit_logs` | Compliance event logging |
-| `rate_limit_attempts` | Brute-force protection |
-| `csrf_tokens` | CSRF token storage |
 
 ---
 
@@ -343,23 +590,90 @@ The `dashboard/collaboration` interface is powered by a real-time WebSocket conn
 
 Features include:
 1. **Live Activity Stream:** See file uploads, pipeline executions, and AI alerts exactly when they happen.
-2. **Hypothesis Board:** Track active scientific hunches, link them to specific genes or mutations, and update their confidence levels dynamically.
-3. **Pipeline Engine Tracker:** Watch the background processing of your genome analysis tools in real-time.
+2. **Hypothesis Board:** Track active scientific hunches, link them to specific genes or mutations, and update their confidence levels dynamically. Each hypothesis has its own AI-powered chat thread.
+3. **Pipeline Engine Tracker:** Watch the background processing of your genome analysis tools in real-time with per-stage progress.
 4. **Historical Analytics:** Dedicated History pages with dynamic metrics derived from database analytics.
 
 ---
 
 ## 📦 Python Dependencies
 
+### Genomics Engine (`microservices/genomics_engine/requirements.txt`)
 | Package | Purpose |
 |:---|:---|
-| `fastapi` | Web framework for the microservice |
-| `uvicorn` | ASGI server |
+| `fastapi==0.103.2` | Web framework for the microservice |
+| `uvicorn[standard]==0.23.2` | ASGI server |
 | `biopython` | FASTA/FASTQ parsing + Needleman-Wunsch alignment |
 | `scikit-learn` | Random Forest severity classifier |
 | `numpy` | Numerical feature computation |
 | `psycopg2-binary` | PostgreSQL access from the Python engine |
-| `requests` | NCBI eUtils API fetching |
+| `requests==2.31.0` | NCBI eUtils API fetching |
+| `websockets` | WebSocket support for real-time collaboration broadcasts |
+| `pytest`, `pytest-asyncio`, `httpx` | Testing |
+
+### Epidemiology Engine (`microservices/epidemiology/requirements.txt`)
+| Package | Purpose |
+|:---|:---|
+| `fastapi`, `uvicorn` | Web framework & ASGI server |
+| `pydantic` | Request/response data validation |
+| `scikit-learn` | Random Forest Regressor (time-series forecasting) + Classifier (hotspot detection) |
+| `numpy` | Feature computation |
+| `python-dotenv` | Environment variable loading |
+| `gunicorn` | Production WSGI server |
+
+---
+
+## 🔐 Security Architecture
+
+The platform implements a multi-layered security model:
+
+1. **Next.js Middleware** (`middleware.ts`): Applies security headers on every response:
+   - `X-Frame-Options: DENY` — clickjacking prevention
+   - `X-Content-Type-Options: nosniff` — MIME sniffing prevention
+   - `X-XSS-Protection: 1; mode=block` — legacy XSS filter
+   - `Content-Security-Policy` — restricts sources to `self`, Firebase Auth, and Google APIs
+   - `Strict-Transport-Security` — HSTS in production
+   - `Permissions-Policy` — disables geolocation, microphone, camera
+
+2. **Session Security**: Hashed session tokens in PostgreSQL with IP address and user agent tracking. Sessions expire automatically.
+
+3. **Rate Limiting**: DB-level rate limiting table (`rate_limit_attempts`) for login, register, and password reset flows. In-memory rate limiting for the Copilot AI (24 req/min per user).
+
+4. **Two-Factor Authentication**: TOTP-based 2FA via `otplib`, with backup codes stored in the database.
+
+5. **CSRF Protection**: Token-based CSRF protection via the `csrf_tokens` table.
+
+6. **Audit Logging**: All security-relevant events are logged to `audit_logs` with IP, user agent, and event type.
+
+---
+
+## 🧪 Running Tests
+
+```bash
+# Run all tests
+npm run test
+
+# Run with coverage (if configured)
+npm run test -- --coverage
+```
+
+Tests are located in `__tests__/` and use Jest + ts-jest + @testing-library/react.
+
+Python microservice tests are located in `microservices/genomics_engine/tests/` and `microservices/epidemiology/tests/` and use `pytest` + `pytest-asyncio`.
+
+---
+
+## 🔧 Troubleshooting
+
+| Problem | Solution |
+|:---|:---|
+| **Database Connection Error** | Ensure `DATABASE_URL` in `.env.local` has the correct password. Default format: `postgresql://postgres:YOUR_PASSWORD@localhost:5432/genonexus` |
+| **`psql` is not recognized** | Add PostgreSQL `bin` folder to PATH (e.g., `C:\Program Files\PostgreSQL\18\bin`) |
+| **Port 3000 is in use** | Next.js will prompt to use 3001. Type `y` to accept |
+| **Outbreak shows `ML SERVER OFFLINE`** | Ensure the Epidemiology Engine is running on port 8001 |
+| **Copilot not responding** | Ensure `GEMINI_API_KEY` is set in `.env.local` |
+| **Analysis fails immediately** | Ensure the Genomics Engine (FastAPI) is running on port 8000 |
+| **Firebase OAuth not working** | Ensure all `NEXT_PUBLIC_FIREBASE_*` and `FIREBASE_*` keys are set in `.env.local` |
 
 ---
 

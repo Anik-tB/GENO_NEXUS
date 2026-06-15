@@ -30,11 +30,9 @@ export async function GET(req: NextRequest) {
     const pathogen = searchParams.get("pathogen") || "Influenza Strain A";
     const horizon = searchParams.get("horizon") || "1 Year";
 
-    // Temporarily disable DB
-    // const db = assertDatabase();
+    const db = assertDatabase();
 
     // Check if we have a recent forecast in the DB (cached for 1 hour)
-    /*
     const cachedResult = await db.query(
       `SELECT * FROM outbreak_forecasts 
        WHERE region = $1 AND pathogen = $2 AND horizon = $3 
@@ -42,10 +40,7 @@ export async function GET(req: NextRequest) {
        ORDER BY created_at DESC LIMIT 1`,
       [region, pathogen, horizon]
     );
-    */
 
-    // Temporarily disable cache to force fetching from the new ML model
-    /*
     if (cachedResult.rows.length > 0) {
       return NextResponse.json({
         success: true,
@@ -57,7 +52,6 @@ export async function GET(req: NextRequest) {
         cached: true,
       });
     }
-    */
 
     // 1. Fetch real historical data
     let historicalPoints = Array.from({ length: 24 }, (_, i) => 12 + i * 2 + Math.floor(Math.random() * 5)); // Fallback mock data
@@ -188,8 +182,7 @@ export async function GET(req: NextRequest) {
       alert_stats: alertStats
     };
 
-    // Temporarily disable DB insert
-    /*
+    // Save to cache
     await db.query(
       `INSERT INTO outbreak_forecasts (region, pathogen, horizon, historical_points, future_points, alert_stats)
        VALUES ($1, $2, $3, $4, $5, $6)`,
@@ -202,7 +195,6 @@ export async function GET(req: NextRequest) {
         JSON.stringify(forecastData.alert_stats)
       ]
     );
-    */
 
     return NextResponse.json({
       success: true,

@@ -13,7 +13,7 @@ FastAPI microservice that performs:
 """
 
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 import requests
 import os
 import io
@@ -522,6 +522,14 @@ class CompareRequest(BaseModel):
     reference_url: Optional[str] = None
     reference_path: Optional[str] = None
     reference_sequence: Optional[str] = None
+
+    @model_validator(mode="after")
+    def validate_inputs(self) -> 'CompareRequest':
+        if not (self.query_path or self.query_url or self.query_sequence):
+            raise ValueError("Provide at least one query source: query_sequence, query_url, or query_path")
+        if not (self.reference_path or self.reference_url or self.reference_sequence):
+            raise ValueError("Provide at least one reference source: reference_sequence, reference_url, or reference_path")
+        return self
 
 class PredictDiseaseRequest(BaseModel):
     mutations: list[dict]

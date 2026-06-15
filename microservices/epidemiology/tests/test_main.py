@@ -4,25 +4,25 @@ import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from fastapi.testclient import TestClient
-from main import app, double_exponential_smoothing
+from main import app, generate_forecast_ml
 
 client = TestClient(app)
 
-def test_double_exponential_smoothing():
-    # Linear series: 10, 20, 30... Next should be 40, 50
-    series = [10.0, 20.0, 30.0]
-    result = double_exponential_smoothing(series, alpha=0.9, beta=0.9, n_preds=2)
-    
-    # Due to smoothing it might not be exactly 40, 50, but it should be close
-    # and definitively > 30 and increasing
-    assert len(result) == 2
-    assert result[0] >= 30
-    assert result[1] > result[0]
+def test_generate_forecast_ml_short():
+    # If len < 4, it repeats the last element (or returns 0 if empty)
+    assert generate_forecast_ml([10.0, 20.0, 30.0], 2) == [30, 30]
+    assert generate_forecast_ml([10.0], 3) == [10, 10, 10]
+    assert generate_forecast_ml([], 2) == [0, 0]
 
-def test_double_exponential_smoothing_short():
-    # If len < 2, it just returns the last element repeated
-    assert double_exponential_smoothing([10.0], 0.5, 0.5, 3) == [10, 10, 10]
-    assert double_exponential_smoothing([], 0.5, 0.5, 2) == [0, 0]
+def test_generate_forecast_ml_long():
+    # A linear-ish series with at least 4 elements
+    series = [10.0, 20.0, 30.0, 40.0, 50.0, 60.0]
+    result = generate_forecast_ml(series, n_preds=3)
+    assert len(result) == 3
+    # Check that predictions are sensible (should be integers and non-negative)
+    for val in result:
+        assert isinstance(val, int)
+        assert val >= 0
 
 def test_forecast_endpoint():
     response = client.post("/forecast", json={
@@ -34,4 +34,4 @@ def test_forecast_endpoint():
     data = response.json()
     assert "future_points" in data
     assert len(data["future_points"]) == 3
-    assert data["future_points"][0] > 0
+    assert data["future_points"] == [30, 30, 30]
