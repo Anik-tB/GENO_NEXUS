@@ -1,6 +1,7 @@
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
-from typing import List, Tuple, Union
+from typing import List, Tuple, Union, Optional
+from esm_predictor import ESMPredictor
 
 # ---------------------------------------------------------------------------
 # AI Severity Model Initialization
@@ -52,9 +53,10 @@ def _create_synthetic_model():
     clf.fit(np.array(X), np.array(y))
     return clf
 
-# Singleton model instance
+# Singleton model and ESM-2 instances
 _MODEL = _create_synthetic_model()
 _LABEL_MAP = {0: "low", 1: "medium", 2: "high"}
+ESM_PREDICTOR = ESMPredictor()
 
 def predict_severity(features: Tuple[bool, bool, float, int, bool, bool]) -> Tuple[str, float]:
     """
@@ -65,6 +67,38 @@ def predict_severity(features: Tuple[bool, bool, float, int, bool, bool]) -> Tup
     probs = _MODEL.predict_proba(feat_arr)[0]
     pred_idx = np.argmax(probs)
     
+    return _LABEL_MAP[pred_idx], float(probs[pred_idx])
+
+def predict_severity_with_esm(
+    features: Tuple[bool, bool, float, int, bool, bool], 
+    esm_score: Optional[float] = None
+) -> Tuple[str, float]:
+    """
+    Hybrid scoring combining sequence Random Forest features with ESM-2 zero-shot scores.
+    """
+    feat_arr = np.array([features]).astype(float)
+    probs = _MODEL.predict_proba(feat_arr)[0].copy() # Copy to avoid editing shared array
+    
+    if esm_score is not None:
+        # ESM score represents log P(mutant) - log P(wildtype).
+        # Typically runs from 0.0 (benign) down to -15.0+ (highly pathogenic).
+        # We map it to a probability shift to increase High/Pathogenic probability if negative.
+        esm_high_shift = 1.0 / (1.0 + np.exp((esm_score + 3.5) / 1.0))
+        
+        # Adjust probabilities: increase High/Pathogenic probability
+        probs[2] = probs[2] * (1.0 - esm_high_shift) + esm_high_shift
+        
+        # Redistribute the remaining probability to Low and Medium
+        sum_low_med = probs[0] + probs[1]
+        if sum_low_med > 0:
+            scale = (1.0 - probs[2]) / sum_low_med
+            probs[0] *= scale
+            probs[1] *= scale
+        else:
+            probs[0] = (1.0 - probs[2]) / 2.0
+            probs[1] = (1.0 - probs[2]) / 2.0
+            
+    pred_idx = np.argmax(probs)
     return _LABEL_MAP[pred_idx], float(probs[pred_idx])
 
 def predict_severity_batch(features_list: List[Tuple[bool, bool, float, int, bool, bool]]) -> List[Tuple[str, float]]:
@@ -84,3 +118,4 @@ def predict_severity_batch(features_list: List[Tuple[bool, bool, float, int, boo
         results.append((_LABEL_MAP[pred_idx], float(probs[pred_idx])))
         
     return results
+

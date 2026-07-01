@@ -40,14 +40,25 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ mutations: [] });
     }
 
-    const raw: Array<{ position: number; reference: string; query: string }> =
-      result.rows[0].mutations_found || [];
+    const raw: any[] = result.rows[0].mutations_found || [];
 
-    const mutations = raw.map((m) => ({
-      ...m,
-      severity: classify(m.reference, m.query),
-      sub: `${m.reference}>${m.query}`,
-    }));
+    const mutations = raw.map((m: any) => {
+      let severity: "pathogenic" | "uncertain" | "benign" = "uncertain";
+      if (m.severity === "high" || m.severity === "pathogenic") {
+        severity = "pathogenic";
+      } else if (m.severity === "low" || m.severity === "benign") {
+        severity = "benign";
+      } else if (m.severity === "medium" || m.severity === "uncertain") {
+        severity = "uncertain";
+      } else {
+        severity = classify(m.reference, m.query);
+      }
+      return {
+        ...m,
+        severity,
+        sub: `${m.reference}>${m.query}`,
+      };
+    });
 
     return NextResponse.json({
       mutations,

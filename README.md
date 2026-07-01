@@ -25,24 +25,24 @@ The platform is architected around 15 cutting-edge capabilities divided into fou
 ### Group A: Genomics & Core Analysis
 - **Multi-Format DNA Analyzer**: Process diverse genomic data (FASTA, FASTQ, VCF, BAM) using state-of-the-art bioinformatics algorithms.
 - **Dual-Source Reference Input**: Provide reference sequences via **NCBI URL** *or* **local file upload** — the system handles both seamlessly.
-- **Variant Pathogenicity Predictor**: AI-driven classification of genetic variants and their disease implications.
+- **Multi-Omics Variant Enricher**: Connects variants to live **NCBI ClinVar** (accessions, review stars, phenotypes) and **EBI AlphaFold DB** (3D coordinate models).
 - **CRISPR Target Designer**: Precision AI tool for designing guide RNAs and predicting off-target effects.
 - **Non-Coding RNA Function Predictor**: Deep learning architecture for predicting ncRNA interactions and pathways.
 
 ### Group B: AI & Machine Learning
 - **AI Gene Chatbot (Genome Copilot)**: A Gemini 2.5 Flash-powered assistant for interactive biomedical knowledge retrieval, context-aware analysis summaries, and AI-generated clinical prevention plans.
-- **Pharmacogenomics Engine**: CPIC/FDA-guideline-based drug-gene interaction analysis. Maps detected variants to metabolic enzymes (CYP2C19, CYP2D6, etc.), flagging favorable drugs and contraindicated medications.
+- **Hybrid ESM-2 Pathogenicity Predictor**: Combines local sequence-level Random Forest features with zero-shot transformer log-likelihoods from **ESM-2** (Hugging Face Serverless Inference API + local CPU fallback) to score variant severity.
 - **Longitudinal Health Trajectory**: Time-series integration of EHR, wearable data, and DNA for personalized health tracking.
-- **Disease Outbreak Predictor**: Epidemic forecasting using global sequencing data streams (disease.sh, WHO GHO API) and a Python Random Forest ML microservice on port 8001.
+- **Spatio-Temporal Outbreak Predictor**: Epidemic forecasting using a **STAR (Spatio-Temporal Autoregressive)** RandomForest regression model trained on dynamic WHO GHO and disease.sh historical endpoints.
 
 ### Group C: Visualization
-- **Chromosome Map Viewer (3D Genome Browser)**: An interactive WebGL-based chromosome visualizer built with a custom React canvas component (`GenomeBrowser`). Renders mutation pins across chromosome strands from real analysis data.
+- **3D Chromosome Map Viewer**: An interactive WebGL-based chromosome visualizer built with a custom React canvas component (`GenomeBrowser`). Renders mutation pins enriched with ClinVar annotations and AlphaFold 3D PDB download links.
 - **Digital Cell Twin**: High-fidelity digital simulations of cellular responses and drug interactions.
 - **Phylogenetic Tree Builder**: Automated evolutionary tree inference from DNA sequences.
 - **Real-Time Virus Mutation Tracker**: Global interactive map tracking emerging viral mutations in real-time.
 
 ### Group D: Collaboration & Privacy
-- **Research Collaboration Hub**: A real-time hub with a live Activity Stream, Hypothesis Board (with AI chat per hypothesis), and Pipeline Tracker — all powered by WebSocket broadcasts from the FastAPI engine.
+- **Research Collaboration Hub**: A real-time hub with a live Activity Stream, Hypothesis Board (with AI chat per hypothesis), and WebSocket stage-by-stage Pipeline Tracker (QC, Align, Call, Predict, Enrich).
 - **Drag & Drop Pipeline Builder**: No-code workflow orchestrator for non-programmers to build bioinformatics pipelines.
 - **Blockchain Data Sovereignty & ZKP**: Secure genomic data sharing leveraging Zero-Knowledge Proofs and immutable ledger audits.
 
@@ -58,12 +58,12 @@ The platform is architected around 15 cutting-edge capabilities divided into fou
 | **Database** | PostgreSQL via `pg` client, raw SQL schema (no ORM) |
 | **Validation** | Zod across all API endpoints |
 | **AI Copilot** | Google Gemini 2.5 Flash (`gemini-2.5-flash`) via Gemini API |
-| **Python Genomics Engine** | FastAPI + Biopython + scikit-learn (Random Forest) + WebSockets |
+| **Python Genomics Engine** | FastAPI + Biopython + scikit-learn (Random Forest) + ESM-2 (Hugging Face API + CPU fallback) + WebSockets |
 | **Python Epidemiology Engine** | FastAPI + scikit-learn (Random Forest Regressor/Classifier) + Pydantic |
 | **Visualization Microservice** | Node.js + Express.js + WebSocket (`ws`) + Redis (`ioredis`) |
 | **Alignment Algorithm** | Needleman-Wunsch Global Gapped Alignment (via Biopython) |
-| **AI Severity Model** | Random Forest Classifier (scikit-learn) |
-| **Pharmacogenomics** | Built-in CPIC/FDA dataset in `src/lib/pharmacogenomics.ts` |
+| **AI Severity Model** | Hybrid Random Forest Classifier (scikit-learn) + zero-shot ESM-2 log-likelihood ratios |
+| **Pharmacogenomics** | Live Clinical Pharmacogenomics Implementation Consortium (CPIC) REST API + RxNorm dynamic mapping |
 | **Email / 2FA** | Nodemailer (SMTP) + otplib (TOTP) |
 | **Testing** | Jest + ts-jest + @testing-library/react |
 | **Containerization** | Docker + docker-compose (Visualization Service) |
@@ -83,10 +83,10 @@ Uploaded File (FASTA/FASTQ/BAM/VCF)
 Biopython SeqIO Parser (robust, handles all line endings & formats)
        │
        ▼
-FASTA Header Detection → Organism identified (HIV-1, SARS-CoV-2, etc.)
+FASTA Header Detection → Organism identified (HIV-1, SARS-CoV-2, BRCA1...)
        │
        ▼
-PostgreSQL reference_genomes lookup → Gene Map loaded (gag, pol, env, S, N...)
+PostgreSQL reference_genomes lookup → Gene Map loaded (gag, pol, S, BRCA1 exons...)
        │
        ▼
 Needleman-Wunsch Global Gapped Alignment (handles unequal-length sequences)
@@ -95,14 +95,19 @@ Needleman-Wunsch Global Gapped Alignment (handles unequal-length sequences)
 SNP + Indel Extraction from aligned pair
        │
        ▼
-Random Forest Classifier (per-mutation severity scoring)
-  └── Features: mutation type, GC context, codon position, domain, drug-resistance site
+ESM-2 Zero-Shot Language Model (predicts log P(mut) - log P(wt) ratio)
        │
        ▼
-Enriched JSON → Next.js API → PostgreSQL → Analysis Dashboard
+Hybrid Random Forest Classifier (combines sequence features with ESM-2 scores)
        │
        ▼
-Pharmacogenomics Engine (maps variants → drug interactions)
+Multi-Omics ClinVar & AlphaFold DB Queries (grabs ClinVar accessions & 3D models)
+       │
+       ▼
+Enriched JSON → Next.js API → PostgreSQL → Analysis Dashboard (real-time progress WS)
+       │
+       ▼
+Pharmacogenomics Engine (queries Live CPIC API & RxNorm dynamically)
        │
        ▼
 Genome Copilot (Gemini) generates AI summary & prevention plans
@@ -147,14 +152,14 @@ Each detected mutation is scored by a **Random Forest Classifier** trained on bi
 
 ## 🗺️ Disease Outbreak Predictor
 
-The Outbreak system is a full end-to-end forecasting pipeline with real data ingestion:
+The Outbreak system is a full end-to-end forecasting pipeline with real-world data ingestion:
 
 1. **Real Data Sources**: Fetches live COVID-19 data from `disease.sh` and HIV prevalence data from the WHO GHO API
 2. **Caching Layer**: Forecasts are cached in the `outbreak_forecasts` PostgreSQL table for 1 hour to reduce API calls
-3. **Python ML Microservice**: The Next.js API route (`/api/outbreak`) calls the Epidemiology Engine on `http://127.0.0.1:8001/forecast` which runs a Random Forest Regressor on the time-series data to extrapolate future trends
-4. **Alert Stats**: The ML model also predicts R₀ (reproduction number), hotspot classification, and trend direction
+3. **STAR (Spatio-Temporal Autoregressive) Forecaster**: The Next.js API route (`/api/outbreak`) calls the Epidemiology Engine on `http://127.0.0.1:8001/forecast` which runs a spatial autoregressive Random Forest Regressor. It models local growth lags alongside spatial leakage coefficients from neighboring regions and a latent global reservoir.
+4. **Alert Stats**: The ML model predicts R₀ (reproduction number), hotspot classification, and trend direction
 
-**Supported Pathogens**: COVID-19 (with real data), HIV (with WHO GHO data), Influenza Strain A (with synthetic baseline data)
+**Supported Pathogens**: COVID-19 (with real data), HIV (with WHO GHO data), Influenza Strain A (with a biologically realistic seasonal winter-peak curve)
 
 ---
 
@@ -162,9 +167,9 @@ The Outbreak system is a full end-to-end forecasting pipeline with real data ing
 
 The Precision Prescribing Engine (`/dashboard/drugs`) maps your genomic variants to real drug-gene interactions:
 
-- **Source**: Based on CPIC (Clinical Pharmacogenomics Implementation Consortium) and FDA Pharmacogenomics guidelines
+- **Source**: Dynamically integrated with the official Clinical Pharmacogenomics Implementation Consortium (**CPIC API**) to fetch live clinical prescribing recommendations, and the **RxNorm API** to resolve target drug concept IDs.
 - **Metabolic Enzymes Covered**: CYP2C19, CYP2D6, CYP3A5, TPMT, DPYD, SLCO1B1, VKORC1, G6PD, HLA-B, CFTR
-- **Output**: Favorable response drugs vs. contraindicated medications, each with CPIC level (A/B/C), FDA warning flag, and dosing guidance
+- **Output**: Favorable response drugs vs. contraindicated medications, each with CPIC level (A/B/C), FDA warning flag, active clinical dosing comments, and CPIC guideline links.
 - **Print Support**: Generates a printable clinical pharmacogenomics report
 
 ---
@@ -591,7 +596,7 @@ The `dashboard/collaboration` interface is powered by a real-time WebSocket conn
 Features include:
 1. **Live Activity Stream:** See file uploads, pipeline executions, and AI alerts exactly when they happen.
 2. **Hypothesis Board:** Track active scientific hunches, link them to specific genes or mutations, and update their confidence levels dynamically. Each hypothesis has its own AI-powered chat thread.
-3. **Pipeline Engine Tracker:** Watch the background processing of your genome analysis tools in real-time with per-stage progress.
+3. **Pipeline Engine Tracker:** Watch the background processing of your genome analysis tools in real-time with per-stage progress broadcasts (QC, Align, Call, Predict, Enrich).
 4. **Historical Analytics:** Dedicated History pages with dynamic metrics derived from database analytics.
 
 ---

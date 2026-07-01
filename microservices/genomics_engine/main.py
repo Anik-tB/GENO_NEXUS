@@ -28,7 +28,7 @@ from dataclasses import dataclass, field
 from Bio import SeqIO
 from Bio.Align import PairwiseAligner
 
-from virus_classifier import predict_severity, predict_severity_batch
+from virus_classifier import predict_severity, predict_severity_batch, predict_severity_with_esm, ESM_PREDICTOR
 from canrisk_client import PatientProfile, FamilyHistory, calculate_boadicea_risk
 
 app = FastAPI(title="GenoNexus Engine v2", version="2.0.0")
@@ -722,6 +722,134 @@ def _fetch_url(url: str) -> tuple[str, str]:
         raise HTTPException(status_code=400, detail=f"URL fetch failed for {url}")
     return _parse_sequence_from_text(resp.text)
 
+def _query_clinvar_hgvs(gene_symbol: str, hgvs_c: str) -> dict:
+    """
+    Queries NCBI E-utilities to get ClinVar details for a human variant.
+    """
+    term = f"{gene_symbol} {hgvs_c}"
+    esearch_url = f"https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=clinvar&term={term}&retmode=json"
+    api_key = os.environ.get("NCBI_API_KEY")
+    if api_key:
+        esearch_url += f"&api_key={api_key}"
+        
+    try:
+        r = requests.get(esearch_url, timeout=5)
+        if r.status_code == 200:
+            data = r.json()
+            id_list = data.get("esearchresult", {}).get("idlist", [])
+            if id_list:
+                var_id = id_list[0]
+                esummary_url = f"https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=clinvar&id={var_id}&retmode=json"
+                if api_key:
+                    esummary_url += f"&api_key={api_key}"
+                r_sum = requests.get(esummary_url, timeout=5)
+                if r_sum.status_code == 200:
+                    sum_data = r_sum.json()
+                    result = sum_data.get("result", {}).get(var_id, {})
+                    
+                    title = result.get("title", "")
+                    rs_id = None
+                    rs_match = re.search(r"rs\d+", title)
+                    if rs_match:
+                        rs_id = rs_match.group(0)
+                        
+                    return {
+                        "clinvar_id": var_id,
+                        "clinical_significance": result.get("clinical_significance", {}).get("description", "Uncertain significance"),
+                        "review_status": result.get("clinical_significance", {}).get("review_status", "no assertion criteria provided"),
+                        "title": title,
+                        "rsid": rs_id,
+                        "phenotype": ", ".join([p.get("name", "") for p in result.get("phenotype_list", [])]) if result.get("phenotype_list") else "Breast-ovarian cancer, familial"
+                    }
+    except Exception as e:
+        print(f"[WARN] ClinVar/NCBI query failed: {e}")
+    return {}
+
+def _fetch_alphafold_pdb(gene_symbol: str) -> dict:
+    """
+    Fetches the 3D structure links from AlphaFold DB API.
+    """
+    uniprot_map = {
+        "BRCA1": "P38398",
+        "SARS-CoV-2": "P0DTD1",
+        "HIV-1": "P04585",
+    }
+    uniprot_id = uniprot_map.get(gene_symbol)
+    if not uniprot_id:
+        if "BRCA" in gene_symbol:
+            uniprot_id = "P38398"
+        else:
+            return {}
+            
+    url = f"https://alphafold.ebi.ac.uk/api/prediction/{uniprot_id}"
+    try:
+        r = requests.get(url, timeout=5)
+        if r.status_code == 200:
+            data = r.json()
+            if data and isinstance(data, list) and len(data) > 0:
+                entry = data[0]
+                return {
+                    "uniprot_id": uniprot_id,
+                    "pdb_url": entry.get("pdbUrl"),
+                    "cif_url": entry.get("cifUrl"),
+                    "pae_image_url": entry.get("paeImageUrl")
+                }
+    except Exception as e:
+        print(f"[WARN] AlphaFold DB query failed: {e}")
+def _get_amino_acids(ref_seq: str, query_seq: str, pos: int) -> tuple[int, str, str, str]:
+    """
+    Given nucleotide position (1-based), returns (codon_pos_in_protein, ref_aa, qry_aa, protein_seq)
+    """
+    from Bio.Seq import Seq
+    
+    ref_protein = ""
+    try:
+        ref_protein = str(Seq(ref_seq).translate(to_stop=False))
+    except Exception:
+        pass
+        
+    nuc_idx = pos - 1
+    codon_idx = nuc_idx // 3
+    start_nuc = codon_idx * 3
+    
+    ref_codon = ref_seq[start_nuc:start_nuc+3]
+    
+    qry_codon_list = list(ref_codon)
+    offset = nuc_idx % 3
+    if start_nuc + offset < len(query_seq):
+        qry_codon_list[offset] = query_seq[start_nuc + offset]
+    qry_codon = "".join(qry_codon_list)
+    
+    ref_aa = "X"
+    qry_aa = "X"
+    try:
+        if len(ref_codon) == 3:
+            ref_aa = str(Seq(ref_codon).translate())
+        if len(qry_codon) == 3:
+            qry_aa = str(Seq(qry_codon).translate())
+    except Exception:
+        pass
+        
+    return codon_idx + 1, ref_aa, qry_aa, ref_protein
+
+async def _update_pipeline_progress(pipeline_id: str, log_msg: str, progress: int, status: str = "running"):
+    for pipe in collab_state.pipelines:
+        if pipe["id"] == pipeline_id:
+            pipe["progress"] = progress
+            pipe["status"] = status
+            if log_msg not in pipe["logs"]:
+                pipe["logs"].append(log_msg)
+            n = len(pipe["stages"])
+            for i, stage in enumerate(pipe["stages"]):
+                threshold = ((i + 1) / n) * 100
+                if progress >= threshold:
+                    stage["status"] = "done"
+                elif progress >= threshold - (100 / n):
+                    stage["status"] = "active"
+            break
+            
+    await manager.broadcast({"type": "pipeline_update", "pipelines": collab_state.pipelines})
+
 # ---------------------------------------------------------------------------
 # Core endpoint
 # ---------------------------------------------------------------------------
@@ -778,6 +906,26 @@ async def compare_sequences(req: CompareRequest):
         # Prefer query header, fall back to ref header
         detected_organism = query_organism if query_organism != "Unknown" else ref_organism
 
+        # Initialize pipeline details in the real-time Collaboration Hub
+        pipe_id = f"pipe-{_next_id()}"
+        new_pipe = {
+            "id": pipe_id,
+            "name": f"{detected_organism} Alignment",
+            "status": "running",
+            "progress": 10,
+            "eta": "6 sec",
+            "logs": [f"Initializing {detected_organism} comparative pipeline..."],
+            "stages": [
+                {"name": "QC", "status": "active"},
+                {"name": "Align", "status": "pending"},
+                {"name": "Call", "status": "pending"},
+                {"name": "Predict", "status": "pending"},
+                {"name": "Enrich", "status": "pending"},
+            ]
+        }
+        collab_state.pipelines.insert(0, new_pipe)
+        await manager.broadcast({"type": "pipeline_update", "pipelines": collab_state.pipelines})
+
         # Length-based cross-species fallback validation (skip for Human Genetics)
         if detected_organism != "BRCA1 (Homo sapiens)" and max_len > 0 and abs(query_len - ref_len) / max_len > 0.30:
             raise HTTPException(
@@ -798,12 +946,16 @@ async def compare_sequences(req: CompareRequest):
         ref_aln = ref_seq[:MAX_BP]
         qry_aln = query_seq[:MAX_BP]
 
+        await _update_pipeline_progress(pipe_id, f"Quality control check complete. Loaded sequence: {len(query_seq)} bp. Initiating alignment...", 30)
+
         aligner = PairwiseAligner()
         aligner.mode = "global"
         aligner.match_score = 2
         aligner.mismatch_score = -1
         aligner.open_gap_score = -2
         aligner.extend_gap_score = -0.5
+
+        await _update_pipeline_progress(pipe_id, "Running Needleman-Wunsch global alignment...", 50)
 
         alignments = aligner.align(ref_aln, qry_aln)
         best = alignments[0]
@@ -813,6 +965,8 @@ async def compare_sequences(req: CompareRequest):
         lines = format(best, "fasta").splitlines()
         aligned_ref = lines[1].strip()
         aligned_qry = lines[3].strip()
+
+        await _update_pipeline_progress(pipe_id, f"Alignment complete. Score: {alignment_score}. Call mutations stage active...", 70)
 
         # ── 5. Extract mutations (SNPs + Indels) ──────────────────────────
         dr_positions = KNOWN_DR_POSITIONS.get(detected_organism, set())
@@ -884,6 +1038,8 @@ async def compare_sequences(req: CompareRequest):
                 "codon_position": cp,
             })
 
+        await _update_pipeline_progress(pipe_id, f"Called {len(mutations)} SNPs and {len(indels)} indels. Running batch Random Forest pathogenicity grading...", 80)
+
         # Batch predict SNP mutations
         if mutations_features:
             snp_preds = predict_severity_batch(mutations_features)
@@ -914,7 +1070,80 @@ async def compare_sequences(req: CompareRequest):
                 indels[i]["severity"] = p[0]
                 indels[i]["ai_confidence"] = p[1]
 
+        # ── ClinVar & AlphaFold DB Enrichment (Phase 1) ───────────────────
+        if detected_organism == "BRCA1 (Homo sapiens)":
+            await _update_pipeline_progress(pipe_id, "Accessing ESM-2 protein language model for zero-shot variant effect predictions and querying ClinVar/AlphaFold databases...", 90)
+            af_data = _fetch_alphafold_pdb("BRCA1")
+            
+            # Enrich first 10 mutations to avoid heavy API rate-limiting
+            enriched_count = 0
+            # Enrich and compute ESM-2 scores for mutations
+            enriched_count = 0
+            for mut in mutations:
+                # 1. Translate cDNA coordinate to protein change
+                codon_pos, ref_aa, qry_aa, ref_protein = _get_amino_acids(ref_seq, query_seq, mut['position'])
+                
+                esm_score = None
+                if ref_aa != "X" and qry_aa != "X" and ref_protein:
+                    esm_score = ESM_PREDICTOR.predict_mutant_score(ref_protein, codon_pos, ref_aa, qry_aa)
+                    mut["esm_score"] = esm_score
+                    mut["protein_change"] = f"p.{ref_aa}{codon_pos}{qry_aa}"
+                
+                # 2. Refine severity using hybrid ESM-2 + RF predictor
+                feat = (
+                    mut["type"] == "Transition",
+                    False,
+                    mut["gc_context"],
+                    mut["codon_position"],
+                    mut["in_functional_domain"],
+                    mut["drug_resistance_site"]
+                )
+                sev, conf = predict_severity_with_esm(feat, esm_score)
+                mut["severity"] = sev
+                mut["ai_confidence"] = conf
+                
+                # 3. Query ClinVar for the first 10 mutations
+                hgvs_c = f"c.{mut['position']}{mut['reference']}>{mut['query']}"
+                if enriched_count < 10:
+                    clinvar_info = _query_clinvar_hgvs("BRCA1", hgvs_c)
+                    if clinvar_info:
+                        mut["clinvar_id"] = clinvar_info.get("clinvar_id")
+                        mut["clinical_significance"] = clinvar_info.get("clinical_significance")
+                        mut["review_status"] = clinvar_info.get("review_status")
+                        mut["phenotype"] = clinvar_info.get("phenotype")
+                        mut["rsid"] = clinvar_info.get("rsid")
+                        
+                        if clinvar_info.get("rsid"):
+                            mut["variant"] = f"{clinvar_info.get('rsid')} ({hgvs_c})"
+                        else:
+                            mut["variant"] = hgvs_c
+                            
+                        clinsig = clinvar_info.get("clinical_significance", "").lower()
+                        if "pathogenic" in clinsig:
+                            mut["severity"] = "high"
+                            mut["impact"] = "Pathogenic"
+                        elif "benign" in clinsig:
+                            mut["severity"] = "low"
+                            mut["impact"] = "Benign"
+                        elif "uncertain" in clinsig or "vus" in clinsig:
+                            mut["severity"] = "medium"
+                            mut["impact"] = "Variant of Uncertain Significance (VUS)"
+                        
+                        enriched_count += 1
+                    else:
+                        mut["variant"] = hgvs_c
+                        mut["impact"] = "Unknown Clinical Impact"
+                else:
+                    mut["variant"] = hgvs_c
+                    mut["impact"] = "pLM-predicted Pathogenicity" if mut["severity"] == "high" else "Neutral variant"
+                    
+                if af_data:
+                    mut["alphafold_pdb_url"] = af_data.get("pdb_url")
+                    mut["uniprot_id"] = af_data.get("uniprot_id")
+
         match_percentage = round((matches / total_aligned * 100) if total_aligned > 0 else 0.0, 2)
+
+        await _update_pipeline_progress(pipe_id, "Comparative pipeline completed. Writing results to the database.", 100, "completed")
 
         return {
             "match_percentage": match_percentage,
@@ -1104,6 +1333,28 @@ async def predict_disease(req: PredictDiseaseRequest):
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/pharmacogenomics")
+async def get_pharmacogenomics_profile(req: dict):
+    mutations = req.get("mutations", [])
+    from pharmacogenomics_client import PharmacogenomicsClient
+    pgx_client = PharmacogenomicsClient()
+    
+    phenotypes = pgx_client.map_variants_to_phenotype(mutations)
+    
+    results = {}
+    for gene, pheno in phenotypes.items():
+        if pheno != "Normal Metabolizer":
+            recs = pgx_client.get_cpic_recommendations(gene, pheno)
+            if recs:
+                results[gene] = {
+                    "phenotype": pheno,
+                    "recommendations": recs
+                }
+    return {
+        "phenotypes": phenotypes,
+        "actionable_recommendations": results
+    }
 
 @app.get("/health")
 async def health():

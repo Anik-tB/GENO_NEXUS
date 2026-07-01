@@ -48,12 +48,28 @@ export async function GET() {
 
     const row = result.rows[0];
 
+    // Fetch dynamic recommendations from CPIC live API wrapper in Python
+    let dynamicRecommendations: any = null;
+    try {
+      const pyRes = await fetch(`${process.env.PYTHON_API_URL || "http://127.0.0.1:8000"}/pharmacogenomics`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mutations: row.mutations_found || [] })
+      });
+      if (pyRes.ok) {
+        dynamicRecommendations = await pyRes.json();
+      }
+    } catch (e) {
+      console.warn("Could not fetch dynamic pharmacogenomics from Python engine:", e);
+    }
+
     return NextResponse.json(
       buildPharmacogenomicsProfile({
         fileName: row.file_name,
         mutations: row.mutations_found,
         indels: row.indels_found,
         generatedAt: new Date(),
+        dynamicRecommendations,
       }),
     );
   } catch (error) {

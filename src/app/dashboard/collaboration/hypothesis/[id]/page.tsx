@@ -98,6 +98,27 @@ export default function HypothesisDetailPage({ params }: PageProps) {
     }
   };
 
+  const handleConfidenceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newVal = Number(e.target.value);
+    if (hypo) {
+      setHypo({ ...hypo, confidence: newVal });
+    }
+  };
+
+  const handleConfidenceCommit = async (e: React.MouseEvent<HTMLInputElement> | React.TouchEvent<HTMLInputElement>) => {
+    const newVal = Number((e.target as HTMLInputElement).value);
+    if (!hypo) return;
+    try {
+      await fetch(`/api/collaboration/hypotheses/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ confidence: newVal }),
+      });
+    } catch (err) {
+      console.error("Failed to update confidence score:", err);
+    }
+  };
+
   // ── Loading state ─────────────────────────────────────────────
   if (loading) {
     return (
@@ -169,6 +190,17 @@ export default function HypothesisDetailPage({ params }: PageProps) {
                 <div
                   className={styles.gaugeFill}
                   style={{ width: `${hypo.confidence}%`, background: `linear-gradient(90deg, ${confidenceColor}88, ${confidenceColor})` }}
+                />
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={hypo.confidence}
+                  onChange={handleConfidenceChange}
+                  onMouseUp={handleConfidenceCommit}
+                  onTouchEnd={handleConfidenceCommit}
+                  className={styles.confidenceSlider}
+                  title="Adjust confidence score"
                 />
               </div>
             </div>

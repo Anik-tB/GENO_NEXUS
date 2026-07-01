@@ -1082,6 +1082,7 @@ export function buildPharmacogenomicsProfile(input: {
   mutations?: unknown;
   indels?: unknown;
   generatedAt?: Date;
+  dynamicRecommendations?: any;
 }): PharmacogenomicsProfile {
   const mutations = parseVariantArray(input.mutations);
   const indels = parseVariantArray(input.indels);
@@ -1105,22 +1106,45 @@ export function buildPharmacogenomicsProfile(input: {
   const avoid: DrugRecommendation[] = [];
   let genesWithFindings = 0;
 
+  const dynamicRecs = input.dynamicRecommendations?.actionable_recommendations || null;
+
   for (const rule of GENE_RULES) {
     const hits = variantsByGene.get(rule.gene) ?? [];
 
     if (hits.length > 0) {
       genesWithFindings++;
       const evidence = evidenceSummary(rule.gene, hits);
+      
+      let comments = rule.affectedDescription;
+      let recList = rule.avoidAffected;
+      
+      if (dynamicRecs && dynamicRecs[rule.gene]) {
+        const dyn = dynamicRecs[rule.gene];
+        comments = dyn.recommendations[0]?.recommendation || comments;
+        recList = dyn.recommendations.map((d: any) => ({
+          name: d.drug_name,
+          gene: rule.gene,
+          note: d.comments || d.recommendation,
+          pathways: ["Pharmacogenomics"],
+          variantEvidence: evidence,
+          guideline: "CPIC Live API Dosing Guidance",
+          severity: d.classification?.toLowerCase() === "strong" ? "high" : "medium",
+          cpicLevel: "A",
+          fdaWarning: true,
+          dosingGuidance: d.recommendation
+        }));
+      }
+
       metabolicProfile.push({
         enzyme: rule.gene,
         geneFullName: rule.geneFullName,
         status: rule.affectedStatus,
-        phenotype: rule.affectedPhenotype,
-        description: rule.affectedDescription,
+        phenotype: input.dynamicRecommendations?.phenotypes?.[rule.gene] || rule.affectedPhenotype,
+        description: comments,
         evidence,
         diplotype: rule.affectedDiplotype,
       });
-      avoid.push(...rule.avoidAffected.map((rec) => withEvidence(rec, evidence)));
+      avoid.push(...recList.map((rec: any) => withEvidence(rec, evidence)));
     } else {
       metabolicProfile.push({
         enzyme: rule.gene,

@@ -70,11 +70,22 @@ export async function GET(req: NextRequest) {
 
     const classified = mutations.map((m, idx) => {
       const sub = `${m.reference}>${m.query}`;
-      const severity = HIGH_IMPACT_SUBS.has(sub)
-        ? "pathogenic"
-        : isTransition(m.reference, m.query)
-        ? "benign"
-        : "uncertain";
+      
+      let severity: "pathogenic" | "uncertain" | "benign" = "uncertain";
+      if (m.severity === "high" || m.severity === "pathogenic") {
+        severity = "pathogenic";
+      } else if (m.severity === "low" || m.severity === "benign") {
+        severity = "benign";
+      } else if (m.severity === "medium" || m.severity === "uncertain") {
+        severity = "uncertain";
+      } else {
+        severity = HIGH_IMPACT_SUBS.has(sub)
+          ? "pathogenic"
+          : isTransition(m.reference, m.query)
+          ? "benign"
+          : "uncertain";
+      }
+      
       return { ...m, severity, sub, idx };
     });
 
@@ -97,9 +108,9 @@ export async function GET(req: NextRequest) {
         .map(m => {
           const relativePosPct = ((m.position - chromStart) / binSize) * 100;
           
-          let impact = "Low";
-          if (m.severity === "pathogenic") impact = "High";
-          if (m.severity === "uncertain") impact = "Moderate";
+          let impact = m.impact || "Low";
+          if (m.severity === "pathogenic") impact = m.impact || "High";
+          if (m.severity === "uncertain") impact = m.impact || "Moderate";
           
           return {
             id: m.idx,
@@ -107,10 +118,17 @@ export async function GET(req: NextRequest) {
             relativePosPct: Math.min(98, Math.max(2, relativePosPct)), // Keep within visual bounds
             type: m.type || "SNP",
             severity: m.severity as "pathogenic" | "uncertain" | "benign",
-            variant: `g.${m.position}${m.reference}>${m.query}`,
+            variant: m.variant || `g.${m.position}${m.reference}>${m.query}`,
             gene: m.functional_region || "Intergenic",
             impact,
             ai_confidence: m.ai_confidence || 0.5,
+            reference: m.reference,
+            query: m.query,
+            clinvar_id: m.clinvar_id,
+            rsid: m.rsid,
+            review_status: m.review_status,
+            phenotype: m.phenotype,
+            alphafold_pdb_url: m.alphafold_pdb_url
           };
         });
 

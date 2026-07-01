@@ -15,6 +15,11 @@ export interface ChromosomeVariant {
   ai_confidence: number;
   reference?: string;
   query?: string;
+  clinvar_id?: string;
+  rsid?: string;
+  review_status?: string;
+  phenotype?: string;
+  alphafold_pdb_url?: string;
 }
 
 const generateContext = (pos: number) => {
@@ -157,8 +162,60 @@ export function GenomeBrowser({ chromosomes, highlightPosition, showAllPins }: {
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', gridColumn: '1 / -1' }}>
                           <span style={{ color: 'var(--gn-text-muted)' }}>Clinical Impact</span>
-                          <span style={{ color: SEVERITY_COLORS[mut.severity] }}>{mut.impact}</span>
+                          <span style={{ color: SEVERITY_COLORS[mut.severity], fontWeight: 'bold' }}>{mut.impact}</span>
                         </div>
+                        {mut.clinvar_id && (
+                          <div style={{ display: 'flex', flexDirection: 'column' }}>
+                            <span style={{ color: 'var(--gn-text-muted)' }}>ClinVar Accession</span>
+                            <a 
+                              href={`https://www.ncbi.nlm.nih.gov/clinvar/variation/${mut.clinvar_id}`} 
+                              target="_blank" 
+                              rel="noreferrer" 
+                              style={{ color: 'var(--gn-primary)', textDecoration: 'underline' }}
+                            >
+                              VCV{mut.clinvar_id}
+                            </a>
+                          </div>
+                        )}
+                        {mut.review_status && (
+                          <div style={{ display: 'flex', flexDirection: 'column' }}>
+                            <span style={{ color: 'var(--gn-text-muted)' }}>Review Status</span>
+                            <span style={{ color: 'var(--gn-text-secondary)', fontSize: '0.7rem' }}>{mut.review_status}</span>
+                          </div>
+                        )}
+                        {mut.phenotype && (
+                          <div style={{ display: 'flex', flexDirection: 'column', gridColumn: '1 / -1' }}>
+                            <span style={{ color: 'var(--gn-text-muted)' }}>Phenotypic Association</span>
+                            <span style={{ color: 'var(--gn-text-secondary)' }}>{mut.phenotype}</span>
+                          </div>
+                        )}
+                        {mut.alphafold_pdb_url && (
+                          <div style={{ display: 'flex', flexDirection: 'column', gridColumn: '1 / -1', marginTop: '0.4rem' }}>
+                            <span style={{ color: 'var(--gn-text-muted)', marginBottom: '0.2rem' }}>AlphaFold 3D Structure</span>
+                            <a 
+                              href={mut.alphafold_pdb_url}
+                              target="_blank"
+                              rel="noreferrer"
+                              style={{ 
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '0.3rem',
+                                padding: '4px 8px',
+                                borderRadius: '4px',
+                                background: 'rgba(6, 182, 212, 0.15)',
+                                color: 'var(--gn-primary)',
+                                border: '1px solid rgba(6, 182, 212, 0.3)',
+                                textDecoration: 'none',
+                                fontWeight: 'bold',
+                                textAlign: 'center',
+                                fontSize: '0.7rem'
+                              }}
+                            >
+                              🌐 Download AlphaFold PDB Model
+                            </a>
+                          </div>
+                        )}
                       </div>
 
                       {mut.reference && mut.query && (
