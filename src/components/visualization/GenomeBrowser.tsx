@@ -46,6 +46,74 @@ const SEVERITY_COLORS: Record<string, string> = {
   benign: "var(--gn-success)",
 };
 
+// Real-world cytogenetic chromosome metadata (size index, centromere height position %, classification type)
+const CHROMOSOME_METADATA: Record<string, { sizePct: number; centromereY: number; type: string }> = {
+  "1":  { sizePct: 100, centromereY: 48, type: "metacentric" },
+  "2":  { sizePct: 97,  centromereY: 38, type: "submetacentric" },
+  "3":  { sizePct: 80,  centromereY: 47, type: "metacentric" },
+  "4":  { sizePct: 76,  centromereY: 30, type: "submetacentric" },
+  "5":  { sizePct: 73,  centromereY: 30, type: "submetacentric" },
+  "6":  { sizePct: 69,  centromereY: 35, type: "submetacentric" },
+  "7":  { sizePct: 64,  centromereY: 35, type: "submetacentric" },
+  "8":  { sizePct: 58,  centromereY: 32, type: "submetacentric" },
+  "9":  { sizePct: 55,  centromereY: 35, type: "submetacentric" },
+  "10": { sizePct: 54,  centromereY: 35, type: "submetacentric" },
+  "11": { sizePct: 54,  centromereY: 35, type: "submetacentric" },
+  "12": { sizePct: 53,  centromereY: 33, type: "submetacentric" },
+  "13": { sizePct: 46,  centromereY: 15, type: "acrocentric" },
+  "14": { sizePct: 43,  centromereY: 15, type: "acrocentric" },
+  "15": { sizePct: 41,  centromereY: 15, type: "acrocentric" },
+  "16": { sizePct: 36,  centromereY: 40, type: "metacentric" },
+  "17": { sizePct: 33,  centromereY: 30, type: "submetacentric" },
+  "18": { sizePct: 32,  centromereY: 28, type: "submetacentric" },
+  "19": { sizePct: 24,  centromereY: 45, type: "metacentric" },
+  "20": { sizePct: 25,  centromereY: 44, type: "metacentric" },
+  "21": { sizePct: 19,  centromereY: 15, type: "acrocentric" },
+  "22": { sizePct: 20,  centromereY: 15, type: "acrocentric" },
+  "XY": { sizePct: 63,  centromereY: 35, type: "submetacentric" },
+};
+
+// Generates mathematical coordinates for centromere-pinch metaphase chromosome shape
+const getChromatidPath = (cy: number) => {
+  return `M 10,2 
+          Q 15,0 20,2 
+          Q 23,${cy / 2} 20,${cy - 2} 
+          Q 15,${cy} 15,${cy} 
+          Q 15,${cy} 20,${cy + 2} 
+          Q 23,${cy + (100 - cy) / 2} 20,98 
+          Q 15,100 10,98 
+          Q 7,${cy + (100 - cy) / 2} 10,${cy + 2} 
+          Q 15,${cy} 15,${cy} 
+          Q 15,${cy} 10,${cy - 2} 
+          Q 7,${cy / 2} 10,2 Z`;
+};
+
+// Deterministically generate Giemsa staining banding patterns (G-bands) for chromosome rendering
+const generateGBands = (chrId: number) => {
+  const bands = [];
+  let seed = chrId * 17;
+  const count = 12 + (seed % 8); // 12 to 19 bands along chromosome
+  let currentY = 3;
+  for (let i = 0; i < count; i++) {
+    seed = (seed * 31 + 13) % 1000;
+    const height = 4 + (seed % 6); // band width 4% to 9%
+    const isDark = (i % 2 === 0);
+    const opacity = isDark ? 0.08 + (seed % 10) / 50 : 0.01;
+    const fill = isDark ? "#ffffff" : "#000000";
+    
+    if (currentY + height < 97) {
+      bands.push({
+        y: currentY,
+        height,
+        opacity,
+        fill
+      });
+    }
+    currentY += height;
+  }
+  return bands;
+};
+
 export function GenomeBrowser({ chromosomes, highlightPosition, showAllPins }: { chromosomes?: ChromosomeData[]; highlightPosition?: number; showAllPins?: boolean }) {
   const [selectedChrom, setSelectedChrom] = useState<ChromosomeData | null>(null);
 
@@ -83,11 +151,16 @@ export function GenomeBrowser({ chromosomes, highlightPosition, showAllPins }: {
           const isSelected = selectedChrom?.id === ch.id;
           const filteredMutations = ch.mutations ? ch.mutations.filter(mut => showAllPins || highlightPosition === undefined || mut.position === highlightPosition) : [];
           
+          // Get realistic physical metadata (override backend staggered height with true cytogenetic scale)
+          const meta = CHROMOSOME_METADATA[ch.label] || { sizePct: ch.height || 60, centromereY: 40, type: "metacentric" };
+          const pathData = getChromatidPath(meta.centromereY);
+          const gBands = generateGBands(ch.id);
+
           return (
             <div key={ch.id} className={styles.pair} onClick={() => setSelectedChrom(isSelected ? null : ch)}>
               <div
                 className={`${styles.pairContainer} ${isSelected ? styles.selectedPair : ""}`}
-                style={{ height: `${ch.height}%` }}
+                style={{ height: `${meta.sizePct}%` }}
               >
                 {/* Scan Beam on selected chromosome */}
                 {isSelected && <div className={styles.scanBeam} />}
@@ -102,14 +175,36 @@ export function GenomeBrowser({ chromosomes, highlightPosition, showAllPins }: {
                         <stop offset="60%" stopColor="#a855f7" stopOpacity={0.9} />
                         <stop offset="100%" stopColor="#06b6d4" stopOpacity={0.85} />
                       </linearGradient>
+                      <clipPath id={`clip-left-${ch.id}`}>
+                        <path d={pathData} />
+                      </clipPath>
                     </defs>
-                    {/* Metaphase chromosome pinched shape (centromere at y=40) */}
+
+                    {/* Chromosome body shape */}
                     <path 
-                      d="M 10,2 Q 15,0 20,2 Q 24,18 20,38 Q 15,40 15,40 Q 15,40 20,42 Q 24,62 20,98 Q 15,100 10,98 Q 6,62 10,42 Q 15,40 15,40 Q 15,40 10,38 Q 6,18 10,2 Z" 
+                      d={pathData} 
                       fill={`url(#grad-left-${ch.id})`}
                       stroke={isSelected ? "var(--gn-primary)" : "rgba(255, 255, 255, 0.15)"}
                       strokeWidth="1.2"
                     />
+
+                    {/* Clip Giemsa Stain G-bands inside the chromosome shape */}
+                    <g clipPath={`url(#clip-left-${ch.id})`}>
+                      {gBands.map((band, idx) => (
+                        <rect 
+                          key={`b-l-${idx}`}
+                          x="0"
+                          y={band.y}
+                          width="30"
+                          height={band.height}
+                          fill={band.fill}
+                          opacity={band.opacity}
+                        />
+                      ))}
+                      {/* Telomere Cap Highlights (cyan glow at ends) */}
+                      <rect x="0" y="0" width="30" height="3" fill="rgba(0, 229, 255, 0.45)" style={{ filter: "drop-shadow(0 0 2px rgba(0, 229, 255, 0.5))" }} />
+                      <rect x="0" y="97" width="30" height="3" fill="rgba(0, 229, 255, 0.45)" style={{ filter: "drop-shadow(0 0 2px rgba(0, 229, 255, 0.5))" }} />
+                    </g>
                     
                     {/* Render mutations as bands directly inside the chromatid body */}
                     {filteredMutations.map((mut) => {
@@ -137,12 +232,37 @@ export function GenomeBrowser({ chromosomes, highlightPosition, showAllPins }: {
                 {/* Right Homologous Chromatid SVG */}
                 <div className={styles.sisterChromatid}>
                   <svg width="100%" height="100%" viewBox="0 0 30 100" preserveAspectRatio="none">
+                    <defs>
+                      <clipPath id={`clip-right-${ch.id}`}>
+                        <path d={pathData} />
+                      </clipPath>
+                    </defs>
+                    
                     <path 
-                      d="M 10,2 Q 15,0 20,2 Q 24,18 20,38 Q 15,40 15,40 Q 15,40 20,42 Q 24,62 20,98 Q 15,100 10,98 Q 6,62 10,42 Q 15,40 15,40 Q 15,40 10,38 Q 6,18 10,2 Z" 
+                      d={pathData} 
                       fill={`url(#grad-left-${ch.id})`}
                       stroke={isSelected ? "var(--gn-primary)" : "rgba(255, 255, 255, 0.15)"}
                       strokeWidth="1.2"
                     />
+
+                    {/* Clip Giemsa Stain G-bands inside the chromosome shape */}
+                    <g clipPath={`url(#clip-right-${ch.id})`}>
+                      {gBands.map((band, idx) => (
+                        <rect 
+                          key={`b-r-${idx}`}
+                          x="0"
+                          y={band.y}
+                          width="30"
+                          height={band.height}
+                          fill={band.fill}
+                          opacity={band.opacity}
+                        />
+                      ))}
+                      {/* Telomere Cap Highlights */}
+                      <rect x="0" y="0" width="30" height="3" fill="rgba(0, 229, 255, 0.45)" style={{ filter: "drop-shadow(0 0 2px rgba(0, 229, 255, 0.5))" }} />
+                      <rect x="0" y="97" width="30" height="3" fill="rgba(0, 229, 255, 0.45)" style={{ filter: "drop-shadow(0 0 2px rgba(0, 229, 255, 0.5))" }} />
+                    </g>
+                    
                     {/* Render mutations as bands directly inside the chromatid body */}
                     {filteredMutations.map((mut) => {
                       const isHighlighted = highlightPosition !== undefined && mut.position === highlightPosition;
