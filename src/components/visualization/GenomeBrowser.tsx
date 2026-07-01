@@ -262,7 +262,7 @@ export function GenomeBrowser({ chromosomes, highlightPosition, showAllPins }: {
                               style={{ 
                                 display: 'inline-flex',
                                 alignItems: 'center',
-                                justifyCenter: 'center',
+                                justifyContent: 'center',
                                 gap: '0.3rem',
                                 padding: '4px 8px',
                                 borderRadius: '4px',
