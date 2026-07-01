@@ -1,66 +1,18 @@
-/* GenomeBrowser */
-.helixWrapper {
+/* Upgraded GenomeBrowser Styles */
+.chromoWrapper {
   width: 100%;
   height: 100%;
   position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2.5rem 1.5rem;
+  background: rgba(4, 6, 12, 0.4);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.6);
   overflow: hidden;
-}
-
-/* Helix scan line */
-.scanLine {
-  position: absolute;
-  left: 0;
-  width: 100%;
-  height: 2px;
-  background: linear-gradient(90deg, transparent 0%, var(--gn-primary) 30%, #fff 50%, var(--gn-primary) 70%, transparent 100%);
-  z-index: 20;
-  pointer-events: none;
-  box-shadow: 0 0 16px 2px var(--gn-primary), 0 0 40px 8px rgba(0,229,255,0.25);
-  transition: top 0.05s linear;
-}
-
-/* Chromosome scan beam — main bright line */
-.chromoScanBeam {
-  position: absolute;
-  left: 0;
-  width: 100%;
-  height: 3px;
-  background: linear-gradient(90deg,
-    transparent 0%,
-    rgba(0,229,255,0.3) 5%,
-    var(--gn-primary) 20%,
-    #ffffff 45%,
-    #aaffee 50%,
-    #ffffff 55%,
-    var(--gn-primary) 80%,
-    rgba(0,229,255,0.3) 95%,
-    transparent 100%
-  );
-  z-index: 20;
-  pointer-events: none;
-  box-shadow:
-    0 0 8px 1px var(--gn-primary),
-    0 0 20px 4px rgba(0,229,255,0.4),
-    0 0 50px 12px rgba(0,229,255,0.15);
-  transition: top 0.04s linear;
-}
-
-/* Trailing glow beneath the beam */
-.chromoScanTrail {
-  position: absolute;
-  left: 0;
-  width: 100%;
-  height: 80px;
-  background: linear-gradient(
-    180deg,
-    rgba(0,229,255,0.12) 0%,
-    rgba(0,229,255,0.06) 30%,
-    transparent 100%
-  );
-  z-index: 19;
-  pointer-events: none;
-  transition: top 0.04s linear;
-  transform: translateY(-8px);
 }
 
 /* Horizontal sci-fi grid lines */
@@ -71,219 +23,168 @@
   height: 1px;
   background: linear-gradient(90deg,
     transparent 0%,
-    rgba(0,229,255,0.06) 15%,
-    rgba(0,229,255,0.12) 50%,
-    rgba(0,229,255,0.06) 85%,
+    rgba(0, 229, 255, 0.04) 15%,
+    rgba(0, 229, 255, 0.08) 50%,
+    rgba(0, 229, 255, 0.04) 85%,
     transparent 100%
   );
   pointer-events: none;
   z-index: 1;
 }
 
-.helixInfo {
-  position: absolute;
-  bottom: 1.5rem;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 20;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1rem;
-}
-
-.infoBadge {
-  background: rgba(0, 229, 255, 0.1);
-  color: var(--gn-primary);
-  border: 1px solid rgba(0, 229, 255, 0.2);
-  padding: 0.4rem 1rem;
-  border-radius: 999px;
-  font-size: 0.75rem;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  backdrop-filter: blur(4px);
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-}
-
-.blinkDot {
-  animation: blinkAnim 1.5s ease-in-out infinite;
-  color: var(--gn-primary);
-}
-@keyframes blinkAnim { 0%,100% { opacity:1; } 50% { opacity:0.2; } }
-
-.helixStats {
-  display: flex;
-  gap: 1.5rem;
-  background: rgba(0,0,0,0.4);
-  border: 1px solid var(--gn-surface-border);
-  border-radius: 12px;
-  padding: 0.75rem 1.5rem;
-  backdrop-filter: blur(8px);
-}
-
-.helixStat {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.2rem;
-}
-
-.statVal {
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: var(--gn-white);
-}
-
-.statLbl {
-  font-size: 0.7rem;
-  color: var(--gn-text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-/* Chromosome view */
-.chromoWrapper {
-  width: 100%;
-  height: 100%;
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 3rem;
-}
-
 .chromosomes {
   display: flex;
   align-items: flex-end;
-  gap: 1rem;
+  gap: 1.2rem;
   height: 70%;
   width: 100%;
   justify-content: center;
+  z-index: 2;
+  margin-top: 1.5rem;
 }
 
 .pair {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.6rem;
   height: 100%;
   justify-content: flex-end;
   cursor: pointer;
-}
-
-.chromatid {
-  width: 14px;
-  background: linear-gradient(180deg, var(--gn-blue) 0%, var(--gn-accent) 100%);
-  border-radius: 999px;
   position: relative;
-  box-shadow: 0 0 10px rgba(59,130,246,0.4);
-  transition: transform 0.2s ease, filter 0.2s ease, box-shadow 0.2s ease;
+  transition: transform 0.2s ease;
 }
 
-.chromatid:hover { transform: scaleY(1.05); filter: brightness(1.3); box-shadow: 0 0 20px rgba(180,0,255,0.7); }
-.selected { box-shadow: 0 0 20px var(--gn-primary) !important; filter: brightness(1.3); }
+.pair:hover {
+  transform: translateY(-4px);
+}
 
-.mutPin {
+.pairContainer {
+  display: flex;
+  gap: 3px;
+  height: 100%;
+  align-items: flex-end;
+  position: relative;
+}
+
+.sisterChromatid {
+  width: 12px;
+  height: 100%;
+  position: relative;
+  transition: filter 0.3s ease;
+}
+
+.pair:hover .sisterChromatid {
+  filter: brightness(1.2);
+}
+
+.selectedPair .sisterChromatid {
+  filter: drop-shadow(0 0 8px rgba(0, 229, 255, 0.6)) brightness(1.2);
+}
+
+/* Scan line animation overlay on selected chromosome */
+.scanBeam {
   position: absolute;
-  top: 30%;
-  left: -5px;
-  width: 24px;
-  height: 4px;
-  border-radius: 2px;
-  animation: pulseMut 1.5s infinite alternate;
+  left: -2px;
+  width: calc(100% + 4px);
+  height: 2px;
+  background: #ffffff;
+  box-shadow: 0 0 10px #ffffff, 0 0 20px var(--gn-primary);
+  z-index: 5;
+  pointer-events: none;
+  animation: scanMove 3s infinite linear;
 }
-@keyframes pulseMut { from { opacity:0.5; box-shadow: 0 0 4px currentColor; } to { opacity:1; box-shadow: 0 0 14px currentColor; } }
 
-.highlightedPin {
-  height: 6px !important;
-  left: -7px !important;
-  width: 28px !important;
-  border: 1px solid #fff;
-  z-index: 10;
-  animation: pulseHighlighted 0.8s infinite alternate !important;
+@keyframes scanMove {
+  0% { top: 0%; }
+  50% { top: 100%; }
+  100% { top: 0%; }
 }
-@keyframes pulseHighlighted { from { opacity:0.7; transform: scale(1.1); box-shadow: 0 0 8px #fff, 0 0 20px var(--gn-primary); } to { opacity:1; transform: scale(1.3); box-shadow: 0 0 14px #fff, 0 0 35px var(--gn-primary); } }
 
 .chromLabel {
-  font-size: 0.68rem;
+  font-size: 0.72rem;
   color: var(--gn-text-muted);
-  font-weight: 600;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  transition: color 0.2s ease;
 }
 
-/* Locus Panel */
+.pair:hover .chromLabel,
+.selectedPair + .chromLabel {
+  color: var(--gn-primary);
+}
+
+/* Locus Panel Overlay with Glassmorphism */
 .locusPanelOverlay {
   position: absolute;
   top: 1rem;
   right: 1rem;
   z-index: 30;
-  animation: slideIn 0.2s ease;
+  animation: slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
-@keyframes slideIn { from { opacity:0; transform:translateX(20px); } to { opacity:1; transform:translateX(0); } }
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(30px); }
+  to { opacity: 1; transform: translateX(0); }
+}
 
 .locusPanel {
-  background: rgba(10,17,34,0.95);
-  border: 1px solid var(--gn-surface-border);
-  border-radius: 14px;
-  padding: 1.25rem;
-  width: 260px;
-  backdrop-filter: blur(16px);
-  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  background: rgba(10, 18, 38, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 1.5rem;
+  width: 320px;
+  backdrop-filter: blur(20px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6), inset 0 0 1px rgba(255, 255, 255, 0.2);
 }
 
 .locusClose {
   position: absolute;
-  top: 0.75rem;
-  right: 0.75rem;
-  background: transparent;
+  top: 1rem;
+  right: 1rem;
+  background: rgba(255, 255, 255, 0.05);
   border: none;
   color: var(--gn-text-muted);
   cursor: pointer;
-  font-size: 0.9rem;
+  font-size: 0.8rem;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s, color 0.2s;
 }
 
-.locusBadge {
-  display: inline-block;
-  padding: 0.25rem 0.65rem;
-  border-radius: 999px;
-  font-size: 0.72rem;
-  font-weight: 700;
-  margin-bottom: 0.75rem;
-}
-
-.locusGene {
-  font-size: 1rem;
-  font-weight: 700;
+.locusClose:hover {
+  background: rgba(255, 255, 255, 0.15);
   color: var(--gn-white);
-  margin: 0 0 0.4rem;
+}
+
+.variantList {
   display: flex;
   flex-direction: column;
-  gap: 0.2rem;
+  gap: 0.75rem;
+  max-height: 380px;
+  overflow-y: auto;
+  padding-right: 0.5rem;
 }
 
-.locusVariant {
-  font-size: 0.78rem;
-  font-weight: 500;
-  color: var(--gn-text-muted);
-  font-family: monospace;
+/* Custom Scrollbar for Variant List */
+.variantList::-webkit-scrollbar {
+  width: 4px;
 }
 
-.locusDesc {
-  font-size: 0.82rem;
-  color: var(--gn-text-secondary);
-  margin: 0 0 1rem;
-  line-height: 1.5;
+.variantList::-webkit-scrollbar-track {
+  background: transparent;
 }
 
-.locusRow {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.4rem 0;
-  border-top: 1px solid var(--gn-border-light);
-  font-size: 0.82rem;
-  color: var(--gn-text-secondary);
+.variantList::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 99px;
 }
 
-.locusRow strong { color: var(--gn-white); font-weight: 600; }
+.variantList::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 229, 255, 0.4);
+}

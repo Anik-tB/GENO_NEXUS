@@ -33,6 +33,9 @@ from canrisk_client import PatientProfile, FamilyHistory, calculate_boadicea_ris
 
 app = FastAPI(title="GenoNexus Engine v2", version="2.0.0")
 
+# Global in-memory cache for alignment results
+_ALIGNMENT_CACHE = {}
+
 # ===========================================================================
 # Real-Time Collaboration WebSocket Hub
 # ===========================================================================
@@ -512,6 +515,64 @@ KNOWN_DR_POSITIONS = {
     "Ebola": {274, 509, 544},
 }
 
+BUILTIN_KNOWN_MUTATIONS = {
+    "HIV-1": {
+        (65, 'A', 'G'): {"severity": "high", "clinical_significance": "K65R — major NRTI resistance", "drug_resistance": True},
+        (70, 'A', 'G'): {"severity": "medium", "clinical_significance": "K70R — NRTI intermediate resistance", "drug_resistance": True},
+        (103, 'A', 'G'): {"severity": "high", "clinical_significance": "K103N — primary NNRTI resistance", "drug_resistance": True},
+        (184, 'A', 'G'): {"severity": "high", "clinical_significance": "M184V — high-level 3TC/FTC resistance", "drug_resistance": True},
+        (215, 'A', 'C'): {"severity": "high", "clinical_significance": "T215Y/F — TAM", "drug_resistance": True},
+        (190, 'G', 'A'): {"severity": "high", "clinical_significance": "G190A — NNRTI resistance", "drug_resistance": True},
+        (41, 'A', 'T'): {"severity": "medium", "clinical_significance": "M41L — TAM1 pathway", "drug_resistance": True},
+        (74, 'T', 'A'): {"severity": "medium", "clinical_significance": "L74V — ddI/abacavir resistance", "drug_resistance": True},
+        (501, 'A', 'T'): {"severity": "high", "clinical_significance": "N501Y — receptor binding domain change", "drug_resistance": False},
+    },
+    "SARS-CoV-2": {
+        (501, 'A', 'T'): {"severity": "high", "clinical_significance": "N501Y — ACE2 binding increase", "drug_resistance": False},
+        (484, 'G', 'A'): {"severity": "high", "clinical_significance": "E484K — immune evasion signature", "drug_resistance": False},
+        (417, 'A', 'C'): {"severity": "high", "clinical_significance": "K417T/N — variant signature", "drug_resistance": False},
+        (614, 'A', 'G'): {"severity": "medium", "clinical_significance": "D614G — fitness enhancement", "drug_resistance": False},
+        (681, 'C', 'T'): {"severity": "high", "clinical_significance": "P681H/R — furin cleavage site", "drug_resistance": False},
+    }
+}
+
+def _load_known_mutations_from_db(organism: str) -> dict:
+    """
+    Queries known_mutations table in PostgreSQL for a specific organism.
+    Returns: {(pos, ref, qry): {severity, clinical_significance, drug_resistance}}
+    """
+    known = {}
+    conn = _get_db_conn()
+    if conn:
+        try:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "SELECT position, reference_base, query_base, severity, clinical_significance, drug_resistance FROM known_mutations WHERE organism = %s",
+                    (organism,)
+                )
+                rows = cur.fetchall()
+                for row in rows:
+                    pos, ref, qry, sev, clinsig, dr = row
+                    known[(pos, ref.upper(), qry.upper())] = {
+                        "severity": sev.lower(),
+                        "clinical_significance": clinsig,
+                        "drug_resistance": bool(dr)
+                    }
+        except Exception as e:
+            print(f"[WARN] Failed to load known mutations from database: {e}")
+        finally:
+            conn.close()
+    return known
+
+def get_known_mutations_map(organism: str) -> dict:
+    """Loads known mutations from database and falls back to built-in variants if empty."""
+    db_muts = _load_known_mutations_from_db(organism)
+    fallback = BUILTIN_KNOWN_MUTATIONS.get(organism, {})
+    for key, val in fallback.items():
+        if key not in db_muts:
+            db_muts[key] = val
+    return db_muts
+
 # ---------------------------------------------------------------------------
 # Pydantic models
 # ---------------------------------------------------------------------------
@@ -906,6 +967,37 @@ async def compare_sequences(req: CompareRequest):
         # Prefer query header, fall back to ref header
         detected_organism = query_organism if query_organism != "Unknown" else ref_organism
 
+        # Cache check
+        import hashlib
+        cache_key_content = f"{query_seq.strip().upper()}|||{ref_seq.strip().upper()}"
+        cache_key = hashlib.sha256(cache_key_content.encode("utf-8")).hexdigest()
+
+        if cache_key in _ALIGNMENT_CACHE:
+            print(f"[INFO] Alignment cache hit for key: {cache_key[:10]}...")
+            cached_res = _ALIGNMENT_CACHE[cache_key].copy()
+
+            # Broadcast pipeline completion for WebSocket UI updates
+            pipe_id = f"pipe-{_next_id()}"
+            new_pipe = {
+                "id": pipe_id,
+                "name": f"{detected_organism} Alignment (Cached)",
+                "status": "completed",
+                "progress": 100,
+                "eta": None,
+                "logs": [f"Cache hit. Instantly retrieved aligned sequence comparison results."],
+                "stages": [
+                    {"name": "QC", "status": "done"},
+                    {"name": "Align", "status": "done"},
+                    {"name": "Call", "status": "done"},
+                    {"name": "Predict", "status": "done"},
+                    {"name": "Enrich", "status": "done"},
+                ]
+            }
+            collab_state.pipelines.insert(0, new_pipe)
+            await manager.broadcast({"type": "pipeline_update", "pipelines": collab_state.pipelines})
+
+            return cached_res
+
         # Initialize pipeline details in the real-time Collaboration Hub
         pipe_id = f"pipe-{_next_id()}"
         new_pipe = {
@@ -969,7 +1061,9 @@ async def compare_sequences(req: CompareRequest):
         await _update_pipeline_progress(pipe_id, f"Alignment complete. Score: {alignment_score}. Call mutations stage active...", 70)
 
         # ── 5. Extract mutations (SNPs + Indels) ──────────────────────────
-        dr_positions = KNOWN_DR_POSITIONS.get(detected_organism, set())
+        known_muts_map = get_known_mutations_map(detected_organism)
+        dr_positions = {pos for (pos, ref, qry), data in known_muts_map.items() if data.get("drug_resistance")}
+        dr_positions.update(KNOWN_DR_POSITIONS.get(detected_organism, set()))
 
         mutations = []
         indels = []
@@ -1017,14 +1111,17 @@ async def compare_sequences(req: CompareRequest):
             is_transition = (is_purine(ref_char) and is_purine(qry_char)) or \
                             (is_pyrimidine(ref_char) and is_pyrimidine(qry_char))
 
+            mut_key = (genomic_ref_pos, ref_char.upper(), qry_char.upper())
+            is_known = mut_key in known_muts_map
+
             gc = _gc_context(ref_aln, genomic_ref_pos - 1)
             cp = _codon_position(genomic_ref_pos, gene_map)
             in_dom, domain_name = _in_domain(genomic_ref_pos, gene_map)
-            is_dr = genomic_ref_pos in dr_positions
+            is_dr = genomic_ref_pos in dr_positions or (is_known and known_muts_map[mut_key].get("drug_resistance"))
 
             mutations_features.append((is_transition, False, gc, cp, in_dom, is_dr))
 
-            mutations.append({
+            mut_data = {
                 "position": genomic_ref_pos,
                 "reference": ref_char,
                 "query": qry_char,
@@ -1036,7 +1133,16 @@ async def compare_sequences(req: CompareRequest):
                 "in_functional_domain": in_dom,
                 "drug_resistance_site": is_dr,
                 "codon_position": cp,
-            })
+            }
+
+            if is_known:
+                known_data = known_muts_map[mut_key]
+                mut_data["severity"] = known_data["severity"]
+                mut_data["ai_confidence"] = 1.0
+                mut_data["impact"] = known_data["clinical_significance"]
+                mut_data["is_known_clinical"] = True
+
+            mutations.append(mut_data)
 
         await _update_pipeline_progress(pipe_id, f"Called {len(mutations)} SNPs and {len(indels)} indels. Running batch Random Forest pathogenicity grading...", 80)
 
@@ -1044,8 +1150,9 @@ async def compare_sequences(req: CompareRequest):
         if mutations_features:
             snp_preds = predict_severity_batch(mutations_features)
             for i, p in enumerate(snp_preds):
-                mutations[i]["severity"] = p[0]
-                mutations[i]["ai_confidence"] = p[1]
+                if not mutations[i].get("is_known_clinical"):
+                    mutations[i]["severity"] = p[0]
+                    mutations[i]["ai_confidence"] = p[1]
 
         # Score Indels with the RF too
         indels_features = []
@@ -1145,7 +1252,7 @@ async def compare_sequences(req: CompareRequest):
 
         await _update_pipeline_progress(pipe_id, "Comparative pipeline completed. Writing results to the database.", 100, "completed")
 
-        return {
+        res_payload = {
             "match_percentage": match_percentage,
             "alignment_score": alignment_score,
             "detected_organism": detected_organism,
@@ -1163,6 +1270,11 @@ async def compare_sequences(req: CompareRequest):
                 "query_header": query_header[:120],
             },
         }
+
+        # Save to alignment cache
+        _ALIGNMENT_CACHE[cache_key] = res_payload
+
+        return res_payload
 
     except HTTPException:
         raise

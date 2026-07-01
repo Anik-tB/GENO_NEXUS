@@ -79,34 +79,97 @@ export function GenomeBrowser({ chromosomes, highlightPosition, showAllPins }: {
       ))}
       
       <div className={styles.chromosomes}>
-        {chromosomes.map((ch) => (
-          <div key={ch.id} className={styles.pair} onClick={() => setSelectedChrom(ch === selectedChrom ? null : ch)}>
-            <div
-              className={`${styles.chromatid} ${selectedChrom?.id === ch.id ? styles.selected : ""}`}
-              style={{ height: `${ch.height}%` }}
-            >
-              {ch.mutations && ch.mutations
-                .filter(mut => showAllPins || highlightPosition === undefined || mut.position === highlightPosition)
-                .map((mut, idx) => {
-                  const isHighlighted = highlightPosition !== undefined && mut.position === highlightPosition;
-                  return (
-                    <span
-                      key={idx}
-                      className={`${styles.mutPin} ${isHighlighted ? styles.highlightedPin : ""}`}
-                      style={{
-                        top: `${mut.relativePosPct}%`,
-                        background: isHighlighted ? "var(--gn-primary)" : (SEVERITY_COLORS[mut.severity] || "var(--gn-text-muted)"),
-                        boxShadow: isHighlighted ? "0 0 12px var(--gn-primary)" : `0 0 8px ${SEVERITY_COLORS[mut.severity]}`,
-                        height: isHighlighted ? '6px' : (mut.severity === "pathogenic" ? '4px' : '2px'), // Make severe variants slightly thicker
-                      }}
-                      title={`${mut.gene} (${mut.variant})`}
+        {chromosomes.map((ch) => {
+          const isSelected = selectedChrom?.id === ch.id;
+          const filteredMutations = ch.mutations ? ch.mutations.filter(mut => showAllPins || highlightPosition === undefined || mut.position === highlightPosition) : [];
+          
+          return (
+            <div key={ch.id} className={styles.pair} onClick={() => setSelectedChrom(isSelected ? null : ch)}>
+              <div
+                className={`${styles.pairContainer} ${isSelected ? styles.selectedPair : ""}`}
+                style={{ height: `${ch.height}%` }}
+              >
+                {/* Scan Beam on selected chromosome */}
+                {isSelected && <div className={styles.scanBeam} />}
+
+                {/* Left Homologous Chromatid SVG */}
+                <div className={styles.sisterChromatid}>
+                  <svg width="100%" height="100%" viewBox="0 0 30 100" preserveAspectRatio="none">
+                    <defs>
+                      <linearGradient id={`grad-left-${ch.id}`} x1="0%" y1="0%" x2="0%" y2="100%">
+                        <stop offset="0%" stopColor="#1e3a8a" stopOpacity={0.85} />
+                        <stop offset="40%" stopColor="#3b82f6" stopOpacity={0.9} />
+                        <stop offset="60%" stopColor="#a855f7" stopOpacity={0.9} />
+                        <stop offset="100%" stopColor="#06b6d4" stopOpacity={0.85} />
+                      </linearGradient>
+                    </defs>
+                    {/* Metaphase chromosome pinched shape (centromere at y=40) */}
+                    <path 
+                      d="M 10,2 Q 15,0 20,2 Q 24,18 20,38 Q 15,40 15,40 Q 15,40 20,42 Q 24,62 20,98 Q 15,100 10,98 Q 6,62 10,42 Q 15,40 15,40 Q 15,40 10,38 Q 6,18 10,2 Z" 
+                      fill={`url(#grad-left-${ch.id})`}
+                      stroke={isSelected ? "var(--gn-primary)" : "rgba(255, 255, 255, 0.15)"}
+                      strokeWidth="1.2"
                     />
-                  );
-                })}
+                    
+                    {/* Render mutations as bands directly inside the chromatid body */}
+                    {filteredMutations.map((mut) => {
+                      const isHighlighted = highlightPosition !== undefined && mut.position === highlightPosition;
+                      const bandColor = isHighlighted ? "var(--gn-primary)" : (SEVERITY_COLORS[mut.severity] || "var(--gn-text-muted)");
+                      
+                      return (
+                        <rect
+                          key={`l-${mut.id}`}
+                          x="7"
+                          y={mut.relativePosPct - 1}
+                          width="16"
+                          height={isHighlighted ? "3.5" : "1.8"}
+                          fill={bandColor}
+                          style={{
+                            filter: `drop-shadow(0 0 4px ${bandColor})`,
+                            opacity: isHighlighted ? 1 : 0.8
+                          }}
+                        />
+                      );
+                    })}
+                  </svg>
+                </div>
+
+                {/* Right Homologous Chromatid SVG */}
+                <div className={styles.sisterChromatid}>
+                  <svg width="100%" height="100%" viewBox="0 0 30 100" preserveAspectRatio="none">
+                    <path 
+                      d="M 10,2 Q 15,0 20,2 Q 24,18 20,38 Q 15,40 15,40 Q 15,40 20,42 Q 24,62 20,98 Q 15,100 10,98 Q 6,62 10,42 Q 15,40 15,40 Q 15,40 10,38 Q 6,18 10,2 Z" 
+                      fill={`url(#grad-left-${ch.id})`}
+                      stroke={isSelected ? "var(--gn-primary)" : "rgba(255, 255, 255, 0.15)"}
+                      strokeWidth="1.2"
+                    />
+                    {/* Render mutations as bands directly inside the chromatid body */}
+                    {filteredMutations.map((mut) => {
+                      const isHighlighted = highlightPosition !== undefined && mut.position === highlightPosition;
+                      const bandColor = isHighlighted ? "var(--gn-primary)" : (SEVERITY_COLORS[mut.severity] || "var(--gn-text-muted)");
+                      
+                      return (
+                        <rect
+                          key={`r-${mut.id}`}
+                          x="7"
+                          y={mut.relativePosPct - 1}
+                          width="16"
+                          height={isHighlighted ? "3.5" : "1.8"}
+                          fill={bandColor}
+                          style={{
+                            filter: `drop-shadow(0 0 4px ${bandColor})`,
+                            opacity: isHighlighted ? 1 : 0.8
+                          }}
+                        />
+                      );
+                    })}
+                  </svg>
+                </div>
+              </div>
+              <span className={styles.chromLabel}>{ch.label}</span>
             </div>
-            <span className={styles.chromLabel}>{ch.label}</span>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {selectedChrom && selectedChrom.mutations && selectedChrom.mutations.length > 0 && (
@@ -122,7 +185,7 @@ export function GenomeBrowser({ chromosomes, highlightPosition, showAllPins }: {
               Identified {selectedChrom.mutations.length} variant(s) within this sequence block.
             </p>
 
-            <div className={styles.variantList} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', maxHeight: '400px', overflowY: 'auto', paddingRight: '0.5rem' }}>
+            <div className={styles.variantList}>
               {selectedChrom.mutations
                 .filter(mut => showAllPins || highlightPosition === undefined || mut.position === highlightPosition)
                 .map((mut) => {
@@ -199,7 +262,7 @@ export function GenomeBrowser({ chromosomes, highlightPosition, showAllPins }: {
                               style={{ 
                                 display: 'inline-flex',
                                 alignItems: 'center',
-                                justifyContent: 'center',
+                                justifyCenter: 'center',
                                 gap: '0.3rem',
                                 padding: '4px 8px',
                                 borderRadius: '4px',

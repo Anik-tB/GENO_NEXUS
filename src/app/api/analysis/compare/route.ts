@@ -30,6 +30,17 @@ export async function POST(req: NextRequest) {
 
     const db = assertDatabase();
 
+    // Cache check: if a completed comparison already exists for these file IDs, return it
+    const existing = await db.query(
+      `SELECT id FROM comparison_results 
+       WHERE query_file_id = $1 AND reference_file_id = $2 AND status = 'completed'
+       ORDER BY created_at DESC LIMIT 1`,
+      [queryFileId, referenceFileId]
+    );
+    if (existing.rows && existing.rows.length > 0) {
+      return NextResponse.json({ success: true, comparisonId: existing.rows[0].id, cached: true });
+    }
+
     // Fetch paths from DB
     const queryFileRes = await db.query(`SELECT storage_path FROM dna_files WHERE id = $1 AND user_id = $2`, [queryFileId, user.id]);
     const refFileRes = await db.query(`SELECT storage_path FROM dna_files WHERE id = $1 AND user_id = $2`, [referenceFileId, user.id]);
