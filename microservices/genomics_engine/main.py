@@ -28,6 +28,39 @@ from dataclasses import dataclass, field
 from Bio import SeqIO
 from Bio.Align import PairwiseAligner
 
+# ---------------------------------------------------------------------------
+# Load local environment variables from .env.local if present
+# ---------------------------------------------------------------------------
+def _load_env_local():
+    """
+    Attempts to read .env.local from the parent project directory
+    to load database credentials automatically.
+    """
+    possible_paths = [
+        os.path.join(os.path.dirname(__file__), "..", "..", ".env.local"),
+        os.path.join(os.path.dirname(__file__), "..", "..", ".env"),
+        ".env.local",
+        ".env"
+    ]
+    for path in possible_paths:
+        if os.path.exists(path):
+            try:
+                with open(path, "r", encoding="utf-8") as f:
+                    for line in f:
+                        line = line.strip()
+                        if line and not line.startswith("#") and "=" in line:
+                            key, val = line.split("=", 1)
+                            key = key.strip()
+                            val = val.strip().strip("'").strip('"')
+                            if key and val and key not in os.environ:
+                                os.environ[key] = val
+                print(f"[INFO] Successfully loaded environment variables from {path}")
+                break
+            except Exception as e:
+                print(f"[WARN] Failed to load environment variables from {path}: {e}")
+
+_load_env_local()
+
 from virus_classifier import predict_severity, predict_severity_batch, predict_severity_with_esm, ESM_PREDICTOR
 from canrisk_client import PatientProfile, FamilyHistory, calculate_boadicea_risk
 
