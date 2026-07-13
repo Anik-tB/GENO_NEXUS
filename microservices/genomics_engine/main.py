@@ -27,6 +27,9 @@ from typing import Optional, List
 from dataclasses import dataclass, field
 from Bio import SeqIO
 from Bio.Align import PairwiseAligner
+import warnings
+from Bio import BiopythonWarning
+warnings.simplefilter("ignore", BiopythonWarning)
 
 # ---------------------------------------------------------------------------
 # Load local environment variables from .env.local if present
@@ -61,7 +64,7 @@ def _load_env_local():
 
 _load_env_local()
 
-from virus_classifier import predict_severity, predict_severity_batch, predict_severity_with_esm, ESM_PREDICTOR
+from virus_classifier import predict_severity, predict_severity_batch, predict_severity_with_esm, ESM_PREDICTOR, explain_prediction_path
 from canrisk_client import PatientProfile, FamilyHistory, calculate_boadicea_risk
 
 app = FastAPI(title="GenoNexus Engine v2", version="2.0.0")
@@ -898,7 +901,9 @@ def _get_amino_acids(ref_seq: str, query_seq: str, pos: int) -> tuple[int, str, 
     
     ref_protein = ""
     try:
-        ref_protein = str(Seq(ref_seq).translate(to_stop=False))
+        # Trim sequence to a multiple of three to avoid partial codon warnings/errors
+        trimmed_ref = ref_seq[:(len(ref_seq) // 3) * 3]
+        ref_protein = str(Seq(trimmed_ref).translate(to_stop=False))
     except Exception:
         pass
         
@@ -1186,6 +1191,7 @@ async def compare_sequences(req: CompareRequest):
                 if not mutations[i].get("is_known_clinical"):
                     mutations[i]["severity"] = p[0]
                     mutations[i]["ai_confidence"] = p[1]
+                mutations[i]["ai_explanation"] = explain_prediction_path(mutations_features[i], esm_score=None)
 
         # Score Indels with the RF too
         indels_features = []
@@ -1209,6 +1215,7 @@ async def compare_sequences(req: CompareRequest):
             for i, p in enumerate(indel_preds):
                 indels[i]["severity"] = p[0]
                 indels[i]["ai_confidence"] = p[1]
+                indels[i]["ai_explanation"] = explain_prediction_path(indels_features[i], esm_score=None)
 
         # ── ClinVar & AlphaFold DB Enrichment (Phase 1) ───────────────────
         if detected_organism == "BRCA1 (Homo sapiens)":
@@ -1241,6 +1248,7 @@ async def compare_sequences(req: CompareRequest):
                 sev, conf = predict_severity_with_esm(feat, esm_score)
                 mut["severity"] = sev
                 mut["ai_confidence"] = conf
+                mut["ai_explanation"] = explain_prediction_path(feat, esm_score)
                 
                 # 3. Query ClinVar for the first 10 mutations
                 hgvs_c = f"c.{mut['position']}{mut['reference']}>{mut['query']}"

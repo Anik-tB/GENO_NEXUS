@@ -3,7 +3,7 @@ import numpy as np
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Tuple
 from dotenv import load_dotenv
 from sklearn.ensemble import RandomForestRegressor, RandomForestClassifier
 
@@ -32,9 +32,9 @@ class ForecastRequest(BaseModel):
 class ForecastResponse(BaseModel):
     historical_points: List[float]
     future_points: List[int]
+    future_points_lower: List[int]
+    future_points_upper: List[int]
     alert_stats: List[Dict[str, Any]]
-
-import math
 
 POPULATION_MAP = {
     "bangladesh": 170000000.0,
@@ -103,15 +103,16 @@ def solve_seir(S0: float, E0: float, I0: float, R0: float, beta: float, sigma: f
         
     return S_list, E_list, I_list, R_list
 
-def generate_forecast_ml(series: List[float], n_preds: int, region: str = "Global", pathogen: str = "Unknown") -> List[int]:
+def generate_forecast_ml(series: List[float], n_preds: int, region: str = "Global", pathogen: str = "Unknown") -> Tuple[List[int], List[int], List[int]]:
     """
-    Hybrid Spatio-Temporal RF + SEIR Compartmental Forecaster.
-    Combines Random Forest lag-regression with physical epidemic compartment solver dynamics.
+    Hybrid Spatio-Temporal RF + SEIR Compartmental Forecaster with Bootstrap Ensemble 95% Confidence Intervals.
+    Combines Random Forest lag-regression with physical epidemic compartment solver dynamics and quantifies uncertainty.
     """
     if len(series) < 4:
         if len(series) == 0:
-            return [0] * n_preds
-        return [max(0, int(series[-1]))] * n_preds
+            return [0] * n_preds, [0] * n_preds, [0] * n_preds
+        val = max(0, int(series[-1]))
+        return [val] * n_preds, [val] * n_preds, [val] * n_preds
 
     # 1. Spatio-Temporal RF prediction
     diffs = [series[i] - series[i-1] for i in range(1, len(series))]
@@ -173,10 +174,71 @@ def generate_forecast_ml(series: List[float], n_preds: int, region: str = "Globa
         ml_predictions.append(int(round(next_val)))
         last_val = next_val
 
-    # 2. SEIR ODE simulation
+    # 2. Bootstrap Ensemble for Uncertainty Estimation
+    n_bootstraps = 20
+    bootstrap_predictions_trajectories = []
+    n_samples = len(X_train)
+    
+    if n_samples >= 5:
+        for b in range(n_bootstraps):
+            # Draw bootstrap sample
+            boot_idx = np.random.choice(n_samples, size=n_samples, replace=True)
+            X_boot = X_train[boot_idx]
+            y_boot = y_train[boot_idx]
+            
+            boot_rf = RandomForestRegressor(n_estimators=50, max_depth=4, random_state=b)
+            boot_rf.fit(X_boot, y_boot)
+            
+            # Predict trajectory
+            b_pred_diffs = []
+            b_last_local_lag1 = diffs[-1]
+            b_last_local_lag2 = diffs[-2] if len(diffs) > 1 else diffs[-1]
+            b_last_glob_lag1 = global_diffs[-1]
+            
+            for _ in range(n_preds):
+                b_last_leakage = b_last_local_lag1 * leakage_coefficient + b_last_glob_lag1 * (1 - leakage_coefficient)
+                b_features = np.array([[b_last_local_lag1, b_last_local_lag2, b_last_glob_lag1, b_last_leakage]])
+                b_pred_diff = boot_rf.predict(b_features)[0]
+                b_pred_diffs.append(b_pred_diff)
+                
+                b_last_local_lag2 = b_last_local_lag1
+                b_last_local_lag1 = b_pred_diff
+                b_last_glob_lag1 = 0.8 * b_last_glob_lag1 + 0.2 * b_pred_diff
+                
+            b_trajectory = []
+            b_last_val = series[-1]
+            for diff in b_pred_diffs:
+                b_next_val = max(0, b_last_val + diff)
+                b_trajectory.append(b_next_val)
+                b_last_val = b_next_val
+                
+            bootstrap_predictions_trajectories.append(b_trajectory)
+    else:
+        # Fallback: add artificial progressive noise to base trajectory
+        for b in range(n_bootstraps):
+            b_trajectory = []
+            b_last_val = series[-1]
+            noise_scale = 0.05 * (b - n_bootstraps / 2.0)
+            for diff in pred_diffs:
+                noise = diff * noise_scale
+                b_next_val = max(0, b_last_val + diff + noise)
+                b_trajectory.append(b_next_val)
+                b_last_val = b_next_val
+            bootstrap_predictions_trajectories.append(b_trajectory)
+            
+    # Calculate 95% Confidence Intervals at each forecast step
+    ml_lower = []
+    ml_upper = []
+    for t in range(n_preds):
+        step_vals = [bootstrap_predictions_trajectories[b][t] for b in range(n_bootstraps)]
+        lower_pct = np.percentile(step_vals, 2.5)
+        upper_pct = np.percentile(step_vals, 97.5)
+        ml_lower.append(lower_pct)
+        ml_upper.append(upper_pct)
+
+    # 3. SEIR ODE simulation
     N = POPULATION_MAP.get(region.lower(), 100000000.0)
     
-    # Configure compartment transitions based on pathogen and timeframe
     path_lower = pathogen.lower() if pathogen else "unknown"
     if "hiv" in path_lower:
         sigma = 0.5  # 2 years incubation
@@ -185,11 +247,9 @@ def generate_forecast_ml(series: List[float], n_preds: int, region: str = "Globa
         sigma = 15.0 # 2 days incubation (monthly steps)
         gamma = 6.0  # 5 days infectiousness
     else:
-        # COVID-19 / default defaults
         sigma = 6.0  # 5 days incubation
         gamma = 3.0  # 10 days infectiousness
 
-    # Dynamically estimate beta based on recent historical growth rate
     latest_val = series[-1]
     ref_val = series[-4] if len(series) >= 4 else series[0]
     growth_ratio = latest_val / max(1.0, ref_val)
@@ -198,8 +258,8 @@ def generate_forecast_ml(series: List[float], n_preds: int, region: str = "Globa
 
     I0 = max(10.0, series[-1])
     E0 = I0 * 1.5
-    R0_compartment = sum(series) - I0
-    S0 = N - (I0 + E0 + R0_compartment)
+    R0_compartment = max(0.0, sum(series) - I0)
+    S0 = max(0.0, N - (I0 + E0 + R0_compartment))
 
     S_list, E_list, I_list, R_list = solve_seir(S0, E0, I0, R0_compartment, beta, sigma, gamma, n_preds, dt=1.0)
     
@@ -210,13 +270,31 @@ def generate_forecast_ml(series: List[float], n_preds: int, region: str = "Globa
         new_cases = (beta * s_val * i_val) / N
         seir_predictions.append(max(0, int(round(new_cases))))
 
-    # 3. Blend models: 40% RF (captures seasonal patterns) + 60% SEIR (imposes physical containment decay)
+    # 4. Blend expected, lower and upper bounds
     blended = []
-    for ml, seir in zip(ml_predictions, seir_predictions):
+    blended_lower = []
+    blended_upper = []
+    
+    for t in range(n_preds):
+        ml = ml_predictions[t]
+        seir = seir_predictions[t]
+        
+        # Blend expected value
         val = 0.4 * ml + 0.6 * seir
         blended.append(max(0, int(round(val))))
+        
+        # Blend bounds
+        lower_val = 0.4 * ml_lower[t] + 0.6 * seir
+        upper_val = 0.4 * ml_upper[t] + 0.6 * seir
+        
+        # Ensure consistency: lower <= val <= upper
+        final_lower = max(0, min(blended[-1], int(round(lower_val))))
+        final_upper = max(blended[-1], int(round(upper_val)))
+        
+        blended_lower.append(final_lower)
+        blended_upper.append(final_upper)
 
-    return blended
+    return blended, blended_lower, blended_upper
 
 def generate_alert_stats(historical_points: List[float], future_points: List[int], pathogen: str) -> List[Dict[str, Any]]:
     # 1. Create a synthetic dataset to train our Random Forest models for hotspots
@@ -274,8 +352,8 @@ def generate_alert_stats(historical_points: List[float], future_points: List[int
 @app.post("/forecast", response_model=ForecastResponse)
 async def forecast(request: ForecastRequest):
     try:
-        # Generate the curve using the new ML Random Forest approach
-        future = generate_forecast_ml(
+        # Generate the curve with 95% bootstrap confidence intervals
+        future, future_lower, future_upper = generate_forecast_ml(
             request.historical_points, 
             request.horizon_periods,
             region=request.region or "Global",
@@ -292,6 +370,8 @@ async def forecast(request: ForecastRequest):
         return ForecastResponse(
             historical_points=request.historical_points,
             future_points=future,
+            future_points_lower=future_lower,
+            future_points_upper=future_upper,
             alert_stats=alert_stats
         )
     except Exception as e:

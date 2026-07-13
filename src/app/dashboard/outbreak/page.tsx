@@ -10,6 +10,8 @@ type AlertStat = { label: string; value: string; color: string };
 type OutbreakData = {
   historical_points: number[];
   future_points: number[];
+  future_points_lower: number[];
+  future_points_upper: number[];
   alert_stats: AlertStat[];
 };
 
@@ -33,6 +35,8 @@ export default function OutbreakPage() {
   const [data, setData] = useState<OutbreakData>({
     historical_points: [12, 18, 25, 32, 45, 58, 65],
     future_points: [78, 92, 110, 135],
+    future_points_lower: [70, 80, 92, 108],
+    future_points_upper: [88, 108, 132, 165],
     alert_stats: [
       { label: "Projected Rise", value: "45%", color: "var(--gn-danger)" },
       { label: "Active Regions", value: "12", color: "var(--gn-warning)" },
@@ -88,12 +92,13 @@ export default function OutbreakPage() {
   const W = 800, H = 280;
   const maxVal = Math.max(
     ...(data.historical_points.length > 0 ? data.historical_points : [0]),
-    ...(data.future_points.length > 0 ? data.future_points : [0])
+    ...(data.future_points.length > 0 ? data.future_points : [0]),
+    ...(data.future_points_upper && data.future_points_upper.length > 0 ? data.future_points_upper : [0])
   );
-  const MAX = Math.max(150, maxVal * 1.2); // Give 20% headroom above highest point
+  const MAX = Math.max(150, maxVal * 1.2);
 
   const totalPoints = data.historical_points.length + data.future_points.length;
-  const currentLabels = [];
+  const currentLabels: string[] = [];
   if (isHiv) {
     const currentYear = new Date().getFullYear();
     const startYear = currentYear - data.historical_points.length + 1;
@@ -120,13 +125,31 @@ export default function OutbreakPage() {
     }
   }
 
-  const pastPts = mkPoints(data.historical_points, 0, W, H, MAX, currentLabels.length);
-  const futPts  = mkPoints(data.future_points, data.historical_points.length - 1, W, H, MAX, currentLabels.length);
+  const pastPts   = mkPoints(data.historical_points, 0, W, H, MAX, currentLabels.length);
+  const futPts    = mkPoints(data.future_points, data.historical_points.length - 1, W, H, MAX, currentLabels.length);
   const joinedFuture = pastPts.length > 0 ? [pastPts[pastPts.length - 1], ...futPts.slice(1)] : futPts;
+
+  // 95% CI bounds
+  const ciLower   = data.future_points_lower && data.future_points_lower.length > 0
+    ? mkPoints(data.future_points_lower, data.historical_points.length - 1, W, H, MAX, currentLabels.length)
+    : [];
+  const ciUpper   = data.future_points_upper && data.future_points_upper.length > 0
+    ? mkPoints(data.future_points_upper, data.historical_points.length - 1, W, H, MAX, currentLabels.length)
+    : [];
+
+  // Build a closed SVG polygon path for the shaded CI band
+  let ciPolygonPoints = "";
+  if (ciLower.length > 0 && ciUpper.length > 0 && pastPts.length > 0) {
+    const startPt = pastPts[pastPts.length - 1];
+    const upperPts = [startPt, ...ciUpper.slice(1)];
+    const lowerPts = [startPt, ...ciLower.slice(1)];
+    const upperStr = upperPts.map(p => `${p.x},${p.y}`).join(" ");
+    const lowerStr = lowerPts.map(p => `${p.x},${p.y}`).join(" ");
+    ciPolygonPoints = `${upperStr} ${lowerStr.split(" ").reverse().join(" ")}`;
+  }
 
   const pastStr   = pts(pastPts);
   const futureStr = pts(joinedFuture);
-  const fillArea  = `${pastStr} ${futureStr.split(" ").reverse().join(" ")} ${W - 20},${H - 20} 20,${H - 20}`;
 
   return (
     <div className={styles.container}>
@@ -189,6 +212,10 @@ export default function OutbreakPage() {
           <div className={styles.legend}>
             <span className={styles.legendItem}><span className={styles.dotPast} /> Historical</span>
             <span className={styles.legendItem}><span className={styles.dotFuture} /> ML Forecast</span>
+            <span className={styles.legendItem}>
+              <span style={{ display: "inline-block", width: 12, height: 12, borderRadius: 3, background: "rgba(244,63,94,0.25)", border: "1px solid rgba(244,63,94,0.5)", marginRight: 4, verticalAlign: "middle" }} />
+              95% CI
+            </span>
           </div>
         </div>
 
@@ -215,9 +242,20 @@ export default function OutbreakPage() {
               <line key={i} x1={20} y1={H - 20 - (H - 40) * p} x2={W - 20} y2={H - 20 - (H - 40) * p} stroke="rgba(255,255,255,0.04)" strokeWidth="1"/>
             ))}
 
-            {/* Forecast zone */}
+            {/* Forecast zone (subtle background tint) */}
             {pastPts.length > 0 && (
-              <rect x={pastPts[pastPts.length - 1].x} y={20} width={W - 20 - pastPts[pastPts.length - 1].x} height={H - 40} fill="rgba(244,63,94,0.04)" rx="4"/>
+              <rect x={pastPts[pastPts.length - 1].x} y={20} width={W - 20 - pastPts[pastPts.length - 1].x} height={H - 40} fill="rgba(244,63,94,0.02)" rx="4"/>
+            )}
+
+            {/* 95% Bootstrap Confidence Interval shaded band */}
+            {ciPolygonPoints && (
+              <polygon
+                points={ciPolygonPoints}
+                fill="rgba(244,63,94,0.12)"
+                stroke="rgba(244,63,94,0.25)"
+                strokeWidth="0.5"
+                strokeDasharray="4 3"
+              />
             )}
 
             {/* Past line */}

@@ -47,6 +47,8 @@ export async function GET(req: NextRequest) {
         data: {
           historical_points: cachedResult.rows[0].historical_points,
           future_points: cachedResult.rows[0].future_points,
+          future_points_lower: cachedResult.rows[0].future_points_lower || [],
+          future_points_upper: cachedResult.rows[0].future_points_upper || [],
           alert_stats: cachedResult.rows[0].alert_stats,
         },
         cached: true,
@@ -140,7 +142,9 @@ export async function GET(req: NextRequest) {
     }
 
     // 2. Call the Python Microservice for Mathematical Forecasting
-    let futurePoints = [];
+    let futurePoints: number[] = [];
+    let futurePointsLower: number[] = [];
+    let futurePointsUpper: number[] = [];
     
     let horizonPeriods = 4;
     if (pathogen.toLowerCase() === "hiv") {
@@ -169,6 +173,8 @@ export async function GET(req: NextRequest) {
       if (pyRes.ok) {
         const pyJson = await pyRes.json();
         futurePoints = pyJson.future_points;
+        futurePointsLower = pyJson.future_points_lower || [];
+        futurePointsUpper = pyJson.future_points_upper || [];
         alertStats = pyJson.alert_stats || [];
       } else {
         console.warn("Python microservice returned an error. Make sure it is running on port 8001.");
@@ -190,6 +196,8 @@ export async function GET(req: NextRequest) {
     const forecastData = {
       historical_points: historicalPoints,
       future_points: futurePoints,
+      future_points_lower: futurePointsLower,
+      future_points_upper: futurePointsUpper,
       alert_stats: alertStats
     };
 

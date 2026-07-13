@@ -140,16 +140,37 @@ export default function AnalysisPage() {
     setMutations(formatted);
 
     // Format Indels
-    const formattedIndels = rawIndels.map((m: any, idx: number) => ({
-      id: `indel_${idx}`,
-      position: m.position,
-      type: m.type === "insertion" ? "Insertion" : "Deletion",
-      base: m.query_base ?? m.reference_base ?? "–",
-      severity: m.severity ?? "low",
-      functional_region: m.functional_region ?? "Intergenic",
-      ai_confidence: m.ai_confidence ?? 0,
-      drug_resistance_site: m.drug_resistance_site ?? false,
-    }));
+    const formattedIndels = rawIndels.map((m: any, idx: number) => {
+      const indelSeverity = m.severity ?? "low";
+      const indelRegion = m.functional_region ?? "Intergenic";
+      const indelConfidence = m.ai_confidence ?? 0;
+      const indelDrSite = m.drug_resistance_site ?? false;
+      const indelType = m.type === "insertion" ? "Insertion" : "Deletion";
+
+      let indelCategory = "Genomic";
+      if (indelDrSite) indelCategory = "Drug Resistance";
+      else if (indelRegion !== "Intergenic") indelCategory = "Functional Domain";
+
+      const indelImpact = indelDrSite
+        ? `⚠️ Indel at known drug-resistance site ${m.position} (${indelRegion}). Clinical review required.`
+        : `${indelType} in ${indelRegion} at position ${m.position}. AI confidence: ${(indelConfidence * 100).toFixed(0)}%.`;
+
+      return {
+        id: `indel_${idx}`,
+        gene: `${indelRegion}:g.${m.position}${indelType === "Insertion" ? "ins" : "del"}`,
+        position: m.position,
+        type: indelType,
+        base: m.query_base ?? m.reference_base ?? "–",
+        variant: `${indelType}: ${m.query_base ?? m.reference_base ?? "–"}`,
+        severity: indelSeverity,
+        impact: indelImpact,
+        category: indelCategory,
+        functional_region: indelRegion,
+        ai_confidence: indelConfidence,
+        drug_resistance_site: indelDrSite,
+        raw: m,
+      };
+    });
     setIndels(formattedIndels);
 
     if (formatted.length > 0) setSelectedGene(formatted[0]);
@@ -799,6 +820,67 @@ export default function AnalysisPage() {
                   <span className={styles.propertyLabel}>Clinical Impact</span>
                   <p className={styles.impactText}>{selectedGene.impact}</p>
                 </div>
+
+                {/* ── AI Explanation (XAI Breakdown) ─────────────────────── */}
+                {selectedGene.raw.ai_explanation && (
+                  <div style={{
+                    marginTop: '1rem',
+                    background: 'rgba(6, 182, 212, 0.04)',
+                    border: '1px solid rgba(6, 182, 212, 0.18)',
+                    borderRadius: '8px',
+                    padding: '1rem',
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.6rem' }}>
+                      <span style={{ fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--gn-primary)' }}>
+                        🧠 AI Pathogenicity Explanation
+                      </span>
+                      <span style={{ fontSize: '0.6rem', color: 'var(--gn-text-muted)', background: 'rgba(6,182,212,0.1)', padding: '1px 6px', borderRadius: 4 }}>
+                        Tree Interpreter + ESM-2
+                      </span>
+                    </div>
+
+                    {/* Verbal Summary */}
+                    {selectedGene.raw.ai_explanation.summary && (
+                      <p style={{ fontSize: '0.75rem', color: 'var(--gn-text-secondary)', lineHeight: 1.6, marginBottom: '0.9rem' }}>
+                        {selectedGene.raw.ai_explanation.summary}
+                      </p>
+                    )}
+
+                    {/* Feature Attribution Bars */}
+                    {selectedGene.raw.ai_explanation.feature_attributions && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
+                        {Object.entries(selectedGene.raw.ai_explanation.feature_attributions as Record<string, number>)
+                          .sort(([, a], [, b]) => b - a)
+                          .map(([feature, pct]) => {
+                            const barColor = pct >= 40
+                              ? 'rgba(244,63,94,0.85)'
+                              : pct >= 20
+                              ? 'rgba(251,191,36,0.85)'
+                              : 'rgba(6,182,212,0.7)';
+                            return (
+                              <div key={feature}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.2rem' }}>
+                                  <span style={{ fontSize: '0.68rem', color: 'var(--gn-text-muted)' }}>{feature}</span>
+                                  <span style={{ fontSize: '0.68rem', color: 'var(--gn-text-secondary)', fontWeight: 600 }}>{pct}%</span>
+                                </div>
+                                <div style={{ width: '100%', height: 6, background: 'rgba(255,255,255,0.06)', borderRadius: 4, overflow: 'hidden' }}>
+                                  <div style={{
+                                    width: `${pct}%`,
+                                    height: '100%',
+                                    background: barColor,
+                                    borderRadius: 4,
+                                    transition: 'width 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+                                    boxShadow: `0 0 6px ${barColor}`,
+                                  }} />
+                                </div>
+                              </div>
+                            );
+                          })
+                        }
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {selectedGene.severity === "high" && (
                   <div className={styles.urgentAlert}>
